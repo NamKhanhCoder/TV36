@@ -1,0 +1,12 @@
+KT001|VTV1|1|TL004|Kenh truyen hinh quoc gia
+KT002|VTV3|3|TL001|Kenh giai tri tong hop
+KT003|HTV7|7|TL001|Kenh truyen hinh HCM
+KT004|K+ Sport 1|101|TL002|Kenh the thao K+
+KT005|K+ Sport 2|102|TL002|Kenh the thao K+ 2
+KT006|HBO|201|TL003|Kenh phim quoc te HBO
+KT007|Cartoon Network|301|TL005|Kenh hoat hinh quoc te
+KT008|VTV2|2|TL007|Kenh khoa hoc giao duc
+KT009|MTV|401|TL006|Kenh am nhac quoc te
+KT010|CNN|501|TL009|Kenh tin tuc quoc te
+KT011|Discovery|502|TL007|Kenh kham pha the gioi
+KT012|VTV6|6|TL008|Kenh thanh thieu nien

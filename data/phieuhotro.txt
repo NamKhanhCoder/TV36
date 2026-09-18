@@ -1,0 +1,12 @@
+PH001|KH001|Set-top box khong len hinh|10/09/2026|dang_xu_ly|Da gui ky thuat vien
+PH002|KH003|Mat tin hieu kenh K+|12/09/2026|moi|
+PH003|KH005|STB bi treo lien tuc|15/09/2024|da_hoan_thanh|Da doi STB moi
+PH004|KH002|Khong xem duoc kenh HBO|01/08/2024|da_hoan_thanh|Cap nhat goi kenh
+PH005|KH004|Remote khong hoat dong|20/08/2024|da_hoan_thanh|Da doi remote moi
+PH006|KH007|Hinh anh bi nhieu|25/05/2025|dang_xu_ly|Dang kiem tra duong truyen
+PH007|KH001|Khong ket noi duoc wifi|05/07/2025|da_hoan_thanh|Huong dan cau hinh lai
+PH008|KH009|Mat tieng tren mot so kenh|10/09/2025|moi|
+PH009|KH010|Khong dang nhap duoc app|20/01/2026|da_hoan_thanh|Reset mat khau
+PH010|KH011|STB tu dong tat nguon|01/04/2026|dang_xu_ly|Dang kiem tra phan cung
+PH011|KH006|Kenh VTV3 khong co tin hieu|15/03/2025|da_hoan_thanh|Cap nhat firmware
+PH012|KH012|Khong phat duoc noi dung VOD|01/08/2026|moi|

@@ -1,0 +1,10 @@
+TL001|Giai tri|Cac kenh giai tri tong hop
+TL002|The thao|Cac kenh the thao trong nuoc va quoc te
+TL003|Phim|Cac kenh chieu phim truyen hinh va dien anh
+TL004|Tin tuc|Cac kenh tin tuc thoi su
+TL005|Thieu nhi|Cac kenh danh cho tre em
+TL006|Am nhac|Cac kenh am nhac va giai tri ca nhac
+TL007|Khoa hoc|Cac kenh khoa hoc kham pha
+TL008|Truyen hinh thuc te|Cac kenh truyen hinh thuc te va game show
+TL009|Quoc te|Cac kenh nuoc ngoai
+TL010|Mua sam|Cac kenh mua sam va quang cao

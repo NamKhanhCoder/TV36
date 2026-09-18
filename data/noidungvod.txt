@@ -1,0 +1,12 @@
+VOD001|Mat biec|Tinh cam|110|Phim chuyen the tu truyen Nguyen Nhat Anh|2019
+VOD002|Bo gia|Hai|128|Phim tet 2021 cua Tran Thanh|2021
+VOD003|Hai Phuong|Hanh dong|98|Phim hanh dong cua Ngo Thanh Van|2019
+VOD004|Lat mat 7|Hanh dong|130|Phim hanh dong Ly Hai|2023
+VOD005|Toi thay hoa vang tren co xanh|Tinh cam|104|Phim chuyen the tu truyen Nguyen Nhat Anh|2015
+VOD006|Em chua 18|Hai|97|Phim hai tinh cam hoc duong|2017
+VOD007|Song song|Kinh di|100|Phim kinh di Viet Nam|2021
+VOD008|Gai gia lam chieu V|Hai|120|Phim hai Ngo Thanh Van|2021
+VOD009|Dam me|Tai lieu|90|Phim tai lieu ve am nhac Viet Nam|2022
+VOD010|Co Ba Sai Gon|Tinh cam|108|Phim ve ao dai Viet Nam|2017
+VOD011|Rom|Tam ly|78|Phim doc lap dat giai quoc te|2019
+VOD012|Trang Ti|Phieu luu|100|Phim chuyen the tu truyen Nguyen Nhat Anh|2021

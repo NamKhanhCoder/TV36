@@ -1,0 +1,10 @@
+GK001|Goi Gia dinh|99000|KT001,KT002,KT003,KT008|Goi kenh co ban cho gia dinh
+GK002|Goi The thao|149000|KT001,KT004,KT005|Goi danh cho fan the thao
+GK003|Goi Phim HD|129000|KT002,KT003,KT006|Goi phim truyen hinh va dien anh
+GK004|Goi Thieu nhi|79000|KT002,KT007,KT012|Goi kenh danh cho tre em
+GK005|Goi Cao cap|299000|KT001,KT002,KT003,KT004,KT005,KT006,KT007,KT008,KT009,KT010,KT011,KT012|Goi full kenh
+GK006|Goi Tin tuc|69000|KT001,KT008,KT010|Goi kenh tin tuc thoi su
+GK007|Goi Am nhac|89000|KT002,KT009,KT012|Goi kenh am nhac giai tri
+GK008|Goi Kham pha|109000|KT008,KT011,KT010|Goi kenh khoa hoc kham pha
+GK009|Goi Co ban|59000|KT001,KT002,KT003|Goi kenh mien phi co ban
+GK010|Goi Quoc te|199000|KT006,KT009,KT010,KT011|Goi kenh nuoc ngoai
