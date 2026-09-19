@@ -66,7 +66,7 @@ bool Date::operator>(Date comparedDate)
     if (day != comparedDate.day)
         return day > comparedDate.day;
 
-    // after all cases, the 2 dates are equal, so its false for operator <
+    // after all cases, the 2 dates are equal, so its false for operator >
     return false;
 }
 
