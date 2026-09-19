@@ -12,7 +12,7 @@ public:
     //usually used when a func dont need the internal variable of the class
 
     static int getInputInt(string display_message);//deny other datatypes and empty
-    static string getInputString(string);//deny other datatypes and empty
+    static string getInputString(string display_message);//deny other datatypes and empty
     static double getInputDouble(string display_message);//deny other datatypes and empty
     static string getInputOptionalString(string display_message);////deny other datatypes, allow empty
     static string normalizePhone(string phone);//normalize phone number, format any +84 to 0 (Vietnamese only, so theres no other +0..)
