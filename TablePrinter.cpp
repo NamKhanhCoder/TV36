@@ -34,7 +34,7 @@ void TablePrinter::printLine(vector<int> widths, vector<string> data)
         {
             value = string(widths[i],'#');
         }
-        else if(value.length()>widths[i]-3)//overflow catch, replace the extended with ... so the table wont be shifted
+        else if(value.length()>widths[i])//overflow catch, replace the extended with ... so the table wont be shifted
         {
             value = value.substr(0,widths[i]-3) + "...";
         }
