@@ -13,7 +13,7 @@ int InputHelper::getInputInt(string display_message)
 
         if (cin.fail() == true) // error detected
         {
-            cout << "[InputHelper]: Invalid input, please enter an Int\n";
+            cout << "[InputHelper] Invalid input, please enter an Int\n";
 
             // clean up leftover input
             cin.clear();
@@ -21,7 +21,7 @@ int InputHelper::getInputInt(string display_message)
         }
         else
         {
-            cout << "[InputHelper]: Valid input\n";
+            cout << "[InputHelper] Valid input\n";
 
             // clean up leftover input
             cin.ignore(10000, '\n');
@@ -42,7 +42,7 @@ string InputHelper::getInputString(string display_message)
             return input;
         }
 
-        cout << "[InputHelper]: Input cannot be empty\n";
+        cout << "[InputHelper] Input cannot be empty\n";
     }
 }
 
@@ -56,13 +56,13 @@ double InputHelper::getInputDouble(string display_message)
 
         if (cin.fail() == true)
         {
-            cout << "[InputHelper]: Invalid input, please enter a Double\n";
+            cout << "[InputHelper] Invalid input, please enter a Double\n";
             cin.clear();
             cin.ignore(10000, '\n');
         }
         else
         {
-            cout << "[InputHelper]: Valid input\n";
+            cout << "[InputHelper] Valid input\n";
             cin.ignore(10000, '\n');
             return input;
         }
@@ -76,4 +76,18 @@ string InputHelper::getInputOptionalString(string display_message)
     cout << display_message << endl;
     getline(cin, input);
     return input;
+}
+
+string InputHelper::normalizePhone(string input)
+{
+    if(input.length() >=3 && input.substr(0,3) == "+84")//if the length is smaller than 3 substr will throw an exception
+    {
+        cout<<"[InputHelper] Phone normalized\n";
+        return "0"+input.substr(3);
+    }
+    else
+    {
+        cout<<"[InputHelper] Phone keeped as it is\n";
+        return input;
+    }
 }
