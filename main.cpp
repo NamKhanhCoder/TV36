@@ -16,11 +16,6 @@ int main()
 {
     while (1)
     {
-        inp = InputHelper::getInputInt();
-        inp = InputHelper::getInputDouble();
-        inp = InputHelper::getInputString();
-        inp = InputHelper::getInputOptionalString();
-        inp = InputHelper::getInputEmail();
-        inp = InputHelper::getInputPhone();
+        //test
     }
 }
