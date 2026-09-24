@@ -7,8 +7,7 @@ using namespace std;
 class Entity
 {
 protected:
-    string id;
-
+    string id="";
 public:
     Entity()
     {
@@ -23,7 +22,6 @@ public:
     {
         return id;
     }
-    virtual void setID(const string &ID) = 0;
     virtual void parseFromString(const string &data) = 0;
 
     virtual string exportToString() const=0;

@@ -1,6 +1,6 @@
 #include <iostream>
 #include "InputHelper.h"
-#include "validator.h"
+#include "Validator.h"
 #include "Utils/Debugger.h"
 using namespace std;
 string trim_end_spaces(const string &str) // sanitizer (remove spaces of 2 ends)
