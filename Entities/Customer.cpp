@@ -55,7 +55,7 @@ vector<string> Customer::exportToVector() const
 void Customer::parseFromString(const string &data)
 {
     vector<string> words;
-    words=split(data);
+    words=splitString(data);
 
     if (words.size() >= 5) 
     {

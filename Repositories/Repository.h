@@ -9,16 +9,59 @@ using namespace std;
 template <class T>
 class Repository
 {
+private:
+    string padding(int number, int width)
+    {
+        string res = to_string(number);
+        if (res.length() < width)
+        {
+            res = string(width - res.length(), '0') + res;
+        }
+        return res;
+    }
+    void loadIDCount()
+    {
+        ifstream file(counter_path);
+        int counter = 0;
+        if (file.is_open())
+        {
+            file >> counter;
+            file.close();
+        }
+        this->id_count = counter;
+        // in case the file is not openned, ID will be 0
+        LOG("[Repository] Read counter = " + to_string(counter) + " from " + counter_path);
+    }
+
 protected:
     vector<T> items;
     string file_path;
+    string counter_path;
+
+    string id_prefix;
+    int id_count;
 
 public:
+    string generateNextID()
+    {
+        this->id_count++;
+        ofstream file(counter_path, ios::trunc);
+        if (file.is_open())
+        {
+            file << this->id_count;
+            file.close();
+        }
+
+        return id_prefix + padding(id_count, 3); // KH001, KH002...
+    }
     // 1. Constructor
-    Repository(const string &path) // initialize with directory
+    Repository(const string &path, const string &counter_path, const string &id_prefix) // initialize with directory
     {
         LOG("[Repository] Repository initialized");
         this->file_path = path;
+        this->counter_path = counter_path;
+        this->id_prefix = id_prefix;
+        this->loadIDCount();
     }
     virtual ~Repository() {}
     void loadFromFile() // overwrite the entire vector with data from file

@@ -1,2 +1,12 @@
 KH001|Le Tran Nam Khanh|0901234567|khanh@gmail.com|Ha Noi
 KH002|Nguyen Hong Anh|0912345678|anh@gmail.com|TP HCM
+KH003|Phan Quoc Trung|0923456789|trung@gmail.com|Da Nang
+KH004|Nguyen Khac Hieu|0934567890|hieu@gmail.com|Hai Phong
+KH005|Duong Bao Long|0945678901|long@gmail.com|Can Tho
+KH007|kjsdhf|0123123123|nam@gmail.com|adsasd
+KH008|NamKhanh|0123456789|namkhanhcoder@gmail.com|12 Tel Aviv
+KH009|HelloWorld|0123123123|nam@gmail.com|tel aviv
+KH010|Customer|0123456789|email@email.com|34 telaviv
+KH011|2|0222222222|22@22.com|dd
+KH012|HelloWorld|0123456789|email@gmail.com|address
+KH013|Name|0123456789|email@gmail.com|address

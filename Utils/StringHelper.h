@@ -1,7 +1,8 @@
+#pragma once
 #include<vector>
 #include<string>
 using namespace std;
-vector<string> split(const string& data, char delimiter = '|')
+inline vector<string> splitString(const string& data, char delimiter = '|')
 {
     vector<string> words;
     string word = "";
@@ -19,4 +20,13 @@ vector<string> split(const string& data, char delimiter = '|')
     }
     words.push_back(word);
     return words;
+}
+inline string convertToUpper(const string& inp)
+{
+    string res="";
+    for(char i :inp)
+    {
+        res+=toupper(i);
+    }
+    return res;
 }

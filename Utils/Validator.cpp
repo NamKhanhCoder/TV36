@@ -2,6 +2,8 @@
 #include <stdexcept> //for invalid arg and overflow (int and double check)
 #include <regex>     //for email checking
 #include "Utils/Debugger.h"
+#include "Utils/Date.h"
+#include "Utils/Time.h"
 
 bool Validator::isValidInt(const string &input)
 {
@@ -160,6 +162,36 @@ bool Validator::isValidEmail(const string &input)
     else
     {
         LOG("[Validator] Invalid, Email pattern mismatch");
+        return false;
+    }
+}
+
+bool Validator::isValidDate(const string &input)
+{
+    try
+    {
+        Date d(input);
+        LOG("[Validator] Valid, Date is accepted");
+        return true;
+    }
+    catch (...)
+    {
+        LOG("[Validator] Invalid, Date format or value is wrong");
+        return false;
+    }
+}
+
+bool Validator::isValidTime(const string &input)
+{
+    try
+    {
+        Time t(input);
+        LOG("[Validator] Valid, Time is accepted");
+        return true;
+    }
+    catch (...)
+    {
+        LOG("[Validator] Invalid, Time format or value is wrong");
         return false;
     }
 }

@@ -9,4 +9,6 @@ public:
     static bool isValidID(const string &input, const string &prefix, short length);
     static bool isValidPhone(const string &input, short length = 10);
     static bool isValidEmail(const string &input);
+    static bool isValidDate(const string &input);
+    static bool isValidTime(const string &input);
 };
