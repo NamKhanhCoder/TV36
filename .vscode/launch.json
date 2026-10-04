@@ -5,14 +5,14 @@
             "name": "Run/Debug C++ in External Terminal",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+            "program": "${workspaceFolder}/main",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${fileDirname}",
+            "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": true,
             "MIMode": "gdb",
-            "miDebuggerPath": "gdb.exe",
+            "miDebuggerPath": "gdb",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",
@@ -20,7 +20,17 @@
                     "ignoreFailures": true
                 }
             ],
-            "preLaunchTask": "C/C++: gcc.exe build active file"
+            "preLaunchTask": "C/C++: gcc.exe build active file",
+            "windows": {
+                "program": "${fileDirname}\\${fileBasenameNoExtension}.exe",
+                "miDebuggerPath": "gdb.exe",
+                "cwd": "${fileDirname}"
+            },
+            "linux": {
+                "program": "${workspaceFolder}/main",
+                "miDebuggerPath": "gdb",
+                "cwd": "${workspaceFolder}"
+            }
         }
     ]
 }
