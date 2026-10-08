@@ -2,6 +2,7 @@
 #include "UseCases/CustomerMenu.h"
 #include "UseCases/ContractMenu.h"
 #include "UseCases/ChannelCategoryMenu.h"
+#include "UseCases/SetTopBoxMenu.h"
 #include "Utils/InputHelper.h"
 #include "Utils/SystemHelper.h"
 
@@ -20,28 +21,35 @@ int main()
         cout << "1. Customer Menu" << endl;
         cout << "2. Categories Menu" << endl;
         cout << "3. Contract Menu" << endl;
+        cout << "4. Set-top Box Menu" << endl;
         
-        int choice = InputHelper::getInputInt("Enter your choice: ");
+        int choice = InputHelper::getInputInt("Enter your choice (enter 0 to exit): ");
         int escape = 0;
 
         switch(choice)
         {
             case 1:
             {
-                ChannelCategoryMenu categoryMenu;
-                categoryMenu.run();
+                CustomerMenu customerMenu;
+                customerMenu.run();
                 break;
             }
             case 2:
             {
-                CustomerMenu customerMenu;
-                customerMenu.run();
+                ChannelCategoryMenu categoryMenu;
+                categoryMenu.run();
                 break;
             }
             case 3:
             {
                 ContractMenu contractMenu;
                 contractMenu.run();
+                break;
+            }
+            case 4:
+            {
+                SetTopBoxMenu stbMenu;
+                stbMenu.run();
                 break;
             }
             default:
