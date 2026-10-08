@@ -10,6 +10,8 @@ string ContractStatus_toString(ContractStatus status)
         return "ACTIVE";
     case ContractStatus::SUSPENDED:
         return "SUSPENDED";
+    case ContractStatus::CANCELED:
+        return "CANCELED";
     case ContractStatus::EXPIRED:
         return "EXPIRED";
     default:
@@ -21,6 +23,7 @@ ContractStatus stringToStatus(const string &s)
 {
     if (s == "SUSPENDED") return ContractStatus::SUSPENDED;
     if (s == "EXPIRED") return ContractStatus::EXPIRED;
+    if (s == "CANCELED") return ContractStatus::CANCELED;
     return ContractStatus::ACTIVE;
 }
 
