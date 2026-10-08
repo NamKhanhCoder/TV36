@@ -13,161 +13,183 @@ CustomerMenu::CustomerMenu() : repo("Data/customers.txt", "Data/customers_counte
 void CustomerMenu::createCustomer()
 {
     SystemHelper::clearScreen();
-    cout << "Enter customer information:" << endl;
-    string name = InputHelper::getInputString("Customer name:");
-    string phone = InputHelper::getInputPhone("Phone:");
-    string email = InputHelper::getInputEmail("Email:");
-    string address = InputHelper::getInputString("Address:");
+    cout << "Enter Customer information:" << endl;
+    string name = InputHelper::getInputString("Enter customer name:");
+    string phone = InputHelper::getInputPhone("Enter phone:");
+    string email = InputHelper::getInputEmail("Enter email:");
+    string address = InputHelper::getInputString("Enter address:");
 
     Customer temp(repo.generateNextID(), name, phone, email, address);
     if (repo.create(temp))
     {
         repo.writeToFile();
         LOG("[CustomerMenu] Customer created successfully");
-        cout << "Customer created successfulley\n";
+        cout << "Customer created successfully!" << endl;
     }
     else
     {
-        cout << "Customer creation failed, abort\n";
+        cout << "Customer creation failed, abort!" << endl;
     }
+    InputHelper::getInputOptionalString("Go back?");
 }
+
 void CustomerMenu::readCustomer()
 {
     SystemHelper::clearScreen();
-    vector<int> widths = {5, 10, 10, 10, 10};
+    vector<int> widths = {8, 22, 12, 25, 20};
     vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
-
-    cout << "=====View customers=====" << endl;
-    cout << "1. View all customers" << endl;
+    
+    cout << "===== View Customers =====" << endl;
+    cout << "1. View all Customers" << endl;
     cout << "2. Search by ID" << endl;
-    int choice = InputHelper::getInputInt("Select an option (enter 0 to go back): ");
+    int choice = InputHelper::getInputInt("Select an option (enter neither to go back): ");
+    SystemHelper::clearScreen();
 
     if (choice == 1)
     {
+        cout << "===== All Customers =====\n";
         TablePrinter::printTable(widths, headers, repo.exportToVector());
         LOG("[CustomerMenu] Customer table printed successfully");
     }
     else if (choice == 2)
     {
-        string inputID = convertToUpper(InputHelper::getInputString("Enter customer ID: "));
+        cout << "===== Find Customer =====\n";
+        string inputID = convertToUpper(InputHelper::getInputString("Enter Customer ID to search: "));
         Customer *cus = repo.readByID(inputID);
-        if (cus == nullptr)
+        if (cus != nullptr)
         {
-            cout << "[Error] Customer not found, ID: " << inputID << endl;
+            SystemHelper::clearScreen();
+            cout << "===== Find Customer =====\n";
+            TablePrinter::printSingle(widths, headers, cus->exportToVector());
         }
         else
         {
-            TablePrinter::printSingle(widths, headers, cus->exportToVector());
+            cout << "[Error] Customer not found!" << endl;
         }
         LOG("[CustomerMenu] Customer search completed");
     }
+    InputHelper::getInputOptionalString("Go back?");
 }
+
 void CustomerMenu::updateCustomer()
 {
     SystemHelper::clearScreen();
-    vector<int> widths = {5, 10, 10, 10, 10};
+    cout << "===== Update Customer =====" << endl;
+    vector<int> widths = {8, 22, 12, 25, 20};
     vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
-    TablePrinter::printTable(widths,headers,repo.exportToVector());
+    TablePrinter::printTable(widths, headers, repo.exportToVector());
 
-    string inputID = convertToUpper(InputHelper::getInputString("Enter customer ID to edit:"));
+    string inputID = convertToUpper(InputHelper::getInputString("Enter Customer ID to update: "));
     Customer *cus = repo.readByID(inputID);
 
     if (cus == nullptr)
     {
-        cout << "[Error] Customer not found, ID: " << inputID << endl;
+        cout << "[Error] Customer not found!" << endl;
+        InputHelper::getInputOptionalString("Go back?");
         return;
     }
+
     SystemHelper::clearScreen();
-    cout << "=====Customer current information=====" << endl;
+    cout << "===== Customer Current Information =====" << endl;
     TablePrinter::printSingle(widths, headers, cus->exportToVector());
 
-    cout << "Enter customer new information (skip to keep it as it is)\n";
+    cout << "\nLeave field empty if you don't want to update it." << endl;
 
-    string name = InputHelper::getInputOptionalString("Customer name:");
-    string phone = InputHelper::getInputOptionalPhone("Phone:");
-    string email = InputHelper::getInputOptionalEmail("Email:");
-    string address = InputHelper::getInputOptionalString("Address:");
-
-    if(name !="")
-    {
+    string name = InputHelper::getInputOptionalString("New Name [" + cus->getName() + "]: ");
+    if (!name.empty())
         cus->setName(name);
-    }
-    if(phone !="")
-    {
-        cus->setPhone(phone);
-    }
-    if(email!="")
-    {
-        cus->setEmail(email);
-    }
-    if(address!="")
-    {
-        cus->setAddress(address);
-    }
-    repo.writeToFile();
-    LOG("[CustomerMenu] Customer information updated successfully");
 
+    string phone = InputHelper::getInputOptionalPhone("New Phone [" + cus->getPhone() + "]: ");
+    if (!phone.empty())
+        cus->setPhone(phone);
+
+    string email = InputHelper::getInputOptionalEmail("New Email [" + cus->getEmail() + "]: ");
+    if (!email.empty())
+        cus->setEmail(email);
+
+    string address = InputHelper::getInputOptionalString("New Address [" + cus->getAddress() + "]: ");
+    if (!address.empty())
+        cus->setAddress(address);
+
+    if (repo.update(*cus))
+    {
+        repo.writeToFile();
+        LOG("[CustomerMenu] Customer information updated successfully");
+        cout << "Customer updated successfully!" << endl;
+    }
+    else
+    {
+        cout << "Update failed!" << endl;
+    }
+    InputHelper::getInputOptionalString("Go back?");
 }
+
 void CustomerMenu::deleteCustomer()
 {
-    cout << "\n=====Delete customer=====\n";
+    SystemHelper::clearScreen();
+    cout << "===== Delete Customer =====" << endl;
+    vector<int> widths = {8, 22, 12, 25, 20};
+    vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
+    TablePrinter::printTable(widths, headers, repo.exportToVector());
     
-    string targetID = convertToUpper(InputHelper::getInputString("Enter customer ID to delete: "));
+    string targetID = convertToUpper(InputHelper::getInputString("Enter Customer ID to delete: "));
 
     // 2. Tìm kiếm trong Repo
     Customer* cus = repo.readByID(targetID);
     if (cus == nullptr)
     {
-        cout << "[Error] Customer not found: " << targetID << endl;
+        cout << "[Error] Customer not found!" << endl;
+        InputHelper::getInputOptionalString("Go back?");
         return;
     }
 
-    cout << "You are about to remove customer:" << endl;
-    vector<int> widths = {5, 10, 10, 10, 10};
-    vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
+    SystemHelper::clearScreen();
+    cout << "You are about to remove Customer:" << endl;
     TablePrinter::printSingle(widths, headers, cus->exportToVector());
 
     // =====================================================================
     // [PLACEHOLDER] Delete conditions
     // =====================================================================
+    // Delete customer phụ thuộc vào việc khách hàng có đang kí hợp đồng nào còn hạn không (sẽ cập nhật sau)
 
     // =====================================================================
 
-    string confirm = InputHelper::getInputString("Confirm deletion? (y/n): ");
+    string confirm = InputHelper::getInputString("Are you sure you want to delete this Customer? (y/n): ");
     
     if (confirm == "y" || confirm == "Y")
     {
         if (repo.remove(targetID))
         {
             repo.writeToFile();
-            cout << "[CustomerMenu] Customer deleted successfully, ID: " << targetID << endl;
             LOG("[CustomerMenu] Customer deleted successfully");
+            cout << "Customer deleted successfully!" << endl;
         }
         else
         {
-            cout << "[Error] Customer deletion failed, please check debug!" << endl;
+            cout << "[Error] Failed to delete Customer!" << endl;
         }
     }
     else
     {
-        cout << "[Abort] Deletion aborted" << endl;
+        cout << "Deletion cancelled." << endl;
         LOG("[CustomerMenu] Delete operation cancelled by user");
     }
+    InputHelper::getInputOptionalString("Go back?");
 }
 
 void CustomerMenu::printMenu()
 {
-    
-    cout << "=====Customer menu=====\n";
-    cout << "1. Create a customer\n";
-    cout << "2. Read customers\n";
-    cout << "3. Update a customer\n";
-    cout << "4. Delete a customer\n";
+    SystemHelper::clearScreen();
+    cout << "===== Customer Management =====" << endl;
+    cout << "1. Add Customer" << endl;
+    cout << "2. View Customers" << endl;
+    cout << "3. Update Customer" << endl;
+    cout << "4. Delete Customer" << endl;
     // afterprint, base menu will automatically call handle choice
 }
+
 void CustomerMenu::handleChoice(int choice)
 {
-    
     switch (choice)
     {
     case 1:
@@ -183,6 +205,8 @@ void CustomerMenu::handleChoice(int choice)
         deleteCustomer();
         break;
     default:
-        cout << "[Error] Invalid option in Customer menu\n";
+        cout << "Invalid choice! Press Enter to try again." << endl;
+        InputHelper::getInputOptionalString("");
+        break;
     }
 }

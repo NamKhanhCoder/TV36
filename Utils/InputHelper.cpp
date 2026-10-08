@@ -102,7 +102,7 @@ string InputHelper::getInputString(const string &message)
 string InputHelper::getInputOptionalString(const string &message)
 {
     string input;
-    cout << message << " (Press Enter to skip): " << endl;
+    cout << message << endl;
     getline(cin, input);
     input = trim_end_spaces(input);
     
@@ -164,7 +164,7 @@ int InputHelper::getInputOptionalInt(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Press Enter to skip): " << endl;
+        cout << message << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -193,7 +193,7 @@ double InputHelper::getInputOptionalDouble(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Press Enter to skip): " << endl;
+        cout << message << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -222,7 +222,7 @@ string InputHelper::getInputOptionalEmail(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Press Enter to skip): " << endl;
+        cout << message << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -251,7 +251,7 @@ string InputHelper::getInputOptionalPhone(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Press Enter to skip): " << endl;
+        cout << message << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -280,7 +280,7 @@ Date InputHelper::getInputDate(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Dinh dang dd/mm/yyyy): " << endl;
+        cout << message << " (dd/mm/yyyy): " << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
         
@@ -292,7 +292,7 @@ Date InputHelper::getInputDate(const string &message)
         }
         else
         {
-            cout << "[Error] Dinh dang ngay thang khong hop le, vui long nhap lai!" << endl;
+            cout << "[Error] Invalid Date format" << endl;
             LOG("[InputHelper] Date is rejected, please try again");
         }
     }
@@ -326,7 +326,7 @@ Date InputHelper::getInputOptionalDate(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Dinh dang dd/mm/yyyy - An Enter de bo qua): " << endl;
+        cout << message << " (dd/mm/yyyy): " << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -344,7 +344,7 @@ Date InputHelper::getInputOptionalDate(const string &message)
         }
         else
         {
-            cout << "[Error] Dinh dang ngay thang khong hop le, vui long nhap lai!" << endl;
+            cout << "[Error] Invalid Optional Date" << endl;
             LOG("[InputHelper] Optional Date is rejected");
         }
     }
@@ -355,7 +355,7 @@ Time InputHelper::getInputOptionalTime(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (Dinh dang hh:mm - An Enter de bo qua): " << endl;
+        cout << message << " (hh:mm): " << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -373,7 +373,7 @@ Time InputHelper::getInputOptionalTime(const string &message)
         }
         else
         {
-            cout << "[Error] Dinh dang thoi gian khong hop le, vui long nhap lai!" << endl;
+            cout << "[Error] Invalid Optional Time" << endl;
             LOG("[InputHelper] Optional Time is rejected");
         }
     }

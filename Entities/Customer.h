@@ -11,7 +11,6 @@ private:
     string phone;
     string email;
     string address;
-
 public:
     Customer() : Entity() {}
     Customer(string id, string name, string phone, string email, string address);

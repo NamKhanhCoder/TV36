@@ -13,8 +13,8 @@ private:
     void updateCustomer();
     void deleteCustomer();
 protected:
-    void printMenu();
-    void handleChoice(int choice);
+    void printMenu() override;
+    void handleChoice(int choice) override;
 public:
     CustomerMenu();
 };

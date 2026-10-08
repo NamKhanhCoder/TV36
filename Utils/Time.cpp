@@ -36,9 +36,24 @@ Time::Time(const string& timeStr)
     try 
     {
         // Dung thuat toan cat chuoi co ban de lay gio va phut
-        int pos = timeStr.find(':');
-        h = stoi(timeStr.substr(0, pos));
-        m = stoi(timeStr.substr(pos + 1));
+        size_t pos = timeStr.find(':');
+        if (pos == string::npos || timeStr.find(':', pos + 1) != string::npos)
+        {
+            throw std::invalid_argument("Loi cat chuoi thoi gian!");
+        }
+        string hSub = timeStr.substr(0, pos);
+        string mSub = timeStr.substr(pos + 1);
+        if (hSub.empty() || mSub.empty())
+        {
+            throw std::invalid_argument("Loi cat chuoi thoi gian!");
+        }
+        size_t idxH = 0, idxM = 0;
+        h = stoi(hSub, &idxH);
+        m = stoi(mSub, &idxM);
+        if (idxH != hSub.length() || idxM != mSub.length())
+        {
+            throw std::invalid_argument("Loi cat chuoi thoi gian!");
+        }
     } 
     catch (...) 
     {

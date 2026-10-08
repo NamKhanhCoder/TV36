@@ -58,26 +58,55 @@ Date::Date(const string& dateString) //constructor from string
     
     try 
     {
-        int pos1 = dateString.find('/');
-        if (pos1 == string::npos) pos1 = dateString.find('-'); //if not / then its -
+        size_t pos1 = dateString.find('/');
+        char sep = '/';
+        if (pos1 == string::npos)
+        {
+            pos1 = dateString.find('-'); //if not / then its -
+            sep = '-';
+        }
+        if (pos1 == string::npos)
+        {
+            throw std::invalid_argument("[Date] Error parsing");
+        }
         
-        int pos2 = dateString.find('/', pos1 + 1); //find from last pos to end
-        if (pos2 == string::npos) pos2 = dateString.find('-', pos1 + 1);
+        size_t pos2 = dateString.find(sep, pos1 + 1); //find from last pos to end
+        if (pos2 == string::npos || dateString.find_first_of("/-", pos2 + 1) != string::npos)
+        {
+            throw std::invalid_argument("[Date] Error parsing");
+        }
         
+        string part1 = dateString.substr(0, pos1);
+        string part2 = dateString.substr(pos1 + 1, pos2 - pos1 - 1);
+        string part3 = dateString.substr(pos2 + 1);
+        if (part1.empty() || part2.empty() || part3.empty())
+        {
+            throw std::invalid_argument("[Date] Error parsing");
+        }
+
+        size_t idx1 = 0, idx2 = 0, idx3 = 0;
+        int v1 = stoi(part1, &idx1);
+        int v2 = stoi(part2, &idx2);
+        int v3 = stoi(part3, &idx3);
+        if (idx1 != part1.length() || idx2 != part2.length() || idx3 != part3.length())
+        {
+            throw std::invalid_argument("[Date] Error parsing");
+        }
+
         //split string
         if (pos1 == 4) 
         { 
             // case yyyy-mm-dd
-            y = stoi(dateString.substr(0, pos1));
-            m = stoi(dateString.substr(pos1 + 1, pos2 - pos1 - 1));
-            d = stoi(dateString.substr(pos2 + 1));
+            y = v1;
+            m = v2;
+            d = v3;
         } 
         else 
         { 
             // case dd/mm/yyyy
-            d = stoi(dateString.substr(0, pos1));
-            m = stoi(dateString.substr(pos1 + 1, pos2 - pos1 - 1));
-            y = stoi(dateString.substr(pos2 + 1));
+            d = v1;
+            m = v2;
+            y = v3;
         }
     } 
     catch (...) 
