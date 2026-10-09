@@ -17,11 +17,12 @@ ContractStatus ContractMenu::inputStatus()
     while(1)
     {
         cout << "Enter the contract status: " << endl;
-        cout << "1. ACTIVE" << endl << "2. SUSPENDED" << endl << "3. EXPIRED" << endl;
+        cout << "1. ACTIVE" << endl << "2. SUSPENDED" << endl << "3. EXPIRED" << endl << "4. CANCELED" << endl;
         int s = InputHelper::getInputInt("Contract's status: ");
         if(s == 1) return ContractStatus::ACTIVE;
         if(s == 2) return ContractStatus::SUSPENDED;
         if(s == 3) return ContractStatus::EXPIRED;
+        if(s == 4) return ContractStatus::CANCELED;
         else cout << "## INPUT ERROR ##" << endl << "Try again" << endl;
     }
 }
@@ -31,11 +32,12 @@ ContractStatus ContractMenu::inputOptionalStatus(ContractStatus currentStatus)
     while(1)
     {
         cout << "Enter the contract status: " << endl;
-        cout << "1. ACTIVE" << endl << "2. SUSPENDED" << endl << "3. EXPIRED" << endl << "0. Skip" << endl;
+        cout << "1. ACTIVE" << endl << "2. SUSPENDED" << endl << "3. EXPIRED" << endl << "4. CANCELED" << endl << "0. Skip" << endl;
         int s = InputHelper::getInputInt("Contract's status: ");
         if(s == 1) return ContractStatus::ACTIVE;
         if(s == 2) return ContractStatus::SUSPENDED;
         if(s == 3) return ContractStatus::EXPIRED;
+        if(s == 4) return ContractStatus::CANCELED;
         if(s == 0) return currentStatus;
         else cout << "## INPUT ERROR ##" << endl << "Try again" << endl;
     }
@@ -127,15 +129,17 @@ void ContractMenu::updateContract()
     string packageID = InputHelper::getInputOptionalString("Package's ID:");
     string stbID = InputHelper::getInputOptionalString("Set-Top Box's ID:");
     Date signDate = InputHelper::getInputOptionalDate("Sign date:");
-    Date startDate = InputHelper::getInputOptionalDate("End date:");
+    Date startDate = InputHelper::getInputOptionalDate("Start date:");
     Date endDate = InputHelper::getInputOptionalDate("End date:");
-    string installationAddress = InputHelper::getInputOptionalString("Contract name:");
-    string monthlyFee = InputHelper::getInputOptionalString("Contract name:");
+    string installationAddress = InputHelper::getInputOptionalString("Installation Address:");
+    string monthlyFee = InputHelper::getInputOptionalString("Monthly Fee:");
     ContractStatus status = ContractMenu::inputOptionalStatus(Contract->get_status());
 
     // Update
     if (!packageID.empty()) Contract->set_packageID(packageID);
+    if (!customerID.empty()) Contract->set_customerID(customerID);
     if (!stbID.empty()) Contract->set_stbID(stbID);
+    if (!signDate.isEmpty()) Contract->set_signDate(signDate);
     if (!startDate.isEmpty()) Contract->set_startDate(startDate);
     if (!endDate.isEmpty()) Contract->set_endDate(endDate);
     if (!installationAddress.empty()) Contract->set_installationAddress(installationAddress);
