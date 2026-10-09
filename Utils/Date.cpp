@@ -150,7 +150,7 @@ string Date::toFileString() const
 {
     string dStr = (day < 10) ? "0" + to_string(day) : to_string(day);
     string mStr = (month < 10) ? "0" + to_string(month) : to_string(month);
-    return to_string(year) + "-" + mStr + "-" + dStr;
+    return dStr + "-" + mStr + "-" + to_string(year);
 }
 
 void Date::addDays(int days)
