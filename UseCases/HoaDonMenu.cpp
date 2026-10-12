@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Nguyen Khac Hieu (Thanh vien 4)
+// Use Case 2: Quan ly Hoa don (Menu dieu khien)
+// ===============================================================
 #include "HoaDonMenu.h"
 #include <iostream>
 #include <algorithm>
@@ -6,6 +13,7 @@
 #include "Utils/InputHelper.h"
 #include "Utils/Validator.h"
 using namespace std;
+// Ham khoi tao: khoi tao 3 repository (HoaDon, Customer, Contract) va nap du lieu tu file
 HoaDonMenu::HoaDonMenu() : repoHoaDon("Data/hoadon.txt", "Data/hdn_counter.txt", "HDN"),
 repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"),
 repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
@@ -14,6 +22,7 @@ repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
     repoCustomer.loadFromFile();
     repoContract.loadFromFile();
 }
+// Chuc nang xem danh sach: hien thi bang hoa don 8 cot can bang TablePrinter va tinh tong doanh thu
 void HoaDonMenu::xemDanhSach()
 {
     if (repoHoaDon.readAll().empty())
@@ -33,6 +42,7 @@ void HoaDonMenu::xemDanhSach()
     }
     cout << "Tong doanh thu: " << (long long)tongDoanhThu << " VND" << endl;
 }
+// Chuc nang them hoa don: validate ma hop dong, ma khach hang, so tien va trang thai thanh toan
 void HoaDonMenu::themHoaDon()
 {
     string id = repoHoaDon.generateNextID();
@@ -87,6 +97,7 @@ void HoaDonMenu::themHoaDon()
     repoHoaDon.create(hoaDonMoi);
     repoHoaDon.writeToFile();
 }
+// Chuc nang tim kiem hoa don: tim theo ma HDN, ma HD, ma KH, ngay lap, han tra, ngay tra, trang thai
 void HoaDonMenu::timKiem()
 {
     cout << "+---TIM KIEM HOA DON---+" << endl;
@@ -287,6 +298,7 @@ void HoaDonMenu::timKiem()
     }
     }
 }
+// Cac ham so sanh phuc vu sap xep danh sach hoa don theo ngay thang
 bool soSanhTheoNgayLapTangDan(const HoaDon &a, const HoaDon &b)
 {
     return a.getNgayLap() < b.getNgayLap();
@@ -319,6 +331,7 @@ bool soSanhTheoNgayTraTienGiamDan(const HoaDon &a, const HoaDon &b)
         return true;
     return a.getNgayTraTien() > b.getNgayTraTien();
 }
+// Chuc nang sap xep hoa don: sap xep theo so tien, ngay lap, han tra, ngay tra va cap nhat file
 void HoaDonMenu::sapXep()
 {
     cout << "+---SAP XEP DANH SACH HOA DON---+" << endl;
@@ -484,6 +497,7 @@ void HoaDonMenu::sapXep()
         break;
     }
 }
+// Chuc nang cap nhat hoa don: tim theo ma HDN, hien thi thong tin hien tai va cap nhat tung truong
 void HoaDonMenu::capNhat()
 {
     string id = InputHelper::getInputString("Nhap ma hoa don: ");
@@ -557,6 +571,7 @@ void HoaDonMenu::capNhat()
     repoHoaDon.writeToFile();
     cout << "Cap nhat hoa don thanh cong" << endl;
 }
+// Chuc nang xoa hoa don: tim theo ma HDN, xac nhan Y/N truoc khi xoa va luu lai file
 void HoaDonMenu::xoaHoaDon()
 {
     string id = InputHelper::getInputString("Nhap ma hoa don: ");
@@ -585,6 +600,7 @@ void HoaDonMenu::xoaHoaDon()
             return;
     }
 }
+// Xu ly lua chon chuc nang tu menu quan ly hoa don
 void HoaDonMenu::handleChoice(int choice)
 {
     switch (choice)
@@ -612,6 +628,7 @@ void HoaDonMenu::handleChoice(int choice)
         break;
     }
 }
+// Hien thi giao dien menu quan ly hoa don
 void HoaDonMenu::printMenu()
 {
     cout << "======QUAN LY HOA DON======" << endl;

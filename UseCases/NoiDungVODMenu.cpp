@@ -1,4 +1,11 @@
-﻿#include "NoiDungVODMenu.h"
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Nguyen Khac Hieu (Thanh vien 4)
+// Use Case 1: Quan ly Noi dung VOD (Menu dieu khien)
+// ===============================================================
+#include "NoiDungVODMenu.h"
 #include <fstream>
 #include <iostream>
 #include <algorithm>
@@ -7,10 +14,12 @@
 #include "Utils/Validator.h"
 #include "Utils/SystemHelper.h"
 using namespace std;
+// Ham khoi tao: khoi tao repository va nap du lieu tu file Data/noidungvod.txt
 NoiDungVODMenu::NoiDungVODMenu() : repo("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD")
 {
     repo.loadFromFile();
 }
+// Chuc nang xem danh sach: xuat toan bo ban ghi VOD ra bang can cot TablePrinter
 void NoiDungVODMenu::xemDanhSach()
 {
     if (repo.readAll().empty())
@@ -24,6 +33,7 @@ void NoiDungVODMenu::xemDanhSach()
     InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
     SystemHelper::clearScreen();
 }
+// Chuc nang them noi dung moi: nhap thong tin, validate du lieu, check trung URL va ghi file
 void NoiDungVODMenu::themNoiDung()
 {
     string id = repo.generateNextID();
@@ -132,6 +142,7 @@ void NoiDungVODMenu::themNoiDung()
     InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
     SystemHelper::clearScreen();
 }
+// Chuc nang tim kiem: ho tro tim theo ma VOD, ten, the loai, nam phat hanh, trang thai
 void NoiDungVODMenu::timKiem()
 {
     cout << "+---TIM KIEM NOI DUNG---+" << endl;
@@ -286,6 +297,7 @@ bool soSanhTheoNamPhatHanhGiamDan(const NoiDungVOD &c, const NoiDungVOD &d)
 {
     return c.getNamPhatHanh() > d.getNamPhatHanh(); // dấu < là theo thứ tự tăng dần còn dấu > là giảm dần
 }
+// Chuc nang sap xep: sap xep theo ten (A-Z, Z-A) hoac nam phat hanh va cap nhat file
 void NoiDungVODMenu::sapXep()
 {
     cout << "+---SAP XEP DANH SACH NOI DUNG---+" << endl;
@@ -384,6 +396,7 @@ void NoiDungVODMenu::sapXep()
     InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
     SystemHelper::clearScreen();
 }
+// Chuc nang cap nhat: tim theo ma VOD, hien thi thong tin hien tai va cho phep sua tung truong
 void NoiDungVODMenu::capNhat()
 {
     string id = InputHelper::getInputString("Nhap ma VOD can cap nhat: ");
@@ -451,6 +464,7 @@ void NoiDungVODMenu::capNhat()
     InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
     SystemHelper::clearScreen();
 }
+// Chuc nang xoa noi dung: tim theo ma VOD, xac nhan Y/N truoc khi xoa va luu file
 void NoiDungVODMenu::xoaNoiDung()
 {
     string id = InputHelper::getInputString("Nhap ma VOD can xoa: ");
@@ -481,6 +495,7 @@ void NoiDungVODMenu::xoaNoiDung()
     InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
     SystemHelper::clearScreen();
 }
+// Xu ly lua chon chuc nang tu menu VOD
 void NoiDungVODMenu::handleChoice(int choice)
 {
     switch (choice)
@@ -508,6 +523,7 @@ void NoiDungVODMenu::handleChoice(int choice)
         break;
     }
 }
+// Hien thi giao dien menu quan ly noi dung VOD
 void NoiDungVODMenu::printMenu()
 {
     cout << "======QUAN LY NOI DUNG VOD======" << endl;
