@@ -1,7 +1,15 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Nguyen Khac Hieu (Thanh vien 4)
+// Use Case: Quan ly Noi dung VOD (Video On Demand)
+// ===============================================================
 #include "NoiDungVOD.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
+// Ham khoi tao mac dinh thiet lap cac gia tri ban dau
 NoiDungVOD::NoiDungVOD()
 {
     id = "";
@@ -13,6 +21,7 @@ NoiDungVOD::NoiDungVOD()
     url = "";
     trangThai = "";
 }
+// Cac ham getter lay gia tri thuoc tinh
 string NoiDungVOD::getTenNoiDung() const
 {
     return tenNoiDung;
@@ -41,6 +50,7 @@ string NoiDungVOD::getTrangThai() const
 {
     return trangThai;
 }
+// Cac ham setter gan gia tri cho thuoc tinh
 void NoiDungVOD::setID(string id)
 {
     this->id = id;
@@ -73,10 +83,12 @@ void NoiDungVOD::setTrangThai(string trangThai)
 {
     this->trangThai = trangThai;
 }
+// Chuyen doi doi tuong thanh chuoi dinh dang luu vao file
 string NoiDungVOD::exportToString() const
 {
     return id + "|" + tenNoiDung + "|" + theLoai + "|" + to_string(thoiLuong) + "|" + moTa + "|" + to_string(namPhatHanh) + "|" + url + "|" + trangThai;
 }
+// Doc va phan tich chuoi tu file de nap vao doi tuong
 void NoiDungVOD::parseFromString(const string &data)
 {
     stringstream ss(data);
@@ -98,14 +110,17 @@ void NoiDungVOD::parseFromString(const string &data)
     getline(ss, token);
     this->trangThai = token;
 }
+// Xuat cac thuoc tinh thanh vector string de hien thi bang TablePrinter
 vector<string> NoiDungVOD::exportToVector() const
 {
     return {id, tenNoiDung, theLoai, to_string(thoiLuong), moTa, to_string(namPhatHanh), url, trangThai};
 }
+// Nap chong toan tu < so sanh theo ten A-Z
 bool NoiDungVOD::operator<(const NoiDungVOD &other) const
 {
     return tenNoiDung < other.tenNoiDung;
 }
+// Nap chong toan tu > so sanh theo ten Z-A
 bool NoiDungVOD::operator>(const NoiDungVOD &other) const
 {
     return tenNoiDung > other.tenNoiDung;

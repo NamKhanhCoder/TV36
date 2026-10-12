@@ -1,7 +1,15 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Nguyen Khac Hieu (Thanh vien 4)
+// Use Case 2: Quan ly Hoa don
+// ===============================================================
 #include "HoaDon.h"
 #include <iostream>
 #include <sstream>
 using namespace std;
+// Ham khoi tao mac dinh thiet lap gia tri ban dau
 HoaDon::HoaDon()
 {
     id = "";
@@ -10,6 +18,7 @@ HoaDon::HoaDon()
     soTien = 0.0;
     trangThai = "chua_thanh_toan";
 }
+// Cac ham getter lay gia tri thuoc tinh
 string HoaDon::getMaHopDong() const
 {
     return maHopDong;
@@ -38,6 +47,7 @@ string HoaDon::getTrangThai() const
 {
     return trangThai;
 }
+// Cac ham setter gan gia tri cho thuoc tinh
 void HoaDon::setID(string id)
 {
     this->id = id;
@@ -70,6 +80,7 @@ void HoaDon::setTrangThai(string trangThai)
 {
     this->trangThai = trangThai;
 }
+// Chuyen doi doi tuong hoa don thanh chuoi ghi vao file (xu ly NONE neu chua thanh toan)
 string HoaDon::exportToString() const
 {   
     string strNgayTra;
@@ -81,6 +92,7 @@ string HoaDon::exportToString() const
     }
     return id + "|" + maHopDong + "|" + maKhachHang + "|" + to_string((long long)soTien) + "|" + ngayLap.toString() + "|" + hanTraTien.toString() + "|" + strNgayTra + "|" + trangThai;
 }
+// Doc va phan tich chuoi tu file de nap vao doi tuong hoa don (xu ly NONE cho ngayTraTien)
 void HoaDon::parseFromString(const string &data)
 {
     stringstream ss(data);
@@ -108,6 +120,7 @@ void HoaDon::parseFromString(const string &data)
     getline(ss, token);
     this->trangThai = token;
 }
+// Xuat cac thuoc tinh thanh vector string phuc vu in bang can cot TablePrinter
 vector<string> HoaDon::exportToVector() const
 {
     string strNgayTra;
@@ -119,10 +132,12 @@ vector<string> HoaDon::exportToVector() const
     }
     return {id, maHopDong, maKhachHang, to_string((long long)soTien), ngayLap.toString(), hanTraTien.toString(), strNgayTra, trangThai};
 }
+// Nap chong toan tu < so sanh theo so tien tang dan
 bool HoaDon::operator<(const HoaDon &other) const
 {
     return soTien < other.soTien;
 }
+// Nap chong toan tu > so sanh theo so tien giam dan
 bool HoaDon::operator>(const HoaDon &other) const
 {
     return soTien > other.soTien;
