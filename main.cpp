@@ -3,6 +3,8 @@
 #include "UseCases/ContractMenu.h"
 #include "UseCases/ChannelCategoryMenu.h"
 #include "UseCases/SetTopBoxMenu.h"
+#include "UseCases/PackageMenu.h"
+#include "UseCases/SupportTicketMenu.h"
 #include "Utils/InputHelper.h"
 #include "Utils/SystemHelper.h"
 
@@ -22,6 +24,8 @@ int main()
         cout << "2. Categories Menu" << endl;
         cout << "3. Contract Menu" << endl;
         cout << "4. Set-top Box Menu" << endl;
+        cout << "5. Package Menu" << endl;
+        cout << "6. Support Ticket Menu" << endl;
         
         int choice = InputHelper::getInputInt("Enter your choice (enter 0 to exit): ");
         int escape = 0;
@@ -50,6 +54,18 @@ int main()
             {
                 SetTopBoxMenu stbMenu;
                 stbMenu.run();
+                break;
+            }
+            case 5:
+            {
+                PackageMenu pkgMenu;
+                pkgMenu.run();
+                break;
+            }
+            case 6:
+            {
+                SupportTicketMenu ticketMenu;
+                ticketMenu.run();
                 break;
             }
             default:
