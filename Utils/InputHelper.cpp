@@ -1,4 +1,8 @@
 #include <iostream>
+#include <stdexcept>
+#include <algorithm>
+#include <cctype>
+#include <limits>
 #include "InputHelper.h"
 #include "Validator.h"
 #include "Utils/Debugger.h"
@@ -34,6 +38,81 @@ string normalizePhone(string &phone)
         clean_phone = "0" + clean_phone.substr(3);
     }
     return clean_phone;
+}
+
+string InputHelper::getInputChannelStatus(const string &message, bool optional)
+{
+    string input;
+    while (true)
+    {
+        cout << message << " (0: Ngung phat, 1: Dang phat";
+        if (optional) cout << ", Enter: giu nguyen";
+        cout << "): " << endl;
+        if (!getline(cin, input))
+            throw runtime_error("Khong doc duoc trang thai kenh.");
+        input = trim_end_spaces(input);
+
+        if (optional && input.empty()) return "";
+        if (input == "0") return "NGUNG_PHAT";
+        if (input == "1") return "DANG_PHAT";
+        cout << "[Error] Chi nhap 0 hoac 1. Vui long nhap lai.\n";
+    }
+}
+
+string InputHelper::getInputID(const string &message, const string &prefix, bool optional)
+{
+    string input;
+    while (true)
+    {
+        cout << message << endl;
+        if (!getline(cin, input)) throw runtime_error("Khong doc duoc ma.");
+        input = trim_end_spaces(input);
+        if (optional && input.empty()) return "";
+        transform(input.begin(), input.end(), input.begin(),
+                  [](unsigned char c) { return static_cast<char>(toupper(c)); });
+        // Repository padding toi thieu 3 chu so; chap nhan ca TL1000, KENH1000.
+        if (input.size() >= prefix.size() + 3 &&
+            input.size() <= static_cast<size_t>(numeric_limits<short>::max()) &&
+            Validator::isValidID(input, prefix, static_cast<short>(input.size())))
+            return input;
+        cout << "[Error] Ma khong hop le. Dung " << prefix
+             << " va it nhat 3 chu so (vi du " << prefix << "004). Nhap lai.\n";
+    }
+}
+
+int InputHelper::getInputPositiveInt(const string &message, bool optional)
+{
+    string input;
+    while (true)
+    {
+        cout << message << endl;
+        if (!getline(cin, input)) throw runtime_error("Khong doc duoc so.");
+        input = trim_end_spaces(input);
+        if (optional && input.empty()) return 0;
+        if (Validator::isValidInt(input))
+        {
+            int value = stoi(input);
+            if (value > 0) return value;
+        }
+        cout << "[Error] So kenh phai la so nguyen lon hon 0. Nhap lai.\n";
+    }
+}
+
+string InputHelper::getInputChannelResolution(const string &message, bool optional)
+{
+    string input;
+    while (true)
+    {
+        cout << message << endl;
+        if (!getline(cin, input)) throw runtime_error("Khong doc duoc do phan giai.");
+        input = trim_end_spaces(input);
+        if (optional && input.empty()) return "";
+        transform(input.begin(), input.end(), input.begin(),
+                  [](unsigned char c) { return static_cast<char>(toupper(c)); });
+        if (input == "SD" || input == "HD" || input == "FHD" || input == "UHD")
+            return input;
+        cout << "[Error] Do phan giai chi nhan SD, HD, FHD hoac UHD. Nhap lai.\n";
+    }
 }
 
 int InputHelper::getInputInt(const string &message)

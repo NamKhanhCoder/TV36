@@ -50,6 +50,7 @@ string Channel::getCategoryID() const { return categoryID; }
 void Channel::setCategoryID(const string& value)
 {
     checkText(value, "categoryID");
+    checkID(value, "TL");
     categoryID = value;
 }
 
