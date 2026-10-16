@@ -5,9 +5,10 @@
 #include "Utils/SystemHelper.h"
 #include "Utils/StringHelper.h"
 using namespace std;
-CustomerMenu::CustomerMenu() : repo("Data/customers.txt", "Data/customers_counter.txt", "KH") // initializer list
+CustomerMenu::CustomerMenu() : repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"), repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
 {
-    repo.loadFromFile();
+    repoCustomer.loadFromFile();
+    repoContract.loadFromFile();
 }
 
 void CustomerMenu::createCustomer()
@@ -19,10 +20,10 @@ void CustomerMenu::createCustomer()
     string email = InputHelper::getInputEmail("Enter email:");
     string address = InputHelper::getInputString("Enter address:");
 
-    Customer temp(repo.generateNextID(), name, phone, email, address);
-    if (repo.create(temp))
+    Customer temp(repoCustomer.generateNextID(), name, phone, email, address);
+    if (repoCustomer.create(temp))
     {
-        repo.writeToFile();
+        repoCustomer.writeToFile();
         LOG("[CustomerMenu] Customer created successfully");
         cout << "Customer created successfully!" << endl;
     }
@@ -38,7 +39,7 @@ void CustomerMenu::readCustomer()
     SystemHelper::clearScreen();
     vector<int> widths = {8, 22, 12, 25, 20};
     vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
-    
+
     cout << "===== View Customers =====" << endl;
     cout << "1. View all Customers" << endl;
     cout << "2. Search by ID" << endl;
@@ -48,14 +49,14 @@ void CustomerMenu::readCustomer()
     if (choice == 1)
     {
         cout << "===== All Customers =====\n";
-        TablePrinter::printTable(widths, headers, repo.exportToVector());
+        TablePrinter::printTable(widths, headers, repoCustomer.exportToVector());
         LOG("[CustomerMenu] Customer table printed successfully");
     }
     else if (choice == 2)
     {
         cout << "===== Find Customer =====\n";
         string inputID = convertToUpper(InputHelper::getInputString("Enter Customer ID to search: "));
-        Customer *cus = repo.readByID(inputID);
+        Customer *cus = repoCustomer.readByID(inputID);
         if (cus != nullptr)
         {
             SystemHelper::clearScreen();
@@ -77,10 +78,10 @@ void CustomerMenu::updateCustomer()
     cout << "===== Update Customer =====" << endl;
     vector<int> widths = {8, 22, 12, 25, 20};
     vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
+    TablePrinter::printTable(widths, headers, repoCustomer.exportToVector());
 
     string inputID = convertToUpper(InputHelper::getInputString("Enter Customer ID to update: "));
-    Customer *cus = repo.readByID(inputID);
+    Customer *cus = repoCustomer.readByID(inputID);
 
     if (cus == nullptr)
     {
@@ -94,10 +95,10 @@ void CustomerMenu::updateCustomer()
     TablePrinter::printSingle(widths, headers, cus->exportToVector());
 
     cout << "\nLeave field empty if you don't want to update it." << endl;
-
-    string name = InputHelper::getInputOptionalString("New Name [" + cus->getName() + "]: ");
-    if (!name.empty())
-        cus->setName(name);
+    cout << "Customer name can not be changed, skipping\n";
+    // string name = InputHelper::getInputOptionalString("New Name [" + cus->getName() + "]: ");
+    // if (!name.empty())
+    //     cus->setName(name);
 
     string phone = InputHelper::getInputOptionalPhone("New Phone [" + cus->getPhone() + "]: ");
     if (!phone.empty())
@@ -111,9 +112,9 @@ void CustomerMenu::updateCustomer()
     if (!address.empty())
         cus->setAddress(address);
 
-    if (repo.update(*cus))
+    if (repoCustomer.update(*cus))
     {
-        repo.writeToFile();
+        repoCustomer.writeToFile();
         LOG("[CustomerMenu] Customer information updated successfully");
         cout << "Customer updated successfully!" << endl;
     }
@@ -130,12 +131,12 @@ void CustomerMenu::deleteCustomer()
     cout << "===== Delete Customer =====" << endl;
     vector<int> widths = {8, 22, 12, 25, 20};
     vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
-    
+    TablePrinter::printTable(widths, headers, repoCustomer.exportToVector());
+
     string targetID = convertToUpper(InputHelper::getInputString("Enter Customer ID to delete: "));
 
-    // 2. Tìm kiếm trong Repo
-    Customer* cus = repo.readByID(targetID);
+    // 2. Tìm kiếm trong repoCustomer
+    Customer *cus = repoCustomer.readByID(targetID);
     if (cus == nullptr)
     {
         cout << "[Error] Customer not found!" << endl;
@@ -151,16 +152,26 @@ void CustomerMenu::deleteCustomer()
     // [PLACEHOLDER] Delete conditions
     // =====================================================================
     // Delete customer phụ thuộc vào việc khách hàng có đang kí hợp đồng nào còn hạn không (sẽ cập nhật sau)
+    const vector<Contract> &contractList = repoContract.readAll();
+    for (const Contract &i : contractList)
+    {
+        if (targetID == i.get_customerID() && (i.get_status() == ContractStatus::ACTIVE || i.get_status() == ContractStatus::SUSPENDED))
+        {
+            cout << "\n[Error] This customer is currently bound to contract [" << i.getID() << "] (ACTIVE/SUSPENDED)!\n";
+            cout << "Deletion aborted.\n\n";
+            return;
+        }
+    }
 
     // =====================================================================
 
     string confirm = InputHelper::getInputString("Are you sure you want to delete this Customer? (y/n): ");
-    
+
     if (confirm == "y" || confirm == "Y")
     {
-        if (repo.remove(targetID))
+        if (repoCustomer.remove(targetID))
         {
-            repo.writeToFile();
+            repoCustomer.writeToFile();
             LOG("[CustomerMenu] Customer deleted successfully");
             cout << "Customer deleted successfully!" << endl;
         }

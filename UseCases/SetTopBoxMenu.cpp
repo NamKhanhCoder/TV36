@@ -10,9 +10,10 @@
 
 using namespace std;
 
-SetTopBoxMenu::SetTopBoxMenu() : repo("Data/settopboxes.txt", "Data/settopboxes_counter.txt", "STB")
+SetTopBoxMenu::SetTopBoxMenu() : repoSetTopBox("Data/settopboxes.txt", "Data/settopboxes_counter.txt", "STB"), repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
 {
-    repo.loadFromFile();
+    repoSetTopBox.loadFromFile();
+    repoContract.loadFromFile();
 }
 
 void SetTopBoxMenu::printMenu()
@@ -87,7 +88,7 @@ void SetTopBoxMenu::createSetTopBox()
     {
         serial = InputHelper::getInputString("Enter serial (must be unique)");
         bool exists = false;
-        for (const auto &stb : repo.readAll())
+        for (const auto &stb : repoSetTopBox.readAll())
         {
             if (stb.getSerial() == serial)
             {
@@ -128,10 +129,10 @@ void SetTopBoxMenu::createSetTopBox()
 
     TechnicalStatus status = inputTechnicalStatus(false, TOT);
 
-    SetTopBox temp(repo.generateNextID(), serial, manufacturer, model, importDate, status);
-    if (repo.create(temp))
+    SetTopBox temp(repoSetTopBox.generateNextID(), serial, manufacturer, model, importDate, status);
+    if (repoSetTopBox.create(temp))
     {
-        repo.writeToFile();
+        repoSetTopBox.writeToFile();
         LOG("[SetTopBoxMenu] SetTopBox created successfully");
         cout << "Set-top Box created successfully!" << endl;
     }
@@ -156,19 +157,19 @@ void SetTopBoxMenu::readSetTopBox()
 
     if (choice == 1)
     {
-        cout<<"=====All Set top box=====\n";
-        TablePrinter::printTable(widths, headers, repo.exportToVector());
+        cout << "=====All Set top box=====\n";
+        TablePrinter::printTable(widths, headers, repoSetTopBox.exportToVector());
         LOG("[SetTopBoxMenu] SetTopBox table printed successfully");
     }
     else if (choice == 2)
     {
-        cout<<"=====Find Set top box=====\n";
+        cout << "=====Find Set top box=====\n";
         string id = convertToUpper(InputHelper::getInputString("Enter Set-top Box ID to search: "));
-        SetTopBox *result = repo.readByID(id);
+        SetTopBox *result = repoSetTopBox.readByID(id);
         if (result != nullptr)
         {
             SystemHelper::clearScreen();
-            cout<<"=====Find Set top box=====\n";
+            cout << "=====Find Set top box=====\n";
             TablePrinter::printSingle(widths, headers, result->exportToVector());
         }
         else
@@ -185,11 +186,11 @@ void SetTopBoxMenu::updateSetTopBox()
     cout << "===== Update Set-top Box =====" << endl;
     vector<int> widths = {8, 15, 15, 15, 12, 15};
     vector<string> headers = {"ID", "Serial", "Manufacturer", "Model", "Import Date", "Status"};
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
+    TablePrinter::printTable(widths, headers, repoSetTopBox.exportToVector());
 
     string id = convertToUpper(InputHelper::getInputString("Enter Set-top Box ID to update: "));
 
-    SetTopBox *stb = repo.readByID(id);
+    SetTopBox *stb = repoSetTopBox.readByID(id);
     if (stb == nullptr)
     {
         cout << "[Error] Set-top Box not found!" << endl;
@@ -208,7 +209,7 @@ void SetTopBoxMenu::updateSetTopBox()
     if (!newSerial.empty() && newSerial != stb->getSerial())
     {
         bool exists = false;
-        for (const auto &item : repo.readAll())
+        for (const auto &item : repoSetTopBox.readAll())
         {
             if (item.getSerial() == newSerial)
             {
@@ -229,10 +230,10 @@ void SetTopBoxMenu::updateSetTopBox()
     string newManufacturer = InputHelper::getInputOptionalString("New Manufacturer [" + stb->getManufacturer() + "]: ");
     if (!newManufacturer.empty())
         stb->setManufacturer(newManufacturer);
-
-    string newModel = InputHelper::getInputOptionalString("New Model [" + stb->getModel() + "]: ");
-    if (!newModel.empty())
-        stb->setModel(newModel);
+    cout << "Model name can not be changed, skipping\n";
+    // string newModel = InputHelper::getInputOptionalString("New Model [" + stb->getModel() + "]: ");
+    // if (!newModel.empty())
+    //     stb->setModel(newModel);
 
     // Date update
     time_t now = time(0);
@@ -261,9 +262,9 @@ void SetTopBoxMenu::updateSetTopBox()
     TechnicalStatus newStatus = inputTechnicalStatus(true, stb->getTechnicalStatus());
     stb->setTechnicalStatus(newStatus);
 
-    if (repo.update(*stb))
+    if (repoSetTopBox.update(*stb))
     {
-        repo.writeToFile();
+        repoSetTopBox.writeToFile();
         LOG("[SetTopBoxMenu] SetTopBox updated successfully");
         cout << "Set-top Box updated successfully!" << endl;
     }
@@ -280,11 +281,11 @@ void SetTopBoxMenu::deleteSetTopBox()
     cout << "===== Delete Set-top Box =====" << endl;
     vector<int> widths = {8, 15, 15, 15, 12, 15};
     vector<string> headers = {"ID", "Serial", "Manufacturer", "Model", "Import Date", "Status"};
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
+    TablePrinter::printTable(widths, headers, repoSetTopBox.exportToVector());
 
     string id = convertToUpper(InputHelper::getInputString("Enter Set-top Box ID to delete: "));
 
-    SetTopBox *stb = repo.readByID(id);
+    SetTopBox *stb = repoSetTopBox.readByID(id);
     if (stb == nullptr)
     {
         cout << "[Error] Set-top Box not found!" << endl;
@@ -296,15 +297,33 @@ void SetTopBoxMenu::deleteSetTopBox()
     cout << "You are about to remove Set-top Box:" << endl;
     TablePrinter::printSingle(widths, headers, stb->exportToVector());
 
+    // Check remove conditions here
 
-    //Check remove conditions here
+    // check if stb is in any contract
+    //  Check if stb is in any active contract
+    const vector<Contract> &contractList = repoContract.readAll();
+
+    for (const auto &i : contractList)
+    {
+        // Bỏ dòng cout test id và stbID khi nộp bài
+        if (id == i.get_stbID() &&
+            (i.get_status() == ContractStatus::ACTIVE || i.get_status() == ContractStatus::SUSPENDED))
+        {
+            cout << "\n[Error] This Set-top box is currently bound to contract [" << i.getID() << "] (ACTIVE/SUSPENDED)!\n";
+            cout << "Deletion aborted.\n\n";
+
+            InputHelper::getInputOptionalString("Press Enter to go back...");
+            return;
+        }
+    }
+
     //============================
     string confirm = InputHelper::getInputString("Are you sure you want to delete this Set-top Box? (y/n): ");
     if (confirm == "y" || confirm == "Y")
     {
-        if (repo.remove(id))
+        if (repoSetTopBox.remove(id))
         {
-            repo.writeToFile();
+            repoSetTopBox.writeToFile();
             LOG("[SetTopBoxMenu] SetTopBox removed successfully");
             cout << "Set-top Box deleted successfully!" << endl;
         }

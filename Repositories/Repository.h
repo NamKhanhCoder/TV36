@@ -149,7 +149,7 @@ public:
         LOG("[Repository] Item not found, returning nullpointer");
         return nullptr;
     }
-    const vector<T> &readAll() const
+    const vector<T> &readAll()
     {
         LOG("[Repository] Succeed return items");
         return items;
