@@ -1,4 +1,4 @@
-KH001|new khanh|0901234567|khanh@gmail.com|Ha Noi
+KH001|new khanh|0123456789|khanh@gmail.co|Ha Noi
 KH002|Nguyen Hong Anh|0912345678|anh@gmail.com|TP HCM
 KH003|Phan Quoc Trung|0923456789|trung@gmail.com|Da Nang
 KH004|Nguyen Khac Hieu|0934567890|hieu@gmail.com|Hai Phong

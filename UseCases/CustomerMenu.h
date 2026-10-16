@@ -2,12 +2,13 @@
 #include "UseCases/BaseMenu.h"
 #include "Repositories/Repository.h"
 #include "Entities/Customer.h"
-
+#include "Entities/Contract.h"
 class CustomerMenu : public BaseMenu
 {
 
 private:
-    Repository<Customer> repo;
+    Repository<Customer> repoCustomer;
+    Repository<Contract> repoContract;
     void createCustomer();
     void readCustomer();
     void updateCustomer();
