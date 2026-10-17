@@ -43,10 +43,11 @@ public:
     // Xu ly lua chon chuc nang menu
     void handleChoice(int choice) override;
     // Kiem tra ton tai ma khach hang tu repoCustomer (TV1)
-    bool kiemTraKhachHangTonTai(string maKhachHang)
+   /* bool kiemTraKhachHangTonTai(string maKhachHang)
     {   
         return repoCustomer.readByID(maKhachHang) != nullptr;
     }
+        */ // ham nay hien tai chu dung den nen de tam trong comment
     // Kiem tra ton tai ma hop dong tu repoContract (TV2)
     bool kiemTraHopDongTonTai(string maHopDong)
     {

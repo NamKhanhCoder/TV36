@@ -14,10 +14,12 @@
 #include "Utils/Validator.h"
 #include "Utils/SystemHelper.h"
 using namespace std;
-// Ham khoi tao: khoi tao repository va nap du lieu tu file Data/noidungvod.txt
-NoiDungVODMenu::NoiDungVODMenu() : repo("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD")
+// Ham khoi tao: khoi tao 2 repository (NoiDungVOD va Package) va nap du lieu tu file
+NoiDungVODMenu::NoiDungVODMenu() : repo("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD"),
+                                   repopackage("Data/packages.txt", "Data/packages_counter.txt", "GOI")
 {
     repo.loadFromFile();
+    repopackage.loadFromFile();
 }
 // Chuc nang xem danh sach: xuat toan bo ban ghi VOD ra bang can cot TablePrinter
 void NoiDungVODMenu::xemDanhSach()
@@ -37,8 +39,29 @@ void NoiDungVODMenu::xemDanhSach()
 void NoiDungVODMenu::themNoiDung()
 {
     string id = repo.generateNextID();
-    string tenNoiDung = InputHelper::getInputString("Nhap ten noi dung: ");
-    string theLoai = InputHelper::getInputString("Nhap the loai noi dung: ");
+    string tenNoiDung;
+    while (true)
+    {
+        tenNoiDung = InputHelper::getInputString("Nhap ten noi dung: ");
+        if (tenNoiDung.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            continue;
+        }
+        break;
+    }
+    string theLoai;
+    while (true)
+    {
+        theLoai = InputHelper::getInputString("Nhap the loai noi dung: ");
+        if (theLoai.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            continue;
+        }
+        break;
+    }
+
     int thoiLuong;
     while (true)
     {
@@ -51,7 +74,17 @@ void NoiDungVODMenu::themNoiDung()
         else
             break;
     }
-    string moTa = InputHelper::getInputOptionalString("Nhap mo ta noi dung: ");
+    string moTa;
+    while (true)
+    {
+        moTa = InputHelper::getInputOptionalString("Nhap mo ta noi dung: ");
+        if (moTa.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            continue;
+        }
+        break;
+    }
     int namPhatHanh;
     while (true)
     {
@@ -398,8 +431,13 @@ void NoiDungVODMenu::sapXep()
 }
 // Chuc nang cap nhat: tim theo ma VOD, hien thi thong tin hien tai va cho phep sua tung truong
 void NoiDungVODMenu::capNhat()
-{
+{   
     string id = InputHelper::getInputString("Nhap ma VOD can cap nhat: ");
+    if (id.find('|') != string::npos)
+    {
+        cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+        return;
+    }
     NoiDungVOD *p = repo.readByID(id);
     if (p == nullptr)
     {
@@ -420,9 +458,24 @@ void NoiDungVODMenu::capNhat()
         cout << "Trang thai: " << p->getTrangThai() << endl;
         cout << "(Nhan Enter neu muon giu nguyen gia tri cu)" << endl;
         string tenNoiDung = InputHelper::getInputOptionalString("Cap nhat Ten noi dung: ");
+        if (tenNoiDung.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            return;
+        }
         string theLoai = InputHelper::getInputOptionalString("Cap nhat the loai: ");
+        if (theLoai.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            return;
+        }
         int thoiLuong = InputHelper::getInputOptionalInt("Cap nhat thoi luong: ");
         string moTa = InputHelper::getInputOptionalString("Cap nhat mo ta: ");
+        if (moTa.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            return;
+        }
         int namPhatHanh = InputHelper::getInputOptionalInt("Cap nhat nam phat hanh: ");
         int choice = InputHelper::getInputOptionalInt("Cap nhat trang thai phim (1.DANG_PHUC_VU/ 2. NGUNG_PHUC_VU): ");
         if (!tenNoiDung.empty())
@@ -475,6 +528,36 @@ void NoiDungVODMenu::xoaNoiDung()
     }
     else
     {
+        // Kiem tra rang buoc toan ven: chan xoa neu VOD dang nam trong goi cuoc (Package)
+        vector<Package> danhSachPackage = repopackage.readAll();
+        int sPackage = danhSachPackage.size();
+        int check = 0;
+        string tenGoiCuoc;
+        // Duyet qua tung goi cuoc de kiem tra danh sach vodIDs
+        for (int i = 0; i < sPackage; i++)
+        {
+            const vector<string> &idVODs = danhSachPackage[i].getVodIDs();
+            int sidVODS = idVODs.size();
+            // Duyet qua tung ma VOD co trong goi cuoc hien tai
+            for (int j = 0; j < sidVODS; j++)
+            {
+                if (idVODs[j] == id)
+                {
+                    check = 1;
+                    tenGoiCuoc = danhSachPackage[i].getName(); // Lay ten goi cuoc dang chua VOD nay
+                    break;
+                }
+            }
+            if (check)
+                break;
+        }
+
+        // Neu VOD dang duoc su dung boi it nhat 1 goi cuoc thi chan xoa va thong bao
+        if (check)
+        {
+            cout << "Khong the xoa! Noi dung VOD nay dang thuoc goi cuoc: " << tenGoiCuoc << endl;
+            return;
+        }
         string line = p->exportToString();
         cout << line << endl;
         string xacNhan = InputHelper::getInputString("Ban co chac muon xoa noi dung nay khong ? (y/n): ");

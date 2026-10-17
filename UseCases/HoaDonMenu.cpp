@@ -15,8 +15,8 @@
 using namespace std;
 // Ham khoi tao: khoi tao 3 repository (HoaDon, Customer, Contract) va nap du lieu tu file
 HoaDonMenu::HoaDonMenu() : repoHoaDon("Data/hoadon.txt", "Data/hdn_counter.txt", "HDN"),
-repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"),
-repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
+                           repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"),
+                           repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
 {
     repoHoaDon.loadFromFile();
     repoCustomer.loadFromFile();
@@ -46,13 +46,26 @@ void HoaDonMenu::xemDanhSach()
 void HoaDonMenu::themHoaDon()
 {
     string id = repoHoaDon.generateNextID();
-    string maHopDong = InputHelper::getInputString("Nhap ma hop dong: ");
+    string maHopDong;
+    while (true)
+    {
+        maHopDong = InputHelper::getInputString("Nhap ma hop dong: ");
+        if (maHopDong.find('|') != string::npos)
+        {
+            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            continue;
+        }
+        break;
+    }
     if (!kiemTraHopDongTonTai(maHopDong))
     {
         cout << "Ma hop dong khong ton tai hoac chua hop le, vui long thu lai!" << endl;
         return;
     }
-    string maKhachHang = InputHelper::getInputString("Nhap ma khach hang: ");
+    // Lay thong tin hop dong tu repoContract de tu dong trich xuat ma khach hang, dam bao rang buoc toan ven khoa ngoai
+    Contract *pcontract = repoContract.readByID(maHopDong);
+    string maKhachHang = pcontract->get_customerID();
+    cout << "Khach hang dai dien hop dong: " << maKhachHang << endl;
     double soTien = InputHelper::getInputDouble("Nhap so tien: ");
     if (soTien <= 0.0)
     {
@@ -501,6 +514,11 @@ void HoaDonMenu::sapXep()
 void HoaDonMenu::capNhat()
 {
     string id = InputHelper::getInputString("Nhap ma hoa don: ");
+    if (id.find('|') != string::npos)
+    {
+        cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+        return;
+    }
     HoaDon *p = repoHoaDon.readByID(id);
     if (p == nullptr)
     {

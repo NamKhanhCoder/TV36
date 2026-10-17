@@ -10,14 +10,17 @@
 #include "Repositories/Repository.h"
 #include "Entities/NoiDungVOD.h"
 #include "UseCases/BaseMenu.h"
+// Tham chieu thuc the Package de kiem tra rang buoc khoa ngoai truoc khi xoa
+#include "Entities/Package.h"
 #include <vector>
 #include <string>
 using namespace std;
 // Lop dieu khien menu quan ly Noi dung VOD ke thua BaseMenu
 class NoiDungVODMenu : public BaseMenu{
     private:
-            // Repository quan ly du lieu noi dung VOD tu file
+            // Cac repository quan ly noi dung VOD va tham chieu du lieu goi cuoc (Package)
             Repository<NoiDungVOD> repo;
+            Repository<Package> repopackage;
     public:
             // Ham khoi tao menu va nap du lieu tu file
             NoiDungVODMenu();
