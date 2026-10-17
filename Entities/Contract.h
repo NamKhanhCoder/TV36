@@ -33,15 +33,15 @@ private:
 public:
     Contract() : Entity() {}
     Contract(string id, string customerID, string packageID, string stbID, Date signDate, Date startDate, Date endDate, string installationAddress, string monthlyFee, ContractStatus status);
-    void set_customerID(string &customerID);
-    void set_packageID(string &packageID);
-    void set_stbID(string &stbID);
-    void set_signDate(Date &signDate);
-    void set_startDate(Date &startDate);
-    void set_endDate(Date &endDate);
-    void set_installationAddress(string &installationAddress);
-    void set_monthlyFee(string &monthlyFee);
-    void set_status(ContractStatus &status);
+    void set_customerID(const string &customerID);
+    void set_packageID(const string &packageID);
+    void set_stbID(const string &stbID);
+    void set_signDate(const Date &signDate);
+    void set_startDate(const Date &startDate);
+    void set_endDate(const Date &endDate);
+    void set_installationAddress(const string &installationAddress);
+    void set_monthlyFee(const string &monthlyFee);
+    void set_status(ContractStatus status);
 
     string get_customerID() const;
     string get_packageID() const;

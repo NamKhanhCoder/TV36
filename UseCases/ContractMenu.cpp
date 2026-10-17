@@ -4,205 +4,579 @@
 #include "Utils/StringHelper.h"
 #include "Utils/TablePrinter.h"
 #include "Utils/InputHelper.h"
+#include <iostream>
 
 using namespace std;
 
-ContractMenu::ContractMenu() : repo("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
+// CONSTRUCTOR & INITIALIZATION ===================================================================== 
+ContractMenu::ContractMenu() : 
+    repo("Data/contracts.txt", "Data/contracts_counter.txt", "HD"),
+    repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"),
+    repoPackage("Data/packages.txt", "Data/packages_counter.txt", "GOI"),
+    repoSetTopBox("Data/settopboxes.txt", "Data/settopboxes_counter.txt", "STB")
 {
-    repo.loadFromFile();    
+    repo.loadFromFile();   
+    repoCustomer.loadFromFile();
+    repoPackage.loadFromFile();
+    repoSetTopBox.loadFromFile();
+}
+
+// TABLE PRINTING HELPERS =====================================================================
+void ContractMenu::printCustomerTable()
+{
+    vector<int> widths = {8, 22, 12, 25, 20};
+    vector<string> headers = {"ID", "Name", "Phone", "Email", "Address"};
+    cout << "\n===== All Customers =====\n";
+    TablePrinter::printTable(widths, headers, repoCustomer.exportToVector());
+}
+
+void ContractMenu::printPackageTable()
+{
+    vector<int> widths = {8, 20, 15, 16, 25, 20};
+    vector<string> headers = {"ID", "Name", "Monthly Price", "Status", "Channels", "VODs"};
+    cout << "\n===== All Packages =====\n";
+    TablePrinter::printTable(widths, headers, repoPackage.exportToVector());
+}
+
+void ContractMenu::printSetTopBoxTable()
+{
+    vector<int> widths = {8, 15, 15, 15, 12, 15};
+    vector<string> headers = {"ID", "Serial", "Manufacturer", "Model", "Import Date", "Status"};
+    cout << "\n===== All Set-Top Boxes =====\n";
+    TablePrinter::printTable(widths, headers, repoSetTopBox.exportToVector());
+}
+
+void ContractMenu::printContractTable(const vector<vector<string>> &data)
+{
+    vector<int> widths = {7, 12, 12, 12, 12, 12, 12, 20, 15, 12};
+    vector<string> headers = {"ID", "Customer ID", "Package ID", "Set-Top Box", "Sign Date", "Start Date", "End Date", "Address", "Monthly Fee", "Status"};
+    TablePrinter::printTable(widths, headers, data);
+}
+
+// VALIDATION & SELECTION HELPERS =====================================================================
+bool ContractMenu::isSetTopBoxInUse(const string &stbID, const string &excludeContractID)
+{
+    for (const auto &c : repo.readAll())
+    {
+        if (!excludeContractID.empty() && c.getID() == excludeContractID)
+            continue;
+
+        // Neu hop dong dang hoat dong ma xai STB nay thi STB duoc coi la dang su dung
+        if (c.get_stbID() == stbID && c.get_status() == ContractStatus::ACTIVE)
+            return true;
+    }
+    return false;
+}
+
+string ContractMenu::selectCustomerID()
+{
+    printCustomerTable();
+    while (true)
+    {
+        string id = convertToUpper(InputHelper::getInputString("Select Customer ID (or 0 to cancel): "));
+        if (id == "0") return "";
+
+        Customer *cus = repoCustomer.readByID(id);
+        if (cus != nullptr)
+        {
+            return id;
+        }
+        cout << "[Error] Customer ID not found: " << id << ". Please choose from the table above.\n";
+    }
+}
+
+string ContractMenu::selectPackageID()
+{
+    printPackageTable();
+    while (true)
+    {
+        string id = convertToUpper(InputHelper::getInputString("Select Package ID (or 0 to cancel): "));
+        if (id == "0") return "";
+
+        Package *pkg = repoPackage.readByID(id);
+        if (pkg != nullptr)
+        {
+            return id;
+        }
+        cout << "[Error] Package ID not found: " << id << ". Please choose from the table above.\n";
+    }
+}
+
+string ContractMenu::selectSetTopBoxID(const string &currentContractID)
+{
+    printSetTopBoxTable();
+    while (true)
+    {
+        string id = convertToUpper(InputHelper::getInputString("Select Set-Top Box ID (or 0 to cancel): "));
+        if (id == "0") return "";
+
+        SetTopBox *stb = repoSetTopBox.readByID(id);
+        if (stb == nullptr)
+        {
+            cout << "[Error] Set-Top Box ID not found: " << id << ". Please choose from the table above.\n";
+            continue;
+        }
+
+        if (isSetTopBoxInUse(id, currentContractID))
+        {
+            cout << "[Error] Set-Top Box " << id << " is already allocated to another active contract!\n";
+            cout << "Please select an available Set-Top Box.\n";
+            continue;
+        }
+
+        return id;
+    }
+}
+
+Date ContractMenu::inputValidStartDate(const Date &signDate)
+{
+    while (true)
+    {
+        Date startDate = InputHelper::getInputDate("Start Date (dd/mm/yyyy): ");
+        if (startDate < signDate)
+        {
+            cout << "[Error] Invalid date: Start Date must be on or after Sign Date (" << signDate.toString() << ").\n";
+            continue;
+        }
+        return startDate;
+    }
+}
+
+Date ContractMenu::calculateEndDate(const Date &startDate)
+{
+    while (true)
+    {
+        int durationMonths = InputHelper::getInputInt("Contract duration in months (e.g. 1, 3, 6, 12): ");
+        if (durationMonths <= 0)
+        {
+            cout << "[Error] Duration must be a positive integer (> 0).\n";
+            continue;
+        }
+
+        Date endDate = startDate;
+        endDate.addMonths(durationMonths);
+        cout << "[Info] Calculated End Date (" << durationMonths << " months): " << endDate.toString() << "\n";
+        return endDate;
+    }
 }
 
 ContractStatus ContractMenu::inputStatus()
 {
-    while(1)
+    while (true)
     {
-        cout << "Enter the contract status: " << endl;
-        cout << "1. ACTIVE" << endl << "2. SUSPENDED" << endl << "3. EXPIRED" << endl << "4. CANCELED" << endl;
-        int s = InputHelper::getInputInt("Contract's status: ");
-        if(s == 1) return ContractStatus::ACTIVE;
-        if(s == 2) return ContractStatus::SUSPENDED;
-        if(s == 3) return ContractStatus::EXPIRED;
-        if(s == 4) return ContractStatus::CANCELED;
-        else cout << "## INPUT ERROR ##" << endl << "Try again" << endl;
+        cout << "\nSelect contract status:\n";
+        cout << "1. ACTIVE\n";
+        cout << "2. SUSPENDED\n";
+        cout << "3. EXPIRED\n";
+        cout << "4. CANCELED\n";
+
+        int s = InputHelper::getInputInt("Contract's status (1-4): ");
+        if (s == 1) return ContractStatus::ACTIVE;
+        if (s == 2) return ContractStatus::SUSPENDED;
+        if (s == 3) return ContractStatus::EXPIRED;
+        if (s == 4) return ContractStatus::CANCELED;
+
+        cout << "[Error] Invalid choice! Please enter a number from 1 to 4.\n";
     }
 }
 
 ContractStatus ContractMenu::inputOptionalStatus(ContractStatus currentStatus)
 {
-    while(1)
+    while (true)
     {
-        cout << "Enter the contract status: " << endl;
-        cout << "1. ACTIVE" << endl << "2. SUSPENDED" << endl << "3. EXPIRED" << endl << "4. CANCELED" << endl << "0. Skip" << endl;
-        int s = InputHelper::getInputInt("Contract's status: ");
-        if(s == 1) return ContractStatus::ACTIVE;
-        if(s == 2) return ContractStatus::SUSPENDED;
-        if(s == 3) return ContractStatus::EXPIRED;
-        if(s == 4) return ContractStatus::CANCELED;
-        if(s == 0) return currentStatus;
-        else cout << "## INPUT ERROR ##" << endl << "Try again" << endl;
+        cout << "\nSelect contract status (Current: " << ContractStatus_toString(currentStatus) << "):\n";
+        cout << "1. ACTIVE\n";
+        cout << "2. SUSPENDED\n";
+        cout << "3. EXPIRED\n";
+        cout << "4. CANCELED\n";
+        cout << "0. Keep current status\n";
+
+        int s = InputHelper::getInputInt("Your choice (0-4): ");
+        if (s == 1) return ContractStatus::ACTIVE;
+        if (s == 2) return ContractStatus::SUSPENDED;
+        if (s == 3) return ContractStatus::EXPIRED;
+        if (s == 4) return ContractStatus::CANCELED;
+        if (s == 0) return currentStatus;
+
+        cout << "[Error] Invalid choice! Please try again.\n";
     }
 }
 
+// CRUD OPERATIONS =====================================================================
 void ContractMenu::createContract()
 {
     SystemHelper::clearScreen();
-    cout << "Enter Contract's Informations: " << endl;
-    string customerID = InputHelper::getInputString("Customer's ID:");
-    string packageID = InputHelper::getInputString("Package's ID:");
-    string stbID = InputHelper::getInputString("Set-Top Box's ID:");
-    Date signDate = InputHelper::getInputDate("Sign Date:");
-    Date startDate = InputHelper::getInputDate("Start Date:");
-    Date endDate = InputHelper::getInputDate("End Date:");
-    string installationAddress = InputHelper::getInputString("Installation Address:");
-    string monthlyFee = InputHelper::getInputString("Monthly Fee: ");
-    ContractStatus status = ContractMenu::inputStatus();
+    cout << "=========================================\n";
+    cout << "         CREATE NEW CONTRACT\n";
+    cout << "=========================================\n";
 
-    Contract temp(repo.generateNextID(), customerID, packageID, stbID, signDate, startDate, endDate, installationAddress, monthlyFee, status);
-    if(repo.create(temp))
+    // 1. Chon Khach hang (co kiem tra ton tai)
+    string customerID = selectCustomerID();
+    if (customerID.empty())
+    {
+        cout << "[Notice] Contract creation cancelled.\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+        return;
+    }
+
+    // 2. Chon Goi cuoc (co kiem tra ton tai)
+    string packageID = selectPackageID();
+    if (packageID.empty())
+    {
+        cout << "[Notice] Contract creation cancelled.\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+        return;
+    }
+
+    // 3. Chon Set-Top Box (kiem tra ton tai va khong trung thiet bi dang dung)
+    string stbID = selectSetTopBoxID();
+    if (stbID.empty())
+    {
+        cout << "[Notice] Contract creation cancelled.\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+        return;
+    }
+
+    // 4. Nhap cac moc ngay: signDate <= startDate < endDate
+    SystemHelper::clearScreen();
+    cout << "===== Contract Period & Installation =====\n";
+    Date signDate = InputHelper::getInputDate("Sign Date");
+    Date startDate = inputValidStartDate(signDate);
+    Date endDate = calculateEndDate(startDate);
+
+    // 5. Dia chi lap dat
+    string installationAddress = InputHelper::getInputString("Installation Address: ");
+
+    // 6. Tinh phi thang: Mac dinh theo Package, co the tuy chinh gia thoa thuan
+    Package *pkg = repoPackage.readByID(packageID);
+    string defaultFee = to_string(pkg->getMonthlyPrice());
+    cout << "\nPackage standard monthly fee: " << defaultFee << " VND\n";
+    string customFee = InputHelper::getInputOptionalString("Enter agreed monthly fee (press Enter to use standard fee): ");
+    string monthlyFee = customFee.empty() ? defaultFee : customFee;
+
+    // 7. Trang thai hop dong ban dau
+    ContractStatus status = inputStatus();
+
+    // 8. Tao va luu hop dong
+    Contract newContract(repo.generateNextID(), customerID, packageID, stbID,
+                         signDate, startDate, endDate, installationAddress, monthlyFee, status);
+
+    if (repo.create(newContract))
     {
         repo.writeToFile();
-        LOG("[ContractMenu] Contract created successfully");
-        cout << "Contract created successfulley\n";
+        LOG("[ContractMenu] Contract created successfully, ID: " + newContract.getID());
+        cout << "\n[Success] Contract created successfully! Assigned ID: " << newContract.getID() << "\n";
     }
     else
     {
-        LOG("[ContractMenu] Contract created unsuccessfully");
-        cout << "Contract creation failed, abort\n";
+        LOG("[ContractMenu] Contract creation failed");
+        cout << "\n[Error] Contract creation failed!\n";
     }
+    InputHelper::getInputOptionalString("Press Enter to return...");
 }
 
 void ContractMenu::readContract()
 {
-    SystemHelper::clearScreen();
-    cout << "=====View contracts=====" << endl;
-    cout << "1. View all contracts" << endl;
-    cout << "2. Search by ID" << endl;
-
-    vector<int> widths = {5, 12, 12, 12, 12, 12, 12, 20, 15, 15};
-    vector<string> headers = {"ID", "Customer's ID", "Package's ID", "Set-Top Box's ID", "Sign Date", "Start Date", "End Date", "Installation Address", "Monthly Fee", "Status"};
-
-    int choice = InputHelper::getInputInt("Select an option (enter 0 to go back): ");
-    if(choice == 1)
+    while (true)
     {
-        TablePrinter::printTable(widths, headers, repo.exportToVector());
-        LOG("[ContractMenu] Contract table printed successfully");
-    }
-    else if(choice == 2)
-    {
-        string inputID = convertToUpper(InputHelper::getInputString("Enter Contract ID: "));
-        Contract *Contract = repo.readByID(inputID);
-        if (Contract == nullptr)
+        SystemHelper::clearScreen();
+        cout << "===== View Contracts =====\n";
+        cout << "1. View all contracts\n";
+        cout << "2. Search contract by ID\n";
+        cout << "0. Go back\n";
+
+        int choice = InputHelper::getInputInt("Select an option: ");
+        if (choice == 0) break;
+
+        if (choice == 1)
         {
-            cout << "[Error] Contract not found, ID: " << inputID << endl;
+            SystemHelper::clearScreen();
+            cout << "===== All Contracts =====\n";
+            printContractTable(repo.exportToVector());
+            cout << "Total: " << repo.readAll().size() << " record(s)\n";
+            LOG("[ContractMenu] All contracts viewed");
+            InputHelper::getInputOptionalString("Press Enter to continue...");
+        }
+        else if (choice == 2)
+        {
+            string searchID = convertToUpper(InputHelper::getInputString("Enter Contract ID: "));
+            Contract *contract = repo.readByID(searchID);
+            if (contract == nullptr)
+            {
+                cout << "[Error] Contract not found with ID: " << searchID << "\n";
+            }
+            else
+            {
+                vector<int> widths = {7, 12, 12, 12, 12, 12, 12, 20, 15, 12};
+                vector<string> headers = {"ID", "Customer ID", "Package ID", "Set-Top Box", "Sign Date", "Start Date", "End Date", "Address", "Monthly Fee", "Status"};
+                TablePrinter::printSingle(widths, headers, contract->exportToVector());
+            }
+            LOG("[ContractMenu] Search contract completed");
+            InputHelper::getInputOptionalString("Press Enter to continue...");
         }
         else
         {
-            TablePrinter::printSingle(widths, headers, Contract->exportToVector());
+            cout << "[Error] Invalid option! Please choose again.\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
         }
-        LOG("[ContractMenu] Contract search completed");
     }
-    InputHelper::getInputOptionalString("Press Enter to go back");
+}
+
+// MODULAR UPDATE SUB-FUNCTIONS =====================================================================
+void ContractMenu::updatePackage(Contract *contract)
+{
+    cout << "\n--- Change Service Package ---\n";
+    cout << "Current Package ID: " << contract->get_packageID() << "\n";
+
+    printPackageTable();
+    while (true)
+    {
+        string newPackageID = convertToUpper(InputHelper::getInputString("Enter new Package ID (or 0 to cancel): "));
+        if (newPackageID == "0") return;
+
+        if (newPackageID == contract->get_packageID())
+        {
+            cout << "[Notice] Contract is already using this package. Nothing changed.\n";
+            return;
+        }
+
+        Package *pkg = repoPackage.readByID(newPackageID);
+        if (pkg == nullptr)
+        {
+            cout << "[Error] Package not found: " << newPackageID << ". Please try again.\n";
+            continue;
+        }
+
+        contract->set_packageID(newPackageID);
+
+        // Cap nhat lai gia tien theo goi cuoc moi
+        string defaultFee = to_string(pkg->getMonthlyPrice());
+        cout << "New package standard monthly fee: " << defaultFee << " VND\n";
+        string customFee = InputHelper::getInputOptionalString("Enter agreed monthly fee (press Enter to use standard fee): ");
+        string newMonthlyFee = customFee.empty() ? defaultFee : customFee;
+
+        contract->set_monthlyFee(newMonthlyFee);
+        cout << "[Success] Package updated to " << newPackageID << " with fee " << newMonthlyFee << " VND!\n";
+        break;
+    }
+}
+
+void ContractMenu::updateSetTopBox(Contract *contract)
+{
+    cout << "\n--- Change Set-Top Box (Warranty / Replace) ---\n";
+    cout << "Current Set-Top Box ID: " << contract->get_stbID() << "\n";
+
+    printSetTopBoxTable();
+    while (true)
+    {
+        string newStbID = convertToUpper(InputHelper::getInputString("Enter new Set-Top Box ID (or 0 to cancel): "));
+        if (newStbID == "0") return;
+
+        if (newStbID == contract->get_stbID())
+        {
+            cout << "[Notice] Contract is already allocated with this Set-Top Box.\n";
+            return;
+        }
+
+        SetTopBox *stb = repoSetTopBox.readByID(newStbID);
+        if (stb == nullptr)
+        {
+            cout << "[Error] Set-Top Box not found: " << newStbID << ". Please try again.\n";
+            continue;
+        }
+
+        if (isSetTopBoxInUse(newStbID, contract->getID()))
+        {
+            cout << "[Error] Set-Top Box " << newStbID << " is currently used by another active contract!\n";
+            continue;
+        }
+
+        contract->set_stbID(newStbID);
+        cout << "[Success] Set-Top Box updated to " << newStbID << "!\n";
+        break;
+    }
+}
+
+void ContractMenu::extendContract(Contract *contract)
+{
+    cout << "\n--- Extend Contract Duration ---\n";
+    cout << "Current End Date: " << contract->get_endDate().toString() << "\n";
+
+    while (true)
+    {
+        int addMonths = InputHelper::getInputInt("Enter number of months to extend (> 0, or 0 to cancel): ");
+        if (addMonths == 0) return;
+
+        if (addMonths < 0)
+        {
+            cout << "[Error] Number of months must be greater than 0!\n";
+            continue;
+        }
+
+        Date updatedEndDate = contract->get_endDate();
+        updatedEndDate.addMonths(addMonths);
+        contract->set_endDate(updatedEndDate);
+
+        // Neu hop dong tung bi het han, tu dong hoi de mo lai trang thai ACTIVE
+        if (contract->get_status() == ContractStatus::EXPIRED)
+        {
+            string reactivate = InputHelper::getInputString("Contract was EXPIRED. Reactivate to ACTIVE? (y/n): ");
+            if (reactivate == "y" || reactivate == "Y")
+            {
+                contract->set_status(ContractStatus::ACTIVE);
+            }
+        }
+
+        cout << "[Success] Contract extended by " << addMonths << " months! New End Date: " << updatedEndDate.toString() << "\n";
+        break;
+    }
+}
+
+void ContractMenu::updateAddress(Contract *contract)
+{
+    cout << "\n--- Change Installation Address ---\n";
+    cout << "Current Address: " << contract->get_installationAddress() << "\n";
+
+    string newAddress = InputHelper::getInputString("Enter new installation address (or leave empty to cancel): ");
+    if (!newAddress.empty())
+    {
+        contract->set_installationAddress(newAddress);
+        cout << "[Success] Installation address updated successfully!\n";
+    }
+    else
+    {
+        cout << "[Notice] Address update cancelled.\n";
+    }
+}
+
+void ContractMenu::updateStatus(Contract *contract)
+{
+    cout << "\n--- Change Contract Status ---\n";
+    ContractStatus newStatus = inputOptionalStatus(contract->get_status());
+    contract->set_status(newStatus);
+    cout << "[Success] Contract status updated to: " << ContractStatus_toString(newStatus) << "\n";
 }
 
 void ContractMenu::updateContract()
 {
     SystemHelper::clearScreen();
-    vector<int> widths = {5, 12, 12, 12, 12, 12, 12, 20, 15, 15};
-    vector<string> headers = {"ID", "Customer's ID", "Package's ID", "Set-Top Box's ID", "Sign Date", "Start Date", "End Date", "Installation Address", "Monthly Fee", "Status"}; 
-    TablePrinter::printTable(widths,headers,repo.exportToVector());
+    cout << "===== Update Contract =====\n";
+    printContractTable(repo.exportToVector());
 
-    string inputID = convertToUpper(InputHelper::getInputString("Enter Contract ID to edit:"));
-    Contract *Contract = repo.readByID(inputID);
+    string targetID = convertToUpper(InputHelper::getInputString("Enter Contract ID to edit: "));
+    Contract *contract = repo.readByID(targetID);
 
-    if (Contract == nullptr)
+    if (contract == nullptr)
     {
-        cout << "[Error] Contract not found, ID: " << inputID << endl;
+        cout << "[Error] Contract not found with ID: " << targetID << "\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
         return;
     }
-    SystemHelper::clearScreen();
-    cout << "=====Contract current information=====" << endl;
-    TablePrinter::printSingle(widths, headers, Contract->exportToVector());
 
-    cout << "Enter Contract new information (skip to keep it as it is)\n";
+    vector<int> widths = {7, 12, 12, 12, 12, 12, 12, 20, 15, 12};
+    vector<string> headers = {"ID", "Customer ID", "Package ID", "Set-Top Box", "Sign Date", "Start Date", "End Date", "Address", "Monthly Fee", "Status"};
 
-    string customerID = InputHelper::getInputOptionalString("Customer's ID:");
-    string packageID = InputHelper::getInputOptionalString("Package's ID:");
-    string stbID = InputHelper::getInputOptionalString("Set-Top Box's ID:");
-    Date signDate = InputHelper::getInputOptionalDate("Sign date:");
-    Date startDate = InputHelper::getInputOptionalDate("Start date:");
-    Date endDate = InputHelper::getInputOptionalDate("End date:");
-    string installationAddress = InputHelper::getInputOptionalString("Installation Address:");
-    string monthlyFee = InputHelper::getInputOptionalString("Monthly Fee:");
-    ContractStatus status = ContractMenu::inputOptionalStatus(Contract->get_status());
+    while (true)
+    {
+        SystemHelper::clearScreen();
+        cout << "===== Current Contract Information: " << contract->getID() << " =====\n";
+        TablePrinter::printSingle(widths, headers, contract->exportToVector());
 
-    // Update
-    if (!packageID.empty()) Contract->set_packageID(packageID);
-    if (!customerID.empty()) Contract->set_customerID(customerID);
-    if (!stbID.empty()) Contract->set_stbID(stbID);
-    if (!signDate.isEmpty()) Contract->set_signDate(signDate);
-    if (!startDate.isEmpty()) Contract->set_startDate(startDate);
-    if (!endDate.isEmpty()) Contract->set_endDate(endDate);
-    if (!installationAddress.empty()) Contract->set_installationAddress(installationAddress);
-    if (!monthlyFee.empty()) Contract->set_monthlyFee(monthlyFee);
-    Contract->set_status(status);
+        cout << "\n===== Update Options =====\n";
+        cout << "1. Doi goi cuoc (Change Service Package)\n";
+        cout << "2. Thay moi Set-Top Box (Replace / Warranty STB)\n";
+        cout << "3. Gia han goi dich vu (Extend Duration Months)\n";
+        cout << "4. Doi dia chi lap dat (Change Address)\n";
+        cout << "5. Thay doi trang thai hop dong (Change Status)\n";
+        cout << "0. Save & Exit\n";
 
-    repo.writeToFile();
-    LOG("[ContractMenu] Contract information updated successfully");
+        int choice = InputHelper::getInputInt("Select an option (0-5): ");
+        if (choice == 0)
+        {
+            repo.writeToFile();
+            cout << "\n[Success] All changes saved to file successfully!\n";
+            LOG("[ContractMenu] Contract " + contract->getID() + " updated and saved");
+            InputHelper::getInputOptionalString("Press Enter to return...");
+            break;
+        }
+
+        switch (choice)
+        {
+        case 1:
+            updatePackage(contract);
+            break;
+        case 2:
+            updateSetTopBox(contract);
+            break;
+        case 3:
+            extendContract(contract);
+            break;
+        case 4:
+            updateAddress(contract);
+            break;
+        case 5:
+            updateStatus(contract);
+            break;
+        default:
+            cout << "[Error] Invalid option! Please select 0 to 5.\n";
+            break;
+        }
+
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+    }
 }
 
 void ContractMenu::deleteContract()
 {
-    cout << "\n=====Delete contract=====\n";
-    vector<int> widths = {5, 12, 12, 12, 12, 12, 12, 20, 15, 15};
-    vector<string> headers = {"ID", "Customer's ID", "Package's ID", "Set-Top Box's ID", "Sign Date", "Start Date", "End Date", "Installation Address", "Monthly Fee", "Status"};
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
+    SystemHelper::clearScreen();
+    cout << "\n===== Delete Contract =====\n";
+    printContractTable(repo.exportToVector());
 
     string targetID = convertToUpper(InputHelper::getInputString("Enter Contract ID to delete: "));
+    Contract *contract = repo.readByID(targetID);
 
-    Contract* Contract = repo.readByID(targetID);
-    if (Contract == nullptr)
+    if (contract == nullptr)
     {
-        cout << "[Error] Contract not found: " << targetID << endl;
+        cout << "[Error] Contract not found: " << targetID << "\n";
+        InputHelper::getInputOptionalString("Press Enter to return...");
         return;
     }
 
-    cout << "You are about to remove Contract:" << endl;
-    TablePrinter::printSingle(widths, headers, Contract->exportToVector());
+    vector<int> widths = {7, 12, 12, 12, 12, 12, 12, 20, 15, 12};
+    vector<string> headers = {"ID", "Customer ID", "Package ID", "Set-Top Box", "Sign Date", "Start Date", "End Date", "Address", "Monthly Fee", "Status"};
+    cout << "\nYou are about to remove this Contract:\n";
+    TablePrinter::printSingle(widths, headers, contract->exportToVector());
 
-    // =====================================================================
-    // [PLACEHOLDER] Delete conditions
-    // =====================================================================
-
-    // =====================================================================
-
-    string confirm = InputHelper::getInputString("Confirm deletion? (y/n): ");
-    
+    string confirm = InputHelper::getInputString("Are you sure you want to delete this contract? (y/n): ");
     if (confirm == "y" || confirm == "Y")
     {
         if (repo.remove(targetID))
         {
             repo.writeToFile();
-            cout << "[ContractMenu] Contract deleted successfully, ID: " << targetID << endl;
-            LOG("[ContractMenu] Contract deleted successfully");
+            cout << "[Success] Contract deleted successfully, ID: " << targetID << "\n";
+            LOG("[ContractMenu] Contract deleted successfully, ID: " + targetID);
         }
         else
         {
-            cout << "[Error] Contract deletion failed, please check debug!" << endl;
+            cout << "[Error] Contract deletion failed!\n";
         }
     }
     else
     {
-        cout << "[Abort] Deletion aborted" << endl;
-        LOG("[ContractMenu] Delete operation cancelled by user");
+        cout << "[Abort] Deletion cancelled by user.\n";
+        LOG("[ContractMenu] Contract deletion cancelled");
     }
+    InputHelper::getInputOptionalString("Press Enter to return...");
 }
 
 void ContractMenu::printMenu()
 {
     SystemHelper::clearScreen();
-    cout << "=====Contract Menu=====\n";
+    cout << "=========================================\n";
+    cout << "           CONTRACT MANAGEMENT\n";
+    cout << "=========================================\n";
     cout << "1. Create a Contract\n";
-    cout << "2. Read Contract\n";
+    cout << "2. Read / Search Contracts\n";
     cout << "3. Update a Contract\n";
     cout << "4. Delete a Contract\n";    
 }
@@ -224,6 +598,8 @@ void ContractMenu::handleChoice(int choice)
         deleteContract();
         break;
     default:
-        cout << "[Error] Invalid option in Contract menu\n";
+        cout << "[Error] Invalid option in Contract menu!\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+        break;
     }
 }

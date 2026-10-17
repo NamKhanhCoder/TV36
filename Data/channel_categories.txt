@@ -1,3 +1,5 @@
-TL001|sport|the thao danh cho nguwoi yeu bong
+TL001|thethao|the thao danh cho nguwoi yeu bong
 TL002|education|day be hoc hat
 TL004|thoi su|thoi su the gioi
+TL005|sport3|ooo
+TL006|choso|kocoj

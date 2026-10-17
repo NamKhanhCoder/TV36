@@ -12,6 +12,8 @@ private:
     void readChannelCategory();
     void updateChannelCategory();
     void deleteChannelCategory();
+
+    bool isNameExisted(const string &name);
 protected:
     void printMenu();
     void handleChoice(int choice);

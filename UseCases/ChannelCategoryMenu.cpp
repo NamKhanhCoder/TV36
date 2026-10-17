@@ -14,8 +14,15 @@ ChannelCategoryMenu::ChannelCategoryMenu() : repo("Data/channel_categories.txt",
 void ChannelCategoryMenu::createChannelCategory()
 {
     SystemHelper::clearScreen();
+
     cout << "Enter channel category informations:" << endl;
     string name = InputHelper::getInputString("Category's name:");
+    while(isNameExisted(name))
+    {
+        cout << "[Error] Category name already exists, abort\n";
+        name = InputHelper::getInputString("Category's name:");
+    }
+
     string description = InputHelper::getInputOptionalString("Category's description:");
 
     ChannelCategory temp(repo.generateNextID(), name, description);
@@ -81,23 +88,45 @@ void ChannelCategoryMenu::updateChannelCategory()
         cout << "[Error] Category not found, ID: " << inputID << endl;
         return;
     }
-    SystemHelper::clearScreen();
-    cout << "=====Category current information=====" << endl;
-    TablePrinter::printSingle(widths, headers, category->exportToVector());
 
-    cout << "Enter Category new information (skip to keep it as it is)\n";
+    int choice;
 
-    string name = InputHelper::getInputOptionalString("Category name:");
-    string description = InputHelper::getInputOptionalString("Description:");
-
-    if(name !="")
+    do
     {
-        category->setName(name);
-    }
-    if(description !="")
-    {
-        category->setDescription(description);
-    }
+
+        SystemHelper::clearScreen();
+        cout << "=====Category current information=====" << endl;
+        TablePrinter::printSingle(widths, headers, category->exportToVector());
+
+        //cout << "Enter Category new information (skip to keep it as it is)\n";
+
+        cout << "What you wanna change?\n1. Name\n2. Description\n3. Done\n";
+
+        choice = InputHelper::getInputInt("Enter your choice: ");
+        switch (choice)
+        {
+        case 1:
+        {
+            string name = InputHelper::getInputOptionalString("Category name:");
+            while(isNameExisted(name))
+            {
+                cout << "[Error] Category name already exists, abort\n";
+                name = InputHelper::getInputString("Category's name:");
+            }
+            category->setName(name);
+        }
+            break;
+        case 2:
+        {
+            string description = InputHelper::getInputOptionalString("Category description:");
+            category->setDescription(description);
+        }
+            break;
+        default:
+            cout << "[Error] Invalid choice, please try again.\n";
+        }
+    } while (choice != 3);
+
 
     repo.writeToFile();
     LOG("[CategoryMenu] Category information updated successfully");
@@ -150,6 +179,20 @@ void ChannelCategoryMenu::deleteChannelCategory()
         cout << "[Abort] Deletion aborted" << endl;
         LOG("[ChannelCategoryMenu] Delete operation cancelled by user");
     }
+}
+
+bool ChannelCategoryMenu::isNameExisted(const string &name)
+{
+    string target = convertToUpper(name);
+
+    for (const ChannelCategory &category : repo.readAll())
+    {
+        if (convertToUpper(category.getName()) == target)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 void ChannelCategoryMenu::printMenu()

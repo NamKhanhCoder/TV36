@@ -42,39 +42,39 @@ Contract::Contract(string id, string customerID, string packageID, string stbID,
 }
 
 // SET --------------------------------------------------
-void Contract::set_customerID(string &customerID)
+void Contract::set_customerID(const string &customerID)
 {
     this->customerID = customerID;
 }
-void Contract::set_packageID(string &packageID)
+void Contract::set_packageID(const string &packageID)
 {
     this->packageID = packageID;
 }
-void Contract::set_stbID(string &stbID)
+void Contract::set_stbID(const string &stbID)
 {
     this->stbID = stbID;
 }
-void Contract::set_signDate(Date &signDate)
+void Contract::set_signDate(const Date &signDate)
 {
     this->signDate = signDate;
 }
-void Contract::set_startDate(Date &startDate)
+void Contract::set_startDate(const Date &startDate)
 {
     this->startDate = startDate;
 }
-void Contract::set_endDate(Date &endDate)
+void Contract::set_endDate(const Date &endDate)
 {
     this->endDate = endDate;
 }
-void Contract::set_installationAddress(string &installationAddress)
+void Contract::set_installationAddress(const string &installationAddress)
 {
     this->installationAddress = installationAddress;
 }
-void Contract::set_monthlyFee(string &monthlyFee)
+void Contract::set_monthlyFee(const string &monthlyFee)
 {
     this->monthlyFee = monthlyFee;
 }
-void Contract::set_status(ContractStatus &status)
+void Contract::set_status(ContractStatus status)
 {
     this->status = status;
 }
