@@ -29,8 +29,8 @@ void NoiDungVODMenu::xemDanhSach()
         cout << "Danh sach noi dung hien dang rong !" << endl;
         return;
     }
-    vector<int> widths = {8, 34, 10, 5, 45, 5, 45, 15};
-    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
+    vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
+    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong (phut)", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
     TablePrinter::printTable(widths, headers, repo.exportToVector());
     InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
     SystemHelper::clearScreen();
@@ -65,7 +65,7 @@ void NoiDungVODMenu::themNoiDung()
     int thoiLuong;
     while (true)
     {
-        thoiLuong = InputHelper::getInputInt("Nhap thoi luong cua noi dung: ");
+        thoiLuong = InputHelper::getInputInt("Nhap thoi luong cua noi dung (phut): ");
         if (thoiLuong <= 0)
         {
             cout << "Thoi luong phai lon hon 0!" << endl;
@@ -186,8 +186,8 @@ void NoiDungVODMenu::timKiem()
     cout << "5. Tim kiem theo trang thai" << endl;
     cout << "Bam bat ki de quay lai." << endl;
     int luaChon = InputHelper::getInputInt("Nhap lua chon: ");
-    vector<int> widths = {8, 34, 10, 5, 45, 5, 45, 15};
-    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
+    vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
+    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong (phut)", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
     repo.loadFromFile();
     const vector<NoiDungVOD> &danhSach = repo.readAll(); // ta chỉ đọc để tìm kiếm chứ không sửa đổi hay hoán đổi vị trí các phần tử như bên sapXep, nên  có thể dùng tham chiếu const &
     int s = danhSach.size();
@@ -340,8 +340,8 @@ void NoiDungVODMenu::sapXep()
     cout << "4. Sap xep theo nam phat hanh (cu -> moi)" << endl;
     cout << "0. Quay lai" << endl;
     int luaChon = InputHelper::getInputInt("Nhap lua chon: ");
-    vector<int> widths = {8, 34, 10, 5, 45, 5, 45, 15};
-    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
+    vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
+    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong (phut)", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
     vector<NoiDungVOD> danhSach = repo.readAll();
     switch (luaChon)
     {
@@ -431,7 +431,7 @@ void NoiDungVODMenu::sapXep()
 }
 // Chuc nang cap nhat: tim theo ma VOD, hien thi thong tin hien tai va cho phep sua tung truong
 void NoiDungVODMenu::capNhat()
-{   
+{
     string id = InputHelper::getInputString("Nhap ma VOD can cap nhat: ");
     if (id.find('|') != string::npos)
     {
@@ -451,7 +451,7 @@ void NoiDungVODMenu::capNhat()
         cout << "MA NOI DUNG HIEN TAI: " << id << endl;
         cout << "Ten noi dung: " << p->getTenNoiDung() << endl;
         cout << "The loai: " << p->getTheLoai() << endl;
-        cout << "Thoi Luong: " << p->getThoiLuong() << endl;
+        cout << "Thoi Luong (phut): " << p->getThoiLuong() << endl;
         cout << "Mo ta: " << p->getMoTa() << endl;
         cout << "Nam phat hanh: " << p->getNamPhatHanh() << endl;
         cout << "URL: " << p->getUrl() << endl;
@@ -469,7 +469,7 @@ void NoiDungVODMenu::capNhat()
             cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
             return;
         }
-        int thoiLuong = InputHelper::getInputOptionalInt("Cap nhat thoi luong: ");
+        int thoiLuong = InputHelper::getInputOptionalInt("Cap nhat thoi luong (phut): ");
         string moTa = InputHelper::getInputOptionalString("Cap nhat mo ta: ");
         if (moTa.find('|') != string::npos)
         {
@@ -584,24 +584,31 @@ void NoiDungVODMenu::handleChoice(int choice)
     switch (choice)
     {
     case 1:
+        SystemHelper::clearScreen();
         xemDanhSach();
         break;
     case 2:
+        SystemHelper::clearScreen();
         themNoiDung();
         break;
     case 3:
+        SystemHelper::clearScreen();
         timKiem();
         break;
     case 4:
+        SystemHelper::clearScreen();
         sapXep();
         break;
     case 5:
+        SystemHelper::clearScreen();
         capNhat();
         break;
     case 6:
+        SystemHelper::clearScreen();
         xoaNoiDung();
         break;
     default:
+        SystemHelper::clearScreen();
         cout << "Lua chon khong hop le, vui long thu lai!" << endl;
         break;
     }
@@ -609,6 +616,7 @@ void NoiDungVODMenu::handleChoice(int choice)
 // Hien thi giao dien menu quan ly noi dung VOD
 void NoiDungVODMenu::printMenu()
 {
+    SystemHelper::clearScreen();
     cout << "======QUAN LY NOI DUNG VOD======" << endl;
     cout << "1. Xem danh sach noi dung VOD" << endl;
     cout << "2. Them noi dung VOD moi" << endl;
