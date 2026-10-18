@@ -1,0 +1,10 @@
+PHT001|HD001|STB001|2026-09-10 08:30|Thiet bi khong len nguon|UU_TIEN|DA_DONG|Da kiem tra va doi adapter nguon moi|2026-09-10 11:00
+PHT002|HD002|STB002|2026-09-15 14:00|Kenh VTV3 bi giat lag|BINH_THUONG|DA_DONG|Cap nhat phan mem STB va toi uu duong truyen|2026-09-15 16:30
+PHT003|HD003|STB003|2026-09-20 09:15|Dieu khien tu xa khong nhan tin hieu|BINH_THUONG|DA_DONG|Thay remote moi cho khach hang|2026-09-20 10:45
+PHT004|HD004|STB004|2026-10-01 19:30|Khong xem duoc kenh HBO|UU_TIEN|DA_DONG|Kich hoat lai goi cuoc tren he thong|2026-10-01 20:15
+PHT005|HD005|STB005|2026-10-05 10:00|Bao tri thiet bi dinh ky|BINH_THUONG|DA_DONG|Ve sinh may va kiem tra ket noi mang tot|2026-10-05 11:30
+PHT006|HD006|STB006|2026-10-10 15:20|Man hinh hien thi loi ma loi E01|KHAN_CAP|DA_DONG|Huong dan khach cam lai the giai ma|2026-10-10 15:40
+PHT007|HD007|STB007|2026-10-12 08:45|Khong vao duoc kho phim VOD|BINH_THUONG|DANG_XU_LY||
+PHT008|HD008|STB008|2026-10-15 17:10|STB bi nong bat thuong khi xem lau|UU_TIEN|DANG_XU_LY||
+PHT009|HD009|STB009|2026-10-16 09:00|Yeu cau kiem tra hop dong het han|BINH_THUONG|TIEP_NHAN||
+PHT010|HD010|STB010|2026-10-17 11:30|Thiet bi khong nhan dia chi IP mang|KHAN_CAP|TIEP_NHAN||

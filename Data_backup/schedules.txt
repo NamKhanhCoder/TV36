@@ -1,0 +1,10 @@
+LPS001|KENH001|Thoi su 19h|2026-10-17 19:00|2026-10-17 19:45|Ban tin thoi su Viet Nam va quoc te
+LPS002|KENH001|Chao buoi sang|2026-10-18 06:00|2026-10-18 07:00|Diem tin dau ngay
+LPS003|KENH002|Ca phe sang|2026-10-18 07:00|2026-10-18 08:00|Giai tri va loi song
+LPS004|KENH002|Chieu phim cuoi tuan|2026-10-18 20:00|2026-10-18 22:00|Phim truyen chon loc
+LPS005|KENH003|Day tieng Anh tren truyen hinh|2026-10-18 08:30|2026-10-18 09:15|Hoc tieng Anh giao tiep
+LPS006|KENH004|Ngoai hang Anh truc tiep|2026-10-18 21:00|2026-10-18 23:00|Vong 8 Premier League
+LPS007|KENH005|Hanh tinh xanh|2026-10-18 14:00|2026-10-18 15:00|Kham pha dai duong ky thu
+LPS008|KENH006|Phim bom tan HBO|2026-10-18 21:30|2026-10-18 23:30|The Dark Knight Rises
+LPS009|KENH007|Ben 10|2026-10-18 16:00|2026-10-18 17:00|Phim hoat hinh thieu nhi
+LPS010|KENH010|Global News Hour|2026-10-18 18:00|2026-10-18 19:00|World news update

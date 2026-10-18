@@ -1,0 +1,10 @@
+VOD001|Mat biec|Tinh cam|110|Phim chuyen the tu truyen Nguyen Nhat Anh|2019|https://www.netflix.com/vn/phim101|DANG_PHUC_VU
+VOD002|Bo gia|Tam ly|128|Phim dien anh tam ly gia dinh Viet Nam|2021|https://www.netflix.com/vn/phim102|DANG_PHUC_VU
+VOD003|Hai Phuong|Hanh dong|98|Phim hanh dong Ngo Thanh Van|2019|https://www.netflix.com/vn/phim103|DANG_PHUC_VU
+VOD004|Lat mat 7|Hanh dong|130|Phim gia dinh hanh dong Ly Hai|2023|https://www.tv360.com/vn/phim204|DANG_PHUC_VU
+VOD005|Toi thay hoa vang tren co xanh|Tinh cam|104|Phim chuyen the tu truyen Nguyen Nhat Anh|2015|https://www.netflix.com/vn/phim105|NGUNG_PHUC_VU
+VOD006|Em chua 18|Hai|97|Phim hai tinh cam hoc duong|2017|https://www.tv360.com/vn/phim206|DANG_PHUC_VU
+VOD007|Song song|Kinh di|100|Phim kinh di Viet Nam|2021|https://www.netflix.com/vn/phim107|NGUNG_PHUC_VU
+VOD008|Gai gia lam chieu V|Hai|120|Phim hai tam ly xa hoi|2021|https://www.tv360.com/vn/phim208|DANG_PHUC_VU
+VOD009|Tiec trang mau|Hai|118|Phim tam ly hai kich phong khach|2020|https://www.netflix.com/vn/phim109|DANG_PHUC_VU
+VOD010|Mai|Tam ly|131|Phim tam ly tinh cam Tran Thanh|2024|https://www.tv360.com/vn/phim210|DANG_PHUC_VU
