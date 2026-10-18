@@ -365,7 +365,7 @@ void NoiDungVODMenu::sapXep()
     }
     case 2:
     {
-        sort(danhSach.begin(), danhSach.end(), greater<NoiDungVOD>()); // tự động gọi toán tử operator <, ko cần thêm tiêu chí so sánh
+        sort(danhSach.begin(), danhSach.end(), greater<NoiDungVOD>()); // tự động gọi toán tử operator >, ko cần thêm tiêu chí so sánh
         ofstream tenFile("Data/noidungvod.txt");                       // goi hàm ofstream là mặc định sẽ xoá nội dung trong file
         cout << "Danh sach noi dung sau khi sap xep xong: " << endl;
         vector<vector<string>> data;
@@ -463,19 +463,31 @@ void NoiDungVODMenu::capNhat()
             cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
             return;
         }
-        string theLoai = InputHelper::getInputOptionalString("Cap nhat the loai: ");
-        if (theLoai.find('|') != string::npos)
+        string theLoai;
+        while (true)
         {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-            return;
+            theLoai = InputHelper::getInputOptionalString("Cap nhat the loai: ");
+            if (theLoai.find('|') != string::npos)
+            {
+                cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+                continue;
+            }
+            break;
         }
+
         int thoiLuong = InputHelper::getInputOptionalInt("Cap nhat thoi luong (phut): ");
-        string moTa = InputHelper::getInputOptionalString("Cap nhat mo ta: ");
-        if (moTa.find('|') != string::npos)
+        string moTa;
+        while (true)
         {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-            return;
+            moTa = InputHelper::getInputOptionalString("Cap nhat mo ta: ");
+            if (moTa.find('|') != string::npos)
+            {
+                cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+                continue;
+            }
+            break;
         }
+
         int namPhatHanh = InputHelper::getInputOptionalInt("Cap nhat nam phat hanh: ");
         int choice = InputHelper::getInputOptionalInt("Cap nhat trang thai phim (1.DANG_PHUC_VU/ 2. NGUNG_PHUC_VU): ");
         if (!tenNoiDung.empty())

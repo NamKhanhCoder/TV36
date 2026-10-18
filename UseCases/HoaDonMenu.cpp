@@ -108,6 +108,7 @@ void HoaDonMenu::themHoaDon()
     hoaDonMoi.setNgayTraTien(ngayTraTien);
     hoaDonMoi.setTrangThai(trangThai);
     repoHoaDon.create(hoaDonMoi);
+    cout << "Them hoa don moi thanh cong!" << endl;
     repoHoaDon.writeToFile();
 }
 // Chuc nang tim kiem hoa don: tim theo ma HDN, ma HD, ma KH, ngay lap, han tra, ngay tra, trang thai
@@ -121,7 +122,7 @@ void HoaDonMenu::timKiem()
     cout << "5. Tim theo han tra tien hoa don" << endl;
     cout << "6. Tim theo ngay tra tien hoa don" << endl;
     cout << "7. Tim theo trang thai thanh toan" << endl;
-    cout << "0. Quay lai" << endl;
+    cout << "Bam bat ki de quay lai." << endl;
     int choice = InputHelper::getInputInt("Nhap lua chon: ");
     repoHoaDon.loadFromFile();
     vector<int> widths = {8, 8, 8, 12, 12, 14, 15, 17};
@@ -304,7 +305,7 @@ void HoaDonMenu::timKiem()
         TablePrinter::printTable(widths, headers, data);
         break;
     }
-    case 0:
+    default:
     {
         return;
         break;
@@ -617,6 +618,8 @@ void HoaDonMenu::xoaHoaDon()
         else
             return;
     }
+    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    SystemHelper::clearScreen();
 }
 // Xu ly lua chon chuc nang tu menu quan ly hoa don
 void HoaDonMenu::handleChoice(int choice)
