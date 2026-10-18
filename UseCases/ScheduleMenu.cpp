@@ -63,8 +63,8 @@ void ScheduleMenu::saveChanges()
 void ScheduleMenu::inputFields(Schedule& item, bool editing)
 {
     if (editing) cout << "Leave a field empty to keep its current value.\n";
-    string channelID = inputField("Channel ID (e.g. KENH001): ", editing);
-    if (!channelID.empty()) item.setChannelID(convertToUpper(channelID));
+    string channelID = InputHelper::getInputID("Channel ID (e.g. KENH001): ", "KENH", editing);
+    if (!channelID.empty()) item.setChannelID(channelID);
 
     string programName = inputField("Program name: ", editing);
     if (!programName.empty()) item.setProgramName(programName);

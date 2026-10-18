@@ -66,26 +66,20 @@ void ChannelMenu::inputFields(Channel& item, bool editing)
     string name = inputField("Name: ", editing);
     if (!name.empty()) item.setName(name);
 
-    string categoryID = inputField("Category ID (e.g. TL004): ", editing);
-    if (!categoryID.empty()) item.setCategoryID(convertToUpper(categoryID));
+    string categoryID = InputHelper::getInputID("Category ID (e.g. TL004): ", "TL", editing);
+    if (!categoryID.empty()) item.setCategoryID(categoryID);
 
-    string number = inputField("Channel number (> 0): ", editing);
-    if (!number.empty())
-    {
-        size_t used = 0;
-        int value = stoi(number, &used);
-        if (used != number.size()) throw invalid_argument("Channel number must be an integer.");
-        item.setChannelNumber(value);
-    }
+    int number = InputHelper::getInputPositiveInt("Channel number (> 0): ", editing);
+    if (number != 0) item.setChannelNumber(number);
 
-    string resolution = inputField("Resolution (SD/HD/FHD/UHD): ", editing);
-    if (!resolution.empty()) item.setResolution(convertToUpper(resolution));
+    string resolution = InputHelper::getInputChannelResolution("Resolution (SD/HD/FHD/UHD): ", editing);
+    if (!resolution.empty()) item.setResolution(resolution);
 
     string streamURL = inputField("Stream URL: ", editing);
     if (!streamURL.empty()) item.setStreamURL(streamURL);
 
-    string status = inputField("Status (DANG_PHAT/NGUNG_PHAT): ", editing);
-    if (!status.empty()) item.setStatus(convertToUpper(status));
+    string status = InputHelper::getInputChannelStatus("Trang thai kenh", editing);
+    if (!status.empty()) item.setStatus(status);
 
     // TODO integration: kiem tra categoryID ton tai va channelNumber khong trung.
 }
