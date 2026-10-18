@@ -1,6 +1,7 @@
 #include "Date.h"
 #include <stdexcept>
 #include <vector>
+#include <ctime>
 
 bool Date::isValidDate(int d, int m, int y) const
 {
@@ -182,6 +183,13 @@ void Date::addMonths(int months)
     {
         day = maxDays;
     }
+}
+
+Date Date::getCurrentDate()
+{
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    return Date(ltm->tm_mday, 1 + ltm->tm_mon, 1900 + ltm->tm_year);
 }
 
 //operators 

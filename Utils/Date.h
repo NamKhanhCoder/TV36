@@ -34,6 +34,8 @@ public:
     void addDays(int days);
     void addMonths(int months);
 
+    static Date getCurrentDate();
+
     // Operator Overloading
     bool operator==(const Date& other) const;
     bool operator!=(const Date& other) const;

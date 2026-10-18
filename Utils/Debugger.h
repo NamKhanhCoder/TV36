@@ -10,7 +10,7 @@
  * Comment dòng #define DEBUG_MODE lại để tắt toàn bộ log khi nộp bài.
  * Bỏ comment để bật log khi đang code và fix bug.
  */
-#define DEBUG_MODE 
+// #define DEBUG_MODE 
 
 #ifdef DEBUG_MODE
 

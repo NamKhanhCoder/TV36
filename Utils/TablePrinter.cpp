@@ -35,7 +35,14 @@ string TablePrinter::formatCell(const string &data, int width)
     string result = "";
     if (data.length() > width) // case overflow
     {
-        result = data.substr(0, width - 3) + "...";//truncate data with...
+        if (width <= 3)
+        {
+            result = string(width,'#');
+        }
+        else
+        {
+            result = data.substr(0, width - 3) + "..."; // truncate data with ...
+        }
     }
     else
     {
