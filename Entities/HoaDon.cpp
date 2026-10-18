@@ -82,12 +82,14 @@ void HoaDon::setTrangThai(string trangThai)
 }
 // Chuyen doi doi tuong hoa don thanh chuoi ghi vao file (xu ly NONE neu chua thanh toan)
 string HoaDon::exportToString() const
-{   
+{
     string strNgayTra;
-    if(ngayTraTien.isEmpty()){
+    if (ngayTraTien.isEmpty())
+    {
         strNgayTra = "NONE";
     }
-    else{
+    else
+    {
         strNgayTra = ngayTraTien.toString();
     }
     return id + "|" + maHopDong + "|" + maKhachHang + "|" + to_string((long long)soTien) + "|" + ngayLap.toString() + "|" + hanTraTien.toString() + "|" + strNgayTra + "|" + trangThai;
@@ -104,7 +106,14 @@ void HoaDon::parseFromString(const string &data)
     getline(ss, token, '|');
     this->maKhachHang = token;
     getline(ss, token, '|');
-    this->soTien = stod(token);
+    try // chua doan ma co nguy co sinh ra loi
+    {
+        this->soTien = stod(token);
+    }
+    catch (...) // dung de bat tat ca cac ngoai le khac
+    {
+        this->soTien = 0; // Neu chuoi loi thi gan ve 0 , ko bi crash
+    }
     getline(ss, token, '|');
     this->ngayLap = Date(token);
     getline(ss, token, '|');
@@ -114,8 +123,9 @@ void HoaDon::parseFromString(const string &data)
     {
         this->ngayTraTien = Date();
     }
-    else{
-    this->ngayTraTien = Date(token);
+    else
+    {
+        this->ngayTraTien = Date(token);
     }
     getline(ss, token);
     this->trangThai = token;
@@ -124,10 +134,12 @@ void HoaDon::parseFromString(const string &data)
 vector<string> HoaDon::exportToVector() const
 {
     string strNgayTra;
-    if(ngayTraTien.isEmpty()){
+    if (ngayTraTien.isEmpty())
+    {
         strNgayTra = "NONE";
     }
-    else{
+    else
+    {
         strNgayTra = ngayTraTien.toString();
     }
     return {id, maHopDong, maKhachHang, to_string((long long)soTien), ngayLap.toString(), hanTraTien.toString(), strNgayTra, trangThai};

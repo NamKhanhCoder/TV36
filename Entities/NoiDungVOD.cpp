@@ -100,11 +100,25 @@ void NoiDungVOD::parseFromString(const string &data)
     getline(ss, token, '|');
     this->theLoai = token;
     getline(ss, token, '|');
-    this->thoiLuong = stoi(token);
+    try // chua doan ma co nguy co sinh ra loi
+    {
+        this->thoiLuong = stoi(token);
+    }
+    catch (...) // dung de bat tat ca cac ngoai le khac
+    {
+        this->thoiLuong = 0; // Neu chuoi loi thi gan ve 0 , ko bi crash
+    }
     getline(ss, token, '|');
     this->moTa = token;
     getline(ss, token, '|');
-    this->namPhatHanh = stoi(token);
+    try
+    {
+        this->namPhatHanh = stoi(token);
+    }
+    catch (...)
+    {
+        this->namPhatHanh = 0;
+    }
     getline(ss, token, '|');
     this->url = token;
     getline(ss, token);
