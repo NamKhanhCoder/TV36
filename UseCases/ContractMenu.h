@@ -5,6 +5,8 @@
 #include "Entities/Customer.h"
 #include "Entities/Package.h"
 #include "Entities/SetTopBox.h"
+#include "Entities/HoaDon.h"
+#include "Entities/SupportTicket.h"
 #include <string>
 #include <vector>
 
@@ -17,14 +19,14 @@ private:
     Repository<Customer> repoCustomer;
     Repository<Package> repoPackage;
     Repository<SetTopBox> repoSetTopBox;
+    Repository<HoaDon> repoHoaDon;
+    Repository<SupportTicket> repoSupportTicket;
 
-    // Table display helpers
     void printCustomerTable();
     void printPackageTable();
     void printSetTopBoxTable();
     void printContractTable(const vector<vector<string>> &data);
 
-    // Selection & Validation helpers
     string selectCustomerID();
     string selectPackageID();
     string selectSetTopBoxID(const string &currentContractID = "");
@@ -36,13 +38,11 @@ private:
     ContractStatus inputStatus();
     ContractStatus inputOptionalStatus(ContractStatus currentStatus);
 
-    // CRUD operations
     void createContract();
     void readContract();
     void updateContract();
     void deleteContract();
 
-    // Modular Update sub-functions
     void updatePackage(Contract *contract);
     void updateSetTopBox(Contract *contract);
     void extendContract(Contract *contract);

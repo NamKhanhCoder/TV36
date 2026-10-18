@@ -1,18 +1,18 @@
 #include "ChannelCategory.h"
 #include "Utils/StringHelper.h"
 
-ChannelCategory::ChannelCategory(string id, string name, string description) : Entity(id)
+ChannelCategory::ChannelCategory(const string &id, const string &name, const string &description) : Entity(id)
 {
     this->name = name;
     this->description = description;
 }
 
-void ChannelCategory::setName(string &name)
+void ChannelCategory::setName(const string &name)
 {
     this->name = name;
 }
 
-void ChannelCategory::setDescription(string &description)
+void ChannelCategory::setDescription(const string &description)
 {
     this->description = description;
 }

@@ -11,10 +11,10 @@ private:
 
 public:
     ChannelCategory() : Entity() {};
-    ChannelCategory(string id, string name, string description);
+    ChannelCategory(const string &id, const string &name, const string &description);
 
-    void setName(string &name);
-    void setDescription(string &description);
+    void setName(const string &name);
+    void setDescription(const string &description);
     
     string getName() const;
     string getDescription() const;

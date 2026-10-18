@@ -8,20 +8,26 @@
 
 using namespace std;
 
-// CONSTRUCTOR & INITIALIZATION ===================================================================== 
+
+// CONSTRUCTOR & INITIALIZATION ====================================================================
 ContractMenu::ContractMenu() : 
     repo("Data/contracts.txt", "Data/contracts_counter.txt", "HD"),
     repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"),
     repoPackage("Data/packages.txt", "Data/packages_counter.txt", "GOI"),
-    repoSetTopBox("Data/settopboxes.txt", "Data/settopboxes_counter.txt", "STB")
+    repoSetTopBox("Data/settopboxes.txt", "Data/settopboxes_counter.txt", "STB"),
+    repoHoaDon("Data/hoadon.txt", "Data/hdn_counter.txt", "HDN"),
+    repoSupportTicket("Data/support_tickets.txt", "Data/support_tickets_counter.txt", "PHT")
 {
     repo.loadFromFile();   
     repoCustomer.loadFromFile();
     repoPackage.loadFromFile();
     repoSetTopBox.loadFromFile();
+    repoHoaDon.loadFromFile();
+    repoSupportTicket.loadFromFile();
 }
 
-// TABLE PRINTING HELPERS =====================================================================
+
+// TABLE PRINTING HELPERS ===================================================================
 void ContractMenu::printCustomerTable()
 {
     vector<int> widths = {8, 22, 12, 25, 20};
@@ -53,7 +59,8 @@ void ContractMenu::printContractTable(const vector<vector<string>> &data)
     TablePrinter::printTable(widths, headers, data);
 }
 
-// VALIDATION & SELECTION HELPERS =====================================================================
+
+// VALIDATION & SELECTION HELPERS ===================================================================
 bool ContractMenu::isSetTopBoxInUse(const string &stbID, const string &excludeContractID)
 {
     for (const auto &c : repo.readAll())
@@ -114,6 +121,14 @@ string ContractMenu::selectSetTopBoxID(const string &currentContractID)
         if (stb == nullptr)
         {
             cout << "[Error] Set-Top Box ID not found: " << id << ". Please choose from the table above.\n";
+            continue;
+        }
+
+        if (stb->getTechnicalStatus() != TechnicalStatus::TOT)
+        {
+            cout << "[Error] Set-Top Box " << id << " cannot be allocated because its status is: " 
+                 << stb->getTechnicalStatusString() << " (must be TOT).\n";
+            cout << "Please select a functional Set-Top Box.\n";
             continue;
         }
 
@@ -202,7 +217,8 @@ ContractStatus ContractMenu::inputOptionalStatus(ContractStatus currentStatus)
     }
 }
 
-// CRUD OPERATIONS =====================================================================
+// CRUD ===================================================================
+
 void ContractMenu::createContract()
 {
     SystemHelper::clearScreen();
@@ -210,54 +226,64 @@ void ContractMenu::createContract()
     cout << "         CREATE NEW CONTRACT\n";
     cout << "=========================================\n";
 
-    // 1. Chon Khach hang (co kiem tra ton tai)
+    // Khach hang kiem tra ton tai
     string customerID = selectCustomerID();
     if (customerID.empty())
     {
         cout << "[Notice] Contract creation cancelled.\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
+        InputHelper::getInputOptionalString("Press Enter to go back...");
         return;
     }
 
-    // 2. Chon Goi cuoc (co kiem tra ton tai)
+    // Goi cuoc kiem tra ton tai
     string packageID = selectPackageID();
     if (packageID.empty())
     {
         cout << "[Notice] Contract creation cancelled.\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
+        InputHelper::getInputOptionalString("Press Enter to go back...");
         return;
     }
 
-    // 3. Chon Set-Top Box (kiem tra ton tai va khong trung thiet bi dang dung)
+    // Set-Top Box kiem tra ton tai, phai TOT, va khong trung thiet bi dang dung
     string stbID = selectSetTopBoxID();
     if (stbID.empty())
     {
         cout << "[Notice] Contract creation cancelled.\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
+        InputHelper::getInputOptionalString("Press Enter to go back...");
         return;
     }
 
-    // 4. Nhap cac moc ngay: signDate <= startDate < endDate
+    // signDate <= startDate < endDate
     SystemHelper::clearScreen();
     cout << "===== Contract Period & Installation =====\n";
-    Date signDate = InputHelper::getInputDate("Sign Date");
+    Date signDate = InputHelper::getInputDate("Sign Date (dd/mm/yyyy): ");
     Date startDate = inputValidStartDate(signDate);
     Date endDate = calculateEndDate(startDate);
 
-    // 5. Dia chi lap dat
+    // Dia chi
     string installationAddress = InputHelper::getInputString("Installation Address: ");
 
-    // 6. Tinh phi thang: Mac dinh theo Package, co the tuy chinh gia thoa thuan
+    // Tinh phi thang: Mac dinh theo Package, co the tuy chinh gia thoa thuan
     Package *pkg = repoPackage.readByID(packageID);
     string defaultFee = to_string(pkg->getMonthlyPrice());
     cout << "\nPackage standard monthly fee: " << defaultFee << " VND\n";
     string customFee = InputHelper::getInputOptionalString("Enter agreed monthly fee (press Enter to use standard fee): ");
-    string monthlyFee = customFee.empty() ? defaultFee : customFee;
+    string monthlyFee = defaultFee;
+    if (!customFee.empty())
+    {
+        try {
+            long long fee = stoll(customFee);
+            if (fee > 0) monthlyFee = customFee;
+            else cout << "[Warning] Invalid fee. Standard fee will be applied.\n";
+        } catch (...) {
+            cout << "[Warning] Invalid fee format. Standard fee will be applied.\n";
+        }
+    }
 
-    // 7. Trang thai hop dong ban dau
+    // Trang thai hop dong ban dau
     ContractStatus status = inputStatus();
 
-    // 8. Tao va luu hop dong
+    // Tao va luu hop dong
     Contract newContract(repo.generateNextID(), customerID, packageID, stbID,
                          signDate, startDate, endDate, installationAddress, monthlyFee, status);
 
@@ -272,7 +298,7 @@ void ContractMenu::createContract()
         LOG("[ContractMenu] Contract creation failed");
         cout << "\n[Error] Contract creation failed!\n";
     }
-    InputHelper::getInputOptionalString("Press Enter to return...");
+    InputHelper::getInputOptionalString("Press Enter to go back...");
 }
 
 void ContractMenu::readContract()
@@ -295,7 +321,7 @@ void ContractMenu::readContract()
             printContractTable(repo.exportToVector());
             cout << "Total: " << repo.readAll().size() << " record(s)\n";
             LOG("[ContractMenu] All contracts viewed");
-            InputHelper::getInputOptionalString("Press Enter to continue...");
+            InputHelper::getInputOptionalString("Press Enter to go back...");
         }
         else if (choice == 2)
         {
@@ -312,17 +338,19 @@ void ContractMenu::readContract()
                 TablePrinter::printSingle(widths, headers, contract->exportToVector());
             }
             LOG("[ContractMenu] Search contract completed");
-            InputHelper::getInputOptionalString("Press Enter to continue...");
+            InputHelper::getInputOptionalString("Press Enter to go back...");
         }
         else
         {
             cout << "[Error] Invalid option! Please choose again.\n";
-            InputHelper::getInputOptionalString("Press Enter to continue...");
+            InputHelper::getInputOptionalString("Press Enter to go back...");
         }
     }
 }
 
-// MODULAR UPDATE SUB-FUNCTIONS =====================================================================
+
+// UPDATE SUB-FUNCTIONS
+
 void ContractMenu::updatePackage(Contract *contract)
 {
     cout << "\n--- Change Service Package ---\n";
@@ -353,7 +381,17 @@ void ContractMenu::updatePackage(Contract *contract)
         string defaultFee = to_string(pkg->getMonthlyPrice());
         cout << "New package standard monthly fee: " << defaultFee << " VND\n";
         string customFee = InputHelper::getInputOptionalString("Enter agreed monthly fee (press Enter to use standard fee): ");
-        string newMonthlyFee = customFee.empty() ? defaultFee : customFee;
+        string newMonthlyFee = defaultFee;
+        if (!customFee.empty())
+        {
+            try {
+                long long fee = stoll(customFee);
+                if (fee > 0) newMonthlyFee = customFee;
+                else cout << "[Warning] Invalid fee. Standard fee applied.\n";
+            } catch (...) {
+                cout << "[Warning] Invalid fee format. Standard fee applied.\n";
+            }
+        }
 
         contract->set_monthlyFee(newMonthlyFee);
         cout << "[Success] Package updated to " << newPackageID << " with fee " << newMonthlyFee << " VND!\n";
@@ -382,6 +420,13 @@ void ContractMenu::updateSetTopBox(Contract *contract)
         if (stb == nullptr)
         {
             cout << "[Error] Set-Top Box not found: " << newStbID << ". Please try again.\n";
+            continue;
+        }
+
+        if (stb->getTechnicalStatus() != TechnicalStatus::TOT)
+        {
+            cout << "[Error] Set-Top Box " << newStbID << " is not in good condition (Status: " 
+                 << stb->getTechnicalStatusString() << "). Must be TOT.\n";
             continue;
         }
 
@@ -417,7 +462,6 @@ void ContractMenu::extendContract(Contract *contract)
         updatedEndDate.addMonths(addMonths);
         contract->set_endDate(updatedEndDate);
 
-        // Neu hop dong tung bi het han, tu dong hoi de mo lai trang thai ACTIVE
         if (contract->get_status() == ContractStatus::EXPIRED)
         {
             string reactivate = InputHelper::getInputString("Contract was EXPIRED. Reactivate to ACTIVE? (y/n): ");
@@ -469,7 +513,7 @@ void ContractMenu::updateContract()
     if (contract == nullptr)
     {
         cout << "[Error] Contract not found with ID: " << targetID << "\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
+        InputHelper::getInputOptionalString("Press Enter to go back...");
         return;
     }
 
@@ -496,7 +540,7 @@ void ContractMenu::updateContract()
             repo.writeToFile();
             cout << "\n[Success] All changes saved to file successfully!\n";
             LOG("[ContractMenu] Contract " + contract->getID() + " updated and saved");
-            InputHelper::getInputOptionalString("Press Enter to return...");
+            InputHelper::getInputOptionalString("Press Enter to go back...");
             break;
         }
 
@@ -538,7 +582,43 @@ void ContractMenu::deleteContract()
     if (contract == nullptr)
     {
         cout << "[Error] Contract not found: " << targetID << "\n";
-        InputHelper::getInputOptionalString("Press Enter to return...");
+        InputHelper::getInputOptionalString("Press Enter to go back...");
+        return;
+    }
+    
+    repoHoaDon.loadFromFile();
+    repoSupportTicket.loadFromFile();
+
+    bool hasHoaDon = false;
+    for (const auto &hd : repoHoaDon.readAll())
+    {
+        if (hd.getMaHopDong() == targetID)
+        {
+            hasHoaDon = true;
+            break;
+        }
+    }
+
+    bool hasTicket = false;
+    for (const auto &ticket : repoSupportTicket.readAll())
+    {
+        if (ticket.getContractID() == targetID)
+        {
+            hasTicket = true;
+            break;
+        }
+    }
+
+    if (hasHoaDon || hasTicket)
+    {
+        cout << "\n[Error] Cannot delete contract " << targetID << "!\n";
+        cout << "Reason: Referential integrity constraint violation:\n";
+        if (hasHoaDon)
+            cout << " - Contract is referenced by one or more Invoices (HoaDon).\n";
+        if (hasTicket)
+            cout << " - Contract is referenced by one or more Support Tickets (Phieu ho tro).\n";
+        cout << "Please remove related invoices/tickets before deleting this contract.\n";
+        InputHelper::getInputOptionalString("Press Enter to go back...");
         return;
     }
 
@@ -566,7 +646,7 @@ void ContractMenu::deleteContract()
         cout << "[Abort] Deletion cancelled by user.\n";
         LOG("[ContractMenu] Contract deletion cancelled");
     }
-    InputHelper::getInputOptionalString("Press Enter to return...");
+    InputHelper::getInputOptionalString("Press Enter to go back...");
 }
 
 void ContractMenu::printMenu()
@@ -599,7 +679,7 @@ void ContractMenu::handleChoice(int choice)
         break;
     default:
         cout << "[Error] Invalid option in Contract menu!\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
+        InputHelper::getInputOptionalString("Press Enter to go back...");
         break;
     }
 }
