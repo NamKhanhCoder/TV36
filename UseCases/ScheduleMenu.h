@@ -2,13 +2,18 @@
 #include "UseCases/BaseMenu.h"
 #include "Repositories/Repository.h"
 #include "Entities/Schedule.h"
+#include "Entities/Channel.h"
 
 class ScheduleMenu : public BaseMenu
 {
 private:
     Repository<Schedule> repo;
+    Repository<Channel> repoChannel;
     bool dataLoaded;
-    void inputFields(Schedule& item, bool editing);
+    bool inputFields(Schedule& item, bool editing);
+    void loadSchedules();
+    string findConflict(const Schedule& item);
+    void sortSchedules();
     void createSchedule();
     void readSchedule();
     void updateSchedule();

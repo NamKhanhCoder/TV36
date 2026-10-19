@@ -20,6 +20,9 @@ public:
     // Tra 0 neu bo trong luc sua; du lieu nhap thuc te phai lon hon 0.
     static int getInputPositiveInt(const string &message, bool optional = false);
     static string getInputChannelResolution(const string &message, bool optional = false);
+    static string getInputText(const string &message, bool optional = false);
+    static string getInputDateTime(const string &message, bool optional = false);
+    static bool getInputConfirmation(const string &message);
 
     static int getInputOptionalInt(const string &message = "");
     static double getInputOptionalDouble(const string &message = "");

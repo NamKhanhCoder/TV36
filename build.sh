@@ -13,7 +13,7 @@ if [ -z "$SRC" ]; then
 fi
 
 echo "[BUILD] Dang bien dich..."
-g++ -g -fdiagnostics-color=always $SRC -I"$DIR" -o main
+g++ -std=c++17 -g -fdiagnostics-color=always $SRC -I"$DIR" -o main
 
 # Kiem tra ket qua build
 if [ $? -eq 0 ]; then

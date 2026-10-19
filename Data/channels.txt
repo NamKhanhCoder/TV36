@@ -2,3 +2,9 @@ KENH001|VTV1|TL004|1|HD|https://example.com/vtv1.m3u8|DANG_PHAT
 KENH002|VTV The Thao|TL001|2|FHD|https://example.com/sports.m3u8|DANG_PHAT
 KENH003|VTV7|TL002|7|HD|https://example.com/vtv7.m3u8|DANG_PHAT
 KENH004|Name|TL004|69|SD|url.com|DANG_PHAT
+KENH005|Discovery Channel|TL007|50|FHD|https://example.com/discovery.m3u8|DANG_PHAT
+KENH006|HBO Cinema|TL003|40|FHD|https://example.com/hbo.m3u8|DANG_PHAT
+KENH007|Cartoon Network|TL006|30|HD|https://example.com/cartoon.m3u8|DANG_PHAT
+KENH008|MTV Music|TL008|25|HD|https://example.com/mtv.m3u8|DANG_PHAT
+KENH009|Bloomberg TV|TL009|15|HD|https://example.com/bloomberg.m3u8|DANG_PHAT
+KENH010|Ha Noi TV|TL010|10|HD|https://example.com/hanoi.m3u8|DANG_PHAT

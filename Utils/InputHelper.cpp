@@ -115,6 +115,61 @@ string InputHelper::getInputChannelResolution(const string &message, bool option
     }
 }
 
+string InputHelper::getInputText(const string &message, bool optional)
+{
+    string input;
+    while (true)
+    {
+        cout << message << endl;
+        if (!getline(cin, input)) throw runtime_error("Khong doc duoc du lieu.");
+        size_t first = input.find_first_not_of(" \t\v\f");
+        if (first == string::npos) input.clear();
+        else input = input.substr(first, input.find_last_not_of(" \t\v\f") - first + 1);
+        if (optional && input.empty()) return "";
+        if (!input.empty() && input.find_first_of("|\r\n") == string::npos) return input;
+        cout << "[Error] Text must not be empty or contain | / line breaks. Please enter again.\n";
+    }
+}
+
+string InputHelper::getInputDateTime(const string &message, bool optional)
+{
+    while (true)
+    {
+        string input = getInputText(message, optional);
+        if (optional && input.empty()) return "";
+        try
+        {
+            if (input.size() != 16 || input[4] != '-' || input[7] != '-' ||
+                input[10] != ' ' || input[13] != ':')
+                throw invalid_argument("Use yyyy-mm-dd HH:mm.");
+            for (size_t i = 0; i < input.size(); ++i)
+            {
+                if (i == 4 || i == 7 || i == 10 || i == 13) continue;
+                if (input[i] < '0' || input[i] > '9')
+                    throw invalid_argument("Date/time must contain digits.");
+            }
+            Date(input.substr(0, 10));
+            Time(input.substr(11, 5));
+            return input;
+        }
+        catch (const exception& error)
+        {
+            cout << "[Error] Invalid date/time: " << error.what() << " Please enter again.\n";
+        }
+    }
+}
+
+bool InputHelper::getInputConfirmation(const string &message)
+{
+    while (true)
+    {
+        string input = getInputText(message);
+        if (input == "y" || input == "Y") return true;
+        if (input == "n" || input == "N") return false;
+        cout << "[Error] Please enter y or n.\n";
+    }
+}
+
 int InputHelper::getInputInt(const string &message)
 {
 

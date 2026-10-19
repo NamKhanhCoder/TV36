@@ -1,130 +1,106 @@
-# Phần Hồng Anh: Channel và Schedule
+# Phần Hồng Anh — Channel và Schedule hoàn thiện
 
-Bản CRUD bổ sung trên TV36, đã cập nhật main của nhóm đến commit `d978f87`. Mục tiêu của bản này là thêm/xem/tìm/sửa/xóa và lưu file cho hai phân hệ theo cấu trúc nhóm. Các ràng buộc liên đối tượng để TODO theo thống nhất.
+## 1. Phiên bản và cách chạy
 
-## 1. Chạy và trình diễn
-
-Mở PowerShell tại thư mục chứa `main.cpp`:
+Bản làm việc cập nhật main TV36 đến commit nền `a189b52` ngày 19/10/2026. Các sửa đổi tiếp theo hoàn thiện phần kênh/lịch theo file debug 17/10. Main chung vẫn có 10 use case; chọn **4 — Channel**, **5 — Schedule**.
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1
-.\build\TV36.exe
+cd C:\Users\ADMIN\Desktop\devop\TV36
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -OutputName TV36-complete.exe
+.\build\TV36-complete.exe
+python tests\test_crud.py build\TV36-complete.exe
 ```
 
-Chọn `4` cho Channel, `5` cho Schedule. Trong mỗi menu: `1` thêm, `2` xem/tìm, `3` sửa, `4` xóa, `0` quay lại. Nhập `0` tại menu chính để thoát. Các trường sửa bỏ trống sẽ giữ nguyên; mô tả lịch nhập `-` để xóa nội dung. Sau mỗi thao tác nhấn Enter quay về menu. Nếu nhập sai, thao tác báo lỗi và quay về menu để chọn lại; dữ liệu sửa dở trên bản sao chưa được lưu.
+GCC/GDB đã có trên máy. Ứng dụng chỉ dùng C++17/thư viện chuẩn. Python chỉ cần khi chạy kiểm thử. Các file .exe cũ không tự cập nhật theo source; hãy dùng đúng `build/TV36-complete.exe`. Thoát executable trước khi build lại cùng tên.
 
-Máy đã có GCC/GDB. Dự án dùng thư viện chuẩn C++; Python chỉ dùng nếu muốn chạy kiểm thử. VS Code: mở đúng thư mục dự án, Ctrl+Shift+B để build. F5 dùng extension C/C++ và GDB; nếu đổi máy, kiểm tra đường dẫn debugger trong `.vscode/launch.json`.
+`build.ps1` biên dịch source trong main/Entities/UseCases/Utils; có `-Warnings` để xem cảnh báo. Hai script build.bat/build.sh cũng đã thêm `-std=c++17` để hỗ trợ filesystem dùng khi lưu file.
 
-Dữ liệu mới của nhóm có KENH001 đến KENH004; LPS001, LPS002, LPS003 để xem thử. Các URL example.com không phải luồng phát thật. Lịch LPS003 qua nửa đêm và có mô tả rỗng.
+## 2. Hai đối tượng vẫn giữ cấu trúc đơn giản
 
-Ví dụ thêm kênh: tên `Kenh demo`, mã thể loại `TL004`, số `10`, độ phân giải `HD`, URL `https://example.com/demo.m3u8`, trạng thái nhập `1` (đang phát) hoặc `0` (ngừng phát). Với dữ liệu hiện tại, mã mới là KENH005. Thử tìm theo mã đó, sửa tên, thoát/mở lại, rồi thử hủy xóa bằng `n` trước khi xóa bằng `y`.
+| Đối tượng | Dữ liệu |
+| --- | --- |
+| Channel | id kế thừa Entity; name, categoryID, channelNumber, resolution, streamURL, status |
+| Schedule | id kế thừa Entity; channelID, programName, startTime, endTime, description |
 
-Ví dụ thêm lịch: mã kênh `KENH001`, chương trình `Chuong trinh demo`, bắt đầu `2026-10-16 23:30`, kết thúc `2026-10-17 00:30`, mô tả tùy chọn. Định dạng ngày giờ phải đủ số 0: `yyyy-mm-dd HH:mm`. Cả ngày và giờ được lưu trong chuỗi; kết thúc phải lớn hơn bắt đầu.
+Mỗi lịch là một chương trình trên một kênh. Danh sách lịch tổng hợp hiển thị được nhiều kênh; không cần biến Schedule thành đối tượng chứa danh sách kênh. Phát cùng chương trình trên hai kênh thì tạo hai lịch riêng.
 
-## 2. Những file thuộc phần bạn
+Giữ nguyên constructor/getter/setter và ba hàm parseFromString/exportToString/exportToVector để tương thích phần nhóm đã ghép. Không thêm Entity, service hay thư viện mới. Các quan hệ được kiểm tra bằng repository của các kiểu đã có.
+
+## 3. Chức năng và quy tắc Channel
+
+- Thêm/xem/tìm/sửa/xóa, sinh mã KENH tự động và lưu/đọc file.
+- Tên và URL không rỗng, không chứa dấu `|` hoặc xuống dòng; nhập sai yêu cầu nhập lại tại trường đó. Tên ngắn không bị cấm nếu không có quy định khác của nhóm.
+- In bảng thể loại trước khi chọn. categoryID phải đúng định dạng TL + ít nhất 3 chữ số và có trong Data/channel_categories.txt. Chữ thường được chuẩn hóa sang hoa.
+- Số kênh là số nguyên dương, không trùng bất kỳ kênh nào, kể cả kênh ngừng phát. Khi sửa bỏ qua chính ID đang sửa.
+- Độ phân giải chỉ SD/HD/FHD/UHD.
+- Trạng thái nhập ở InputHelper: **0 = NGUNG_PHAT, 1 = DANG_PHAT**. Khi sửa, Enter giữ nguyên.
+- Khi xóa, hỏi y/n. Sau xác nhận, nạp lại Package và Schedule; chặn nếu còn bất kỳ gói/lịch tham chiếu, báo rõ mã GOI/LPS. Áp dụng cả gói ngừng đăng ký, kênh ngừng phát và lịch cũ.
+- Mã kênh trong danh sách Package được so sánh sau khi bỏ khoảng trắng ngoài và đổi sang hoa. Nếu dữ liệu gói sai định dạng thì báo lỗi, không coi là không có tham chiếu.
+
+Menu xem/tìm: tất cả, ID, tên chứa chuỗi, thể loại, trạng thái. Menu 5 sắp xếp để xem theo số kênh hoặc tên. Sắp xếp bản sao, không thay đổi file.
+
+Nhập 0 tại trường Name để hủy thêm/sửa; không lưu bản nháp và không tăng counter khi hủy.
+
+## 4. Chức năng và quy tắc Schedule
+
+- Thêm/xem/tìm/sửa/xóa, sinh mã LPS tự động.
+- In bảng kênh và trạng thái trước khi chọn. Mã kênh phải có trong Data/channels.txt.
+- Tạo lịch mới hoặc đổi sang kênh khác phải chọn kênh DANG_PHAT.
+- Kênh đã NGUNG_PHAT: vẫn xem lịch cũ, sửa tên chương trình/mô tả và xóa lịch; đổi khoảng giờ bị chặn, cần bật lại kênh trước. Khi đổi sang kênh khác đang phát thì được kiểm tra như bình thường.
+- Ngày giờ nhập chuẩn `yyyy-mm-dd HH:mm`; kiểm tra ngày thực tế, năm nhuận và giờ phút. Kết thúc sau bắt đầu. Bản hiện tại không áp đặt lịch phải ở tương lai.
+- Nhập sai định dạng ngày/giờ sẽ nhập lại tại trường đó. Kết thúc không sau bắt đầu thì nhập lại kết thúc. Chồng lịch thì nhập lại khoảng giờ, giữ tên chương trình và mã kênh đã chọn.
+- Cùng kênh bị chồng khi `newStart < oldEnd && oldStart < newEnd`. Khi sửa bỏ qua chính scheduleID. Hai lịch tiếp giáp hợp lệ; cùng giờ trên hai kênh khác nhau hợp lệ; xử lý đúng qua nửa đêm.
+- Mô tả tùy chọn. Khi sửa, Enter giữ nguyên, `-` xóa nội dung. Chặn dấu phân cách/xuống dòng.
+- Nhập 0 tại Program name để hủy thêm/sửa.
+
+Menu xem/tìm: tất cả, ID, theo kênh, theo ngày. Lọc ngày gồm cả chương trình bắt đầu hôm trước nhưng còn phát sau 00:00; lịch kết thúc đúng 00:00 không tính vào ngày tiếp theo. Ngày lọc nhập theo helper Date của nhóm (dd/mm/yyyy). Menu 5 sắp theo giờ bắt đầu tăng dần, chỉ sắp để xem.
+
+## 5. Các file cần đọc để học code
 
 | File | Trách nhiệm |
 | --- | --- |
-| `Entities/Channel.h` | Khai báo thuộc tính và hàm của một kênh |
-| `Entities/Channel.cpp` | Constructor, getter/setter, kiểm tra cơ bản, đọc/ghi một dòng kênh |
-| `Entities/Schedule.h` | Khai báo thuộc tính và hàm của một lịch |
-| `Entities/Schedule.cpp` | Xử lý thông tin lịch, ngày giờ và đọc/ghi một dòng lịch |
-| `UseCases/ChannelMenu.h/.cpp` | Nhập liệu và điều phối CRUD kênh |
-| `UseCases/ScheduleMenu.h/.cpp` | Nhập liệu và điều phối CRUD lịch |
-| `Data/channels.txt`, `Data/channels_counter.txt` | Danh sách kênh và số dùng để sinh mã |
-| `Data/schedules.txt`, `Data/schedules_counter.txt` | Danh sách lịch và số dùng để sinh mã |
-| `main.cpp` | Hai lựa chọn 4, 5 mở menu kênh và lịch trong menu chung mới của nhóm |
-| `tests/test_crud.py` | Kiểm thử qua chương trình console thực tế trên dữ liệu tạm |
+| Entities/Channel.h/.cpp | Dữ liệu một kênh, kiểm tra thuộc tính cơ bản và chuyển đổi một dòng |
+| Entities/Schedule.h/.cpp | Dữ liệu một lịch, ngày giờ chuẩn và khoảng thời gian |
+| UseCases/ChannelMenu.h/.cpp | CRUD kênh; dùng thêm repoCategory, repoPackage, repoSchedule |
+| UseCases/ScheduleMenu.h/.cpp | CRUD lịch; dùng thêm repoChannel và findConflict |
+| Utils/InputHelper.h/.cpp | Nhập mã/số/độ phân giải/trạng thái; bổ sung getInputText, getInputDateTime, getInputConfirmation |
+| tests/test_crud.py | Kiểm thử qua chương trình console thực, dữ liệu tạm |
+| Data/channels.txt và schedules.txt | Mỗi dòng một bản ghi; counter riêng để sinh ID |
 
-Phần này dùng lại các tiện ích của nhóm; `InputHelper.h/.cpp` bổ sung hàm nhập trạng thái 0/1. Các phân hệ của thành viên khác được lấy theo main đã cập nhật. `build.ps1`, `.vscode` và `.gitignore` hỗ trợ build/debug trên máy. Khi ghép với bản nhóm mới hơn, đối chiếu 8 file C++ của Channel/Schedule, các mục menu và hàm `getInputChannelStatus` trong InputHelper; ghép từng thay đổi thay vì ghi đè toàn bộ file dùng chung. Trao đổi trước khi thay dữ liệu thật của nhóm bằng dữ liệu mẫu.
+## 6. Lần theo một lần thêm và sửa
 
-## 3. Học theo một lần thêm kênh
+1. Main case 4 tạo ChannelMenu; BaseMenu::run in menu và gọi handleChoice.
+2. loadChannels nạp lại danh sách, kiểm tra cấu trúc/ID/số kênh trùng. Với Schedule dùng loadSchedules, đồng thời kiểm tra lịch chồng có sẵn trong file.
+3. createChannel tạo bản nháp; inputFields nhập dữ liệu, dùng helper cho định dạng và dùng repository để kiểm tra tồn tại/trùng.
+4. Chỉ sau khi dữ liệu hợp lệ mới sinh ID và gọi repo.create. Nếu counter cũ, sinh tiếp đến mã chưa có.
+5. saveChanges ghi toàn bộ danh sách sang file `.pending`, kiểm tra ghi/đóng thành công rồi dùng filesystem::rename thay file gốc; đọc lại xác nhận trước thông báo thành công.
+6. updateChannel/updateSchedule tìm bản ghi, tạo candidate = *found rồi sửa candidate. Chỉ khi nhập đủ hợp lệ mới repo.update. Hủy hoặc lỗi trước bước đó không sửa dở bản gốc.
 
-1. Trong `main.cpp`, nhánh `case 4` tạo `ChannelMenu`, rồi gọi `run()` kế thừa từ `BaseMenu`.
-2. Constructor `ChannelMenu` tạo `Repository<Channel>`, nạp `Data/channels.txt`, kiểm tra ID trùng và ghi nhận dữ liệu đã nạp được.
-3. `BaseMenu::run()` lặp: in menu → đọc lựa chọn → gọi `handleChoice`.
-4. Chọn 1 dẫn đến `createChannel()`.
-5. `Channel draft` là bản nháp. `inputFields(draft, false)` nhập các trường và gọi setter.
-6. Setter kiểm tra trường tương ứng. Nếu sai, `throw invalid_argument` chuyển về `catch` trong menu, hiển thị thông báo; chưa gọi repository để thêm.
-7. Khi hợp lệ, `generateNextID()` sinh mã; vòng lặp bỏ qua mã đã có nếu counter cũ. Constructor đủ tham số tạo `Channel item` có ID.
-8. `repo.create(item)` thêm vào vector trong RAM. `saveChanges()` gọi `repo.writeToFile()` rồi xác minh nội dung đọc lại trước khi báo thành công.
+Entity giữ một bản ghi, repository giữ danh sách, menu điều phối yêu cầu người dùng. getID() kế thừa từ Entity; người dùng không sửa ID.
 
-Entity giữ một bản ghi; Repository giữ cả danh sách; Menu nhận yêu cầu và gọi đúng thao tác. Bạn có thể lần theo luồng này để hiểu tất cả chức năng còn lại.
+## 7. Kiểm tra file và lỗi ghi
 
-## 4. Ba hàm chuyển đổi dữ liệu
+loadChecked là hàm hỗ trợ trong từng file menu, không phải lớp mới. Nó kiểm tra mở file, số cột, ID, parser, chuyển ngược dữ liệu và ID trùng trước khi gọi loadFromFile của nhóm. File tham chiếu thiếu/hỏng thì thao tác báo lỗi và dừng, không xem như danh sách rỗng để cho xóa.
 
-`exportToString()` tạo dòng lưu file:
+File chính thiếu/hỏng/trùng số kênh/chồng lịch: khóa thao tác để tránh ghi đè dữ liệu nạp dở; sửa file rồi mở lại menu. Không tự xóa dòng hỏng. Quan hệ cũ bị thiếu đối tượng tham chiếu có thể sửa bằng cách chọn lại đối tượng hợp lệ; nếu không có đối tượng nào chọn được thì thao tác hủy với thông báo.
 
-```text
-KENH001|VTV1|TL004|1|HD|https://example.com/vtv1.m3u8|DANG_PHAT
-```
+Khi ghi lỗi hoặc không thay được file gốc, menu báo lỗi và khóa để tránh tiếp tục dùng trạng thái RAM chưa lưu. File gốc chỉ được thay sau khi file tạm ghi và đóng thành công. File .pending có thể còn lại sau lỗi; không được tự nạp vào chương trình. Cơ chế này giảm nguy cơ hỏng file khi ghi thất bại, không phải hệ quản trị CSDL có khóa đồng thời hay bảo đảm chống mất điện.
 
-`parseFromString()` tách bằng `splitString`, kiểm tra đủ số cột, chuyển số kênh bằng `stoi`, tạo đối tượng hợp lệ rồi gán lại. Channel có 7 cột, Schedule có 6 cột. Parser Schedule chấp nhận mô tả rỗng sau dấu `|` cuối.
+## 8. Dữ liệu mẫu và phạm vi nhóm
 
-`exportToVector()` tạo `vector<string>` để TablePrinter in từng ô. Số phần tử phải khớp số cột `headers` và `widths`. Bảng rút gọn chuỗi dài; tìm theo ID còn in chi tiết từng trường để xem đầy đủ URL/mô tả.
+- Data hiện có **10 kênh và 10 lịch**, counter ít nhất 10. Giữ nguyên 4 kênh/3 lịch trước đó, chỉ thêm mẫu để đủ số lượng.
+- Bản sao dữ liệu trước bổ sung: build/before-completion-20261019. Không thay Data của các thành viên khác.
+- Các kênh mới phân loại theo danh mục thật: Discovery → TL007 Khám phá; HBO → TL003 Phim; Cartoon → TL006 Thiếu nhi; MTV → TL008 Âm nhạc; Bloomberg → TL009 Quốc tế; Hà Nội → TL010 Địa phương.
+- URL example.com chỉ là thông tin minh họa, chưa xác nhận phát thật. Bản ghi KENH004 do nhóm thêm trước đó vẫn giữ nguyên.
+- PackageMenu/SupportTicket và các lỗi ngoài hai phân hệ vẫn thuộc thành viên khác. Đặc biệt người làm Package cần kiểm tra tồn tại mã kênh khi thêm/sửa gói; chặn xóa ở Channel không thay thế kiểm tra chiều đó.
+- Các file chung Entity/Repository/BaseMenu, menu chính 10 use case và cấu trúc dữ liệu phần khác giữ nguyên. Script build thêm chuẩn C++17; InputHelper bổ sung hàm mà không đổi API cũ.
 
-## 5. Vì sao sửa trên bản sao?
+## 9. Kiểm thử và bàn giao
 
-`readByID` trả con trỏ đến bản ghi trong repository. Menu kiểm tra `nullptr` trước khi dùng, rồi tạo `Channel candidate = *found` hoặc `Schedule candidate = *found`.
+Kết quả lần hoàn thiện: build thành công cả 26 file C++ với GCC/C++17 và -Wall -Wextra; **39 nhóm kiểm thử đều đạt**, hash Data thật không đổi sau kiểm thử. Vẫn có cảnh báo kiểu số có dấu/không dấu trong tiện ích/repository của nhóm. Đã kiểm tra cấu hình JSON/task/debugger; chưa thao tác thử nút F5 trong giao diện VS Code. Task/launch trên máy trỏ tới TV36-complete.exe.
 
-Các setter sửa candidate trước. Chỉ khi tất cả trường hợp lệ mới gọi `repo.update(candidate)` và lưu. Ví dụ nhập tên mới rồi số kênh âm: tên gốc trong repository vẫn giữ nguyên vì candidate chưa được cập nhật vào danh sách.
+Chạy `python tests/test_crud.py build/TV36-complete.exe`. Script tạo bản sao Data trong thư mục tạm; fixture kiểm thử riêng không phụ thuộc số mẫu thật. Các ca kiểm tra bao gồm CRUD, nhập lại, hủy, trạng thái, khóa ngoại, số kênh trùng, ràng buộc xóa, chồng lịch nhiều dạng, lịch qua ngày, bỏ qua chính bản ghi khi sửa, kênh ngừng phát, lọc/sắp xếp, file hỏng/thiếu, counter cũ và ghi lỗi.
 
-ID được kế thừa từ `Entity`, không có mục nhập sửa ID. Getter có `const` nghĩa là hàm đọc không thay đổi đối tượng. Setter nhận `const string&` giúp truyền chuỗi mà không cần sao chép và không sửa chuỗi đầu vào.
+Một ca giữ chương trình đang ở xác nhận xóa, thay dữ liệu gói trong bản sao rồi xác nhận để chứng minh tham chiếu được nạp lại. Một ca đặt file chỉ đọc trên Windows để xác nhận lỗi thay file không làm hỏng bản gốc. Cuối bộ kiểm thử so sánh hash toàn bộ Data thật.
 
-## 6. Ngày giờ của Schedule
-
-Schedule giữ `startTime` và `endTime` dưới dạng string theo cách SupportTicket đang làm. `normalizeDateTime()` kiểm tra độ dài, vị trí dấu và chữ số, rồi gọi constructor `Date` và `Time` để kiểm tra ngày thực tế, năm nhuận và giờ phút.
-
-`Date::toFileString()` hiện trả `dd-mm-yyyy`; Schedule giữ chuỗi đã kiểm tra ở dạng `yyyy-mm-dd HH:mm`. Vì năm, tháng, ngày, giờ, phút đều có vị trí cố định, so sánh chuỗi theo thứ tự từ trái sang phải cũng là so sánh thời gian.
-
-`setTimeRange(start, end)` kiểm tra cả hai mốc rồi gán cùng lúc. Điều này cho phép chuyển cả chương trình sang ngày khác mà không so sánh mốc mới đầu tiên với mốc cũ còn lại. Chưa kiểm tra chồng với lịch khác vì đó là TODO tích hợp.
-
-## 7. Đọc lỗi và các phần để họp nhóm
-
-File thiếu/hỏng hoặc trùng ID: menu báo và khóa thao tác để tránh ghi đè phần dữ liệu đã nạp dở. Sửa file, quay về menu chính rồi mở lại phân hệ. Không tự bỏ qua dòng hỏng. Counter cũ được xử lý bằng cách sinh tiếp đến mã chưa có.
-
-Lưu không xác minh được: menu báo lỗi và khóa thao tác; cần kiểm tra file. Repository của nhóm hiện ghi trực tiếp, chưa có cơ chế ghi nguyên tử/khôi phục tự động nếu lỗi ổ đĩa xảy ra giữa lúc ghi.
-
-TODO đã đặt trong code:
-
-- Channel: kiểm tra categoryID tồn tại, số kênh không trùng, chặn xóa khi Package/Schedule tham chiếu.
-- Schedule: kiểm tra kênh tồn tại/trạng thái, kiểm tra chồng lịch (loại chính bản ghi khi sửa).
-- Phần phối hợp: kiểm tra mã kênh khi thêm/sửa gói; chặn xóa thể loại đang có kênh.
-
-Chưa cần tạo thêm lớp nghiệp vụ hay thay cấu trúc Package/ChannelCategory cho bản CRUD này. Đây là bản bàn giao CRUD, chưa phải toàn bộ kiểm tra nghiệp vụ cuối cùng của nhóm.
-
-## 8. Kiểm thử lại
-
-Kết quả kiểm tra bản cập nhật trạng thái: build thành công cả 26 file C++ bằng GCC 14.2.0 với C++17; 19 nhóm kiểm thử đều đạt. Còn cảnh báo so sánh kiểu số trong tiện ích/repository sẵn có của nhóm. Kiểm thử không thay đổi file dữ liệu của dự án. Chưa chạy thử nút F5 trong giao diện VS Code.
-
-```powershell
-python tests\test_crud.py
-```
-
-Script cần Python 3, chỉ dùng thư viện chuẩn. Nó chạy executable đã build, tạo bản sao Data trong thư mục tạm, thao tác qua menu rồi kiểm tra file sau khi mở lại chương trình. Các nhóm kiểm tra gồm mở và quay về từ đủ 10 menu, xóa bản ghi cuối cùng rồi nạp lại danh sách rỗng, CRUD hai phân hệ, hủy xóa, giữ/xóa mô tả, sửa sai không lưu dở, lịch qua nửa đêm/năm nhuận, dữ liệu hỏng/trùng mã, ID không tồn tại, counter cũ và danh sách rỗng. Cuối cùng so sánh hash để xác nhận Data của dự án không đổi.
-
-Để học ngược, hãy tự đổi một thông báo trong menu, build và chạy; sau đó tự theo dõi một lần thêm, một lần sửa và một lần đọc lại file. Chỉ thay đổi từng phần nhỏ để biết mình vừa làm gì.
-
-## 9. Nhập trạng thái kênh bằng 0/1
-
-`InputHelper::getInputChannelStatus(message, optional)` chứa toàn bộ vòng lặp nhập trạng thái: `0` trả `NGUNG_PHAT`, `1` trả `DANG_PHAT`. Giá trị khác (kể cả nhập chữ, 2 hoặc 1.0) báo lỗi và nhập lại ngay tại trường trạng thái. Khi thêm kênh, không được bỏ trống; khi sửa, `optional = true` cho phép Enter trả chuỗi rỗng để giữ nguyên trạng thái hiện tại.
-
-`ChannelMenu::inputFields` gọi helper rồi truyền kết quả vào `Channel::setStatus`. Kiểu thuộc tính và định dạng file vẫn là chuỗi trạng thái cũ, nên dữ liệu nhóm đã có tiếp tục đọc được.
-
-Trong lần cập nhật này, bản `build/TV36.exe` cũ đang chạy nên Windows khóa file. Bản mới được build thành `build/TV36-fixed-input.exe`; mở file này để thử nhập 0/1. Sau khi thoát bản cũ, có thể chạy lại `build.ps1` để cập nhật tên executable mặc định. Có thể chỉ định tên đầu ra khi build để tránh file đang bị khóa:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\build.ps1 -OutputName TV36-fixed-input.exe
-.\build\TV36-fixed-input.exe
-python tests\test_crud.py build\TV36-fixed-input.exe
-```
-
-## 10. Sửa lỗi nhập sai mã vẫn được nhận
-
-Trước đây mã thể loại dùng getInputString nên chỉ chặn chuỗi rỗng. Hiện ChannelMenu dùng InputHelper::getInputID với tiền tố TL; ScheduleMenu dùng cùng hàm với tiền tố KENH. Mã phải có tiền tố và ít nhất 3 chữ số; chữ thường được chuyển sang chữ hoa. Ví dụ khenh, KENH001 tại ô thể loại, TL04, TL00A đều bị từ chối và yêu cầu nhập lại tại ô mã; tl004 được chuẩn hóa thành TL004.
-
-Số kênh dùng getInputPositiveInt; số âm, 0, chữ, số thập phân và tràn số bị từ chối ngay. Độ phân giải dùng getInputChannelResolution và chỉ nhận SD/HD/FHD/UHD. Khi sửa, Enter tại các trường này giữ nguyên. Channel::setCategoryID cũng kiểm tra định dạng để dữ liệu đọc từ file không bỏ qua ràng buộc.
-
-Tên kênh vẫn là chuỗi tự do không rỗng; một tên ngắn như j chưa bị cấm bởi yêu cầu hiện tại. Kiểm tra định dạng mã chưa kiểm tra mã đó tồn tại trong danh sách; phần liên kết vẫn chờ nhóm tích hợp. File hỏng chứa mã thể loại sai định dạng sẽ bị báo lỗi và khóa menu, không tự sửa hoặc xóa dữ liệu.
-
-Bản kiểm thử mới đã tái hiện chuỗi nhập khenh rồi sửa thành tl004, xác nhận chưa chuyển sang ô số kênh khi mã còn sai. Tổng cộng 19 nhóm kiểm thử đạt; dữ liệu dự án không đổi.
+Bản hoàn thiện này dành cho main TV36. Báo cáo BAO_CAO_CAP_NHAT_2026-10-19.md ở máy mô tả tình trạng ngay sau pull, trước lần hoàn thiện; dùng hướng dẫn hiện tại để xem hành vi mới.

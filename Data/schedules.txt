@@ -1,3 +1,10 @@
 LPS001|KENH001|Thoi su|2026-10-16 19:00|2026-10-16 19:45|Ban tin buoi toi
 LPS002|KENH002|The thao toi|2026-10-16 20:00|2026-10-16 21:00|Tong hop the thao
 LPS003|KENH003|Hoc cung em|2026-10-16 23:30|2026-10-17 00:30|
+LPS004|KENH004|Ban tin demo|2026-10-19 08:00|2026-10-19 08:30|Chuong trinh minh hoa
+LPS005|KENH005|Hanh tinh xanh|2026-10-19 14:00|2026-10-19 15:00|Kham pha thien nhien
+LPS006|KENH006|Phim cuoi tuan|2026-10-19 20:00|2026-10-19 22:00|Phim truyen
+LPS007|KENH007|Gio hoat hinh|2026-10-19 16:00|2026-10-19 17:00|Chuong trinh thieu nhi
+LPS008|KENH008|Am nhac hom nay|2026-10-19 18:00|2026-10-19 19:00|Ca nhac
+LPS009|KENH009|Tin kinh te|2026-10-19 19:00|2026-10-19 20:00|Tin tuc quoc te
+LPS010|KENH010|Ha Noi dem|2026-10-19 23:30|2026-10-20 00:30|Chuong trinh qua nua dem

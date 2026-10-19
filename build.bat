@@ -18,7 +18,7 @@ if "!SRC!"=="" (
 )
 
 echo [BUILD] Dang bien dich...
-g++.exe -g -fdiagnostics-color=always !SRC! -I"%~dp0." -o main.exe
+g++.exe -std=c++17 -g -fdiagnostics-color=always !SRC! -I"%~dp0." -o main.exe
 
 :: Kiem tra ket qua build
 if %ERRORLEVEL% EQU 0 (
