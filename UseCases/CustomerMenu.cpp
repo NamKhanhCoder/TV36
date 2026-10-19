@@ -459,6 +459,10 @@ void CustomerMenu::deleteCustomer()
     // =====================================================================
     // REFERENTIAL INTEGRITY & DELETE CONSTRAINTS
     // =====================================================================
+    // Refresh contract & invoice lists to ensure up-to-date referential integrity
+    repoContract.loadFromFile();
+    repoHoaDon.loadFromFile();
+
     // 1. Check if customer is bound to any active or suspended contract
     const vector<Contract> &contractList = repoContract.readAll();
     for (const Contract &c : contractList)

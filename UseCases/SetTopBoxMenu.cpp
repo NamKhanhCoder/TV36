@@ -695,6 +695,10 @@ void SetTopBoxMenu::deleteSetTopBox()
     // =====================================================================
     // REFERENTIAL INTEGRITY & DELETE CONSTRAINTS
     // =====================================================================
+    // Refresh contract & ticket lists to ensure up-to-date referential integrity
+    repoContract.loadFromFile();
+    repoSupportTicket.loadFromFile();
+
     // 1. Check if device is bound to an active or suspended contract
     const vector<Contract> &contractList = repoContract.readAll();
     for (const auto &c : contractList)
