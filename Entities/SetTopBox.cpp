@@ -23,28 +23,16 @@ SetTopBox::SetTopBox(string id, string serial, string manufacturer, string model
 
 void SetTopBox::setSerial(const string &serial)
 {
-    if (serial.empty())
-        throw invalid_argument("[SetTopBox] Serial can not be empty");
-    if (serial.find('|') != string::npos)
-        throw invalid_argument("[SetTopBox] Serial can not contain character |");
     this->serial = serial;
 }
 
 void SetTopBox::setManufacturer(const string &manufacturer)
 {
-    if (manufacturer.empty())
-        throw invalid_argument("[SetTopBox] Manufacturer can not be empty");
-    if (manufacturer.find('|') != string::npos)
-        throw invalid_argument("[SetTopBox] Manufacturer can not contain character |");
     this->manufacturer = manufacturer;
 }
 
 void SetTopBox::setModel(const string &model)
 {
-    if (model.empty())
-        throw invalid_argument("[SetTopBox] Model name can not be empty");
-    if (model.find('|') != string::npos)
-        throw invalid_argument("[SetTopBox] Model name can not contain character |");
     this->model = model;
 }
 
@@ -138,24 +126,27 @@ vector<string> SetTopBox::exportToVector() const
         manufacturer,
         model,
         importDate.toString(),
-        getTechnicalStatusString()
-    };
+        getTechnicalStatusString()};
     return result;
 }
 
 void SetTopBox::parseFromString(const string &data)
 {
     vector<string> words = splitString(data);
-
-    if (words.size() >= 6)
+    if (words.size() != 6)
     {
-        id = words[0];
-        serial = words[1];
-        manufacturer = words[2];
-        model = words[3];
-        importDate = Date(words[4]);
-        technicalStatus = parseTechnicalStatus(words[5]);
+        throw invalid_argument("[Customer] The line of data is not valid: " + data);
     }
+    id = words[0];
+    if(Validator::isValidID(id,"STB",6)==false)
+    {
+        throw invalid_argument("[Customer] The ID is not valid: " + data);
+    }
+    serial = words[1];
+    manufacturer = words[2];
+    model = words[3];
+    importDate = Date(words[4]);
+    technicalStatus = parseTechnicalStatus(words[5]);
 }
 
 bool SetTopBox::operator<(const SetTopBox &other) const

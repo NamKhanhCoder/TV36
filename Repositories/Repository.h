@@ -4,7 +4,9 @@
 #include <string>
 #include <fstream>
 #include "Utils/Debugger.h"
-
+#include <chrono>
+#include <thread>
+#include "Utils/InputHelper.h"
 using namespace std;
 
 template <class T>
@@ -81,13 +83,18 @@ public:
 
         while (getline(file, line)) // read line by line
         {
-            if (line.empty() == true)
+            T item;
+            try
             {
-                LOG("[Repository] White line detected, skipping");
+                item.parseFromString(line);
+            }
+            catch(const std::exception& err)
+            {
+                cout<<"[Warning] The data is corupted: "<<err.what()<<endl;
+                InputHelper::getInputOptionalString("Press Enter to continue...");
                 continue;
             }
-            T item;
-            item.parseFromString(line);
+            
             items.push_back(item);
         }
         file.close();

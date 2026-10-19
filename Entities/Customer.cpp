@@ -23,33 +23,21 @@ Customer::Customer(string id, string name, string phone, string email, string ad
 
 void Customer::setName(const string &name)
 {
-    if (name.empty())
-        throw invalid_argument("[Customer] Customer name can not be empty!");
-    if (name.find('|') != string::npos)
-        throw invalid_argument("[Customer] Customer name can not contain character |");
     this->name = name;
 }
 
 void Customer::setPhone(const string &phone)
 {
-    if (!Validator::isValidPhone(phone))
-        throw invalid_argument("[Customer] Phone number must have 10 digits and start with 0");
     this->phone = phone;
 }
 
 void Customer::setEmail(const string &email)
 {
-    if (!Validator::isValidEmail(email))
-        throw invalid_argument("[Customer] Email format is invalid");
     this->email = email;
 }
 
 void Customer::setAddress(const string &address)
 {
-    if (address.empty())
-        throw invalid_argument("[Customer] Address can not be empty");
-    if (address.find('|') != string::npos)
-        throw invalid_argument("[Customer] Address can not contain character |");
     this->address = address;
 }
 
@@ -88,17 +76,31 @@ void Customer::parseFromString(const string &data)
 {
     vector<string> words = splitString(data);
 
-    if (words.size() >= 5) 
+    if(words.size()!=5)
     {
-        id      = words[0];
-        name    = words[1];
-        phone   = words[2];
-        email   = words[3];
-        string addr = words[4];
-        if (!addr.empty() && addr.back() == '\r')
-            addr.pop_back();
-        address = addr;
+        throw invalid_argument("[Customer] The line of data is not valid: "+data);
     }
+
+    id = words[0];
+    if(Validator::isValidID(id,"KH",5) == false)
+    {
+        throw invalid_argument("[Customer] The ID of data is not valid: "+data);
+    }
+    name = words[1];
+    phone = words[2];
+    if(Validator::isValidPhone(phone)==false)
+    {
+        throw invalid_argument("[Customer] The Phone of data is not valid: "+data);
+    }
+    email = words[3];
+    if(Validator::isValidEmail(email)==false)
+    {
+        throw invalid_argument("[Customer] The Email of data is not valid: "+data);
+    }
+    string addr = words[4];
+    if (!addr.empty() && addr.back() == '\r')
+        addr.pop_back();
+    address = addr;
 }
 
 bool Customer::operator<(const Customer &other) const
