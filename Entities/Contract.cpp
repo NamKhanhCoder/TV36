@@ -1,5 +1,7 @@
 #include "Contract.h"
 #include "Utils/StringHelper.h"
+#include "Utils/Validator.h"
+#include <stdexcept>
 
 // ETC --------------------------------------------------
 string ContractStatus_toString(ContractStatus status)
@@ -21,37 +23,44 @@ string ContractStatus_toString(ContractStatus status)
 
 ContractStatus stringToStatus(const string &s)
 {
+    if (s == "ACTIVE") return ContractStatus::ACTIVE;
     if (s == "SUSPENDED") return ContractStatus::SUSPENDED;
     if (s == "EXPIRED") return ContractStatus::EXPIRED;
     if (s == "CANCELED") return ContractStatus::CANCELED;
-    return ContractStatus::ACTIVE;
+    throw invalid_argument("[Contract] Invalid contract status: " + s);
 }
 
 // INIT --------------------------------------------------
 Contract::Contract(string id, string customerID, string packageID, string stbID, Date signDate, Date startDate, Date endDate, string installationAddress, string monthlyFee, ContractStatus status) : Entity(id)
 {
-    this->customerID = customerID;
-    this->packageID = packageID;
-    this->stbID = stbID;
-    this->signDate = signDate;
-    this->startDate = startDate;
-    this->endDate = endDate;
-    this->installationAddress = installationAddress;
-    this->monthlyFee = monthlyFee;
-    this->status = status;
+    set_customerID(customerID);
+    set_packageID(packageID);
+    set_stbID(stbID);
+    set_signDate(signDate);
+    set_startDate(startDate);
+    set_endDate(endDate);
+    set_installationAddress(installationAddress);
+    set_monthlyFee(monthlyFee);
+    set_status(status);
 }
 
 // SET --------------------------------------------------
 void Contract::set_customerID(const string &customerID)
 {
+    if (customerID.empty())
+        throw invalid_argument("[Contract] Customer ID can not be empty!");
     this->customerID = customerID;
 }
 void Contract::set_packageID(const string &packageID)
 {
+    if (packageID.empty())
+        throw invalid_argument("[Contract] Package ID can not be empty!");
     this->packageID = packageID;
 }
 void Contract::set_stbID(const string &stbID)
 {
+    if (stbID.empty())
+        throw invalid_argument("[Contract] Set-Top Box ID can not be empty!");
     this->stbID = stbID;
 }
 void Contract::set_signDate(const Date &signDate)
@@ -68,10 +77,14 @@ void Contract::set_endDate(const Date &endDate)
 }
 void Contract::set_installationAddress(const string &installationAddress)
 {
+    if (installationAddress.empty())
+        throw invalid_argument("[Contract] Installation address can not be empty!");
     this->installationAddress = installationAddress;
 }
 void Contract::set_monthlyFee(const string &monthlyFee)
 {
+    if (monthlyFee.empty())
+        throw invalid_argument("[Contract] Monthly fee can not be empty!");
     this->monthlyFee = monthlyFee;
 }
 void Contract::set_status(ContractStatus status)
@@ -143,20 +156,71 @@ vector<string> Contract::exportToVector() const
 }
 void Contract::parseFromString(const string &data)
 {
-    vector<string> words;
-    words=splitString(data);
+    vector<string> words = splitString(data);
 
-    if (words.size() >= 10) 
+    if (words.size() != 10)
     {
-        id                      = words[0];
-        customerID              = words[1];
-        packageID               = words[2];
-        stbID                   = words[3];
-        signDate                = words[4];
-        startDate               = words[5];
-        endDate                 = words[6];
-        installationAddress     = words[7];
-        monthlyFee              = words[8];
-        status                  = stringToStatus(words[9]);
+        throw invalid_argument("[Contract] Invalid field count in line: " + data);
     }
+
+    if (!Validator::isValidID(words[0], "HD", 5))
+    {
+        throw invalid_argument("[Contract] Invalid Contract ID: " + words[0]);
+    }
+
+    if (!Validator::isValidID(words[1], "KH", 5))
+    {
+        throw invalid_argument("[Contract] Invalid Customer ID: " + words[1]);
+    }
+
+    if (!Validator::isValidID(words[2], "GOI", 6))
+    {
+        throw invalid_argument("[Contract] Invalid Package ID: " + words[2]);
+    }
+
+    if (!Validator::isValidID(words[3], "STB", 6))
+    {
+        throw invalid_argument("[Contract] Invalid Set-Top Box ID: " + words[3]);
+    }
+
+    Date parsedSignDate(words[4]);
+    Date parsedStartDate(words[5]);
+    Date parsedEndDate(words[6]);
+
+    if (parsedStartDate < parsedSignDate)
+    {
+        throw invalid_argument("[Contract] Start date cannot be before sign date: " + words[5] + " < " + words[4]);
+    }
+
+    if (parsedEndDate <= parsedStartDate)
+    {
+        throw invalid_argument("[Contract] End date must be after start date: " + words[6] + " <= " + words[5]);
+    }
+
+    if (words[7].empty())
+    {
+        throw invalid_argument("[Contract] Installation address cannot be empty");
+    }
+
+    if (!Validator::isValidInt(words[8]) || stoll(words[8]) <= 0)
+    {
+        throw invalid_argument("[Contract] Invalid monthly fee: " + words[8]);
+    }
+
+    string stStr = words[9];
+    if (!stStr.empty() && stStr.back() == '\r')
+        stStr.pop_back();
+
+    ContractStatus parsedStatus = stringToStatus(stStr);
+
+    this->id = words[0];
+    this->customerID = words[1];
+    this->packageID = words[2];
+    this->stbID = words[3];
+    this->signDate = parsedSignDate;
+    this->startDate = parsedStartDate;
+    this->endDate = parsedEndDate;
+    this->installationAddress = words[7];
+    this->monthlyFee = words[8];
+    this->status = parsedStatus;
 }
