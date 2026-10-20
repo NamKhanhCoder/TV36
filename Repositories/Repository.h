@@ -100,7 +100,6 @@ public:
             file << this->id_count;
             file.close();
         }
-
         return id_prefix + padding(id_count, 3); // KH001, KH002...
     }
     // 1. Constructor
