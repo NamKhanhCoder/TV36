@@ -1,12 +1,17 @@
-//Lê Trần Nam Khánh - B24DCVT193
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Le Tran Nam Khanh (B24DCVT193)
+// Framework cot loi: Repository<T> (Khuon mau quan ly du lieu & file)
+// ===============================================================
 #pragma once
 #include <vector>
 #include <string>
 #include <fstream>
 #include <filesystem>
 #include "Utils/Debugger.h"
-#include <chrono>
-#include <thread>
+#include <stdexcept>
 #include "Utils/InputHelper.h"
 using namespace std;
 
@@ -153,7 +158,8 @@ public:
 
         if (file.is_open() == false) // cant open case
         {
-            LOG("[Repository] Failed to open " + file_path);
+            LOG("[Repository] File is failed to open to write: "+file_path);
+            throw std::runtime_error("[Repository] The current file is inaccessible: " + file_path);
             return;
         }
 

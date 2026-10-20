@@ -158,9 +158,19 @@ void SetTopBoxMenu::createSetTopBox()
 
         if (repoSetTopBox.create(finalStb))
         {
-            repoSetTopBox.writeToFile();
-            LOG("[SetTopBoxMenu] SetTopBox created successfully, ID: " + newID);
-            cout << "\n[Success] Set-top box created successfully! Assigned ID: " << newID << "\n";
+            try
+            {
+                repoSetTopBox.writeToFile();
+                LOG("[SetTopBoxMenu] SetTopBox created successfully, ID: " + newID);
+                cout << "\n[Success] Set-top box created successfully! Assigned ID: " << newID << "\n";
+            }
+            catch (const exception &e)
+            {
+                repoSetTopBox.loadFromFile();
+                LOG("[SetTopBoxMenu] File error while saving new SetTopBox: " + string(e.what()));
+                cout << "\n[File Error] " << e.what() << "\n";
+                cout << "Changes discarded. Set-top box was not saved to disk.\n";
+            }
         }
         else
         {
@@ -642,15 +652,25 @@ void SetTopBoxMenu::updateSetTopBox()
 
         if (repoSetTopBox.update(*stb))
         {
-            repoSetTopBox.writeToFile();
-            LOG("[SetTopBoxMenu] SetTopBox " + inputID + " updated successfully");
-            cout << "\n[Success] Set-top box updated successfully!\n";
-
-            if (activeContract != nullptr && (newStatus == TechnicalStatus::HONG || newStatus == TechnicalStatus::BAO_TRI))
+            try
             {
-                cout << "\n[Advisory] Device marked as " << stb->getTechnicalStatusString() 
-                     << " while allocated to active Contract [" << activeContract->getID() << "].\n";
-                cout << "Recommended next step: Create a Support Ticket or swap the STB in Contract Menu.\n";
+                repoSetTopBox.writeToFile();
+                LOG("[SetTopBoxMenu] SetTopBox " + inputID + " updated successfully");
+                cout << "\n[Success] Set-top box updated successfully!\n";
+
+                if (activeContract != nullptr && (newStatus == TechnicalStatus::HONG || newStatus == TechnicalStatus::BAO_TRI))
+                {
+                    cout << "\n[Advisory] Device marked as " << stb->getTechnicalStatusString() 
+                         << " while allocated to active Contract [" << activeContract->getID() << "].\n";
+                    cout << "Recommended next step: Create a Support Ticket or swap the STB in Contract Menu.\n";
+                }
+            }
+            catch (const exception &e)
+            {
+                repoSetTopBox.loadFromFile();
+                LOG("[SetTopBoxMenu] File error while updating SetTopBox: " + string(e.what()));
+                cout << "\n[File Error] " << e.what() << "\n";
+                cout << "Changes discarded. Set-top box updates were not saved to disk.\n";
             }
         }
         else
@@ -736,9 +756,19 @@ void SetTopBoxMenu::deleteSetTopBox()
     {
         if (repoSetTopBox.remove(targetID))
         {
-            repoSetTopBox.writeToFile();
-            LOG("[SetTopBoxMenu] SetTopBox deleted successfully, ID: " + targetID);
-            cout << "\n[Success] Set-top box deleted successfully!\n";
+            try
+            {
+                repoSetTopBox.writeToFile();
+                LOG("[SetTopBoxMenu] SetTopBox deleted successfully, ID: " + targetID);
+                cout << "\n[Success] Set-top box deleted successfully!\n";
+            }
+            catch (const exception &e)
+            {
+                repoSetTopBox.loadFromFile();
+                LOG("[SetTopBoxMenu] File error while deleting SetTopBox: " + string(e.what()));
+                cout << "\n[File Error] " << e.what() << "\n";
+                cout << "Deletion aborted. Set-top box record restored.\n";
+            }
         }
         else
         {

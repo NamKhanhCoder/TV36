@@ -113,9 +113,19 @@ void CustomerMenu::createCustomer()
 
         if (repoCustomer.create(newCustomer))
         {
-            repoCustomer.writeToFile();
-            LOG("[CustomerMenu] Customer created successfully, ID: " + newID);
-            cout << "\n[Success] Customer created successfully! Assigned ID: " << newID << "\n";
+            try
+            {
+                repoCustomer.writeToFile();
+                LOG("[CustomerMenu] Customer created successfully, ID: " + newID);
+                cout << "\n[Success] Customer created successfully! Assigned ID: " << newID << "\n";
+            }
+            catch (const exception &e)
+            {
+                repoCustomer.loadFromFile();
+                LOG("[CustomerMenu] File error while saving new customer: " + string(e.what()));
+                cout << "\n[File Error] " << e.what() << "\n";
+                cout << "Changes discarded. Customer was not saved to disk.\n";
+            }
         }
         else
         {
@@ -413,9 +423,19 @@ void CustomerMenu::updateCustomer()
 
         if (repoCustomer.update(*cus))
         {
-            repoCustomer.writeToFile();
-            LOG("[CustomerMenu] Customer " + inputID + " updated successfully");
-            cout << "\n[Success] Customer updated successfully!\n";
+            try
+            {
+                repoCustomer.writeToFile();
+                LOG("[CustomerMenu] Customer " + inputID + " updated successfully");
+                cout << "\n[Success] Customer updated successfully!\n";
+            }
+            catch (const exception &e)
+            {
+                repoCustomer.loadFromFile();
+                LOG("[CustomerMenu] File error while updating customer: " + string(e.what()));
+                cout << "\n[File Error] " << e.what() << "\n";
+                cout << "Changes discarded. Customer updates were not saved to disk.\n";
+            }
         }
         else
         {
@@ -500,9 +520,19 @@ void CustomerMenu::deleteCustomer()
     {
         if (repoCustomer.remove(targetID))
         {
-            repoCustomer.writeToFile();
-            LOG("[CustomerMenu] Customer deleted successfully, ID: " + targetID);
-            cout << "\n[Success] Customer deleted successfully!\n";
+            try
+            {
+                repoCustomer.writeToFile();
+                LOG("[CustomerMenu] Customer deleted successfully, ID: " + targetID);
+                cout << "\n[Success] Customer deleted successfully!\n";
+            }
+            catch (const exception &e)
+            {
+                repoCustomer.loadFromFile();
+                LOG("[CustomerMenu] File error while deleting customer: " + string(e.what()));
+                cout << "\n[File Error] " << e.what() << "\n";
+                cout << "Deletion aborted. Customer record restored.\n";
+            }
         }
         else
         {

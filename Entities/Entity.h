@@ -1,4 +1,10 @@
-//Lê Trần Nam Khánh - B24DCVT193
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Le Tran Nam Khanh (B24DCVT193)
+// Framework cot loi: Entity (Lop co so truu tuong)
+// ===============================================================
 #pragma once
 #include <string>
 #include <vector>
