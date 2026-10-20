@@ -2,11 +2,14 @@
 #include "UseCases/BaseMenu.h"
 #include "Repositories/Repository.h"
 #include "Entities/SupportTicket.h"
+#include "Entities/Contract.h"
 
 class SupportTicketMenu : public BaseMenu
 {
 private:
     Repository<SupportTicket> repo;
+    Repository<Contract> repoContract;
+
     void createTicket();
     void readTicket();
     void updateTicket();
@@ -22,4 +25,3 @@ protected:
 public:
     SupportTicketMenu();
 };
-

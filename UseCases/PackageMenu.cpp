@@ -4,14 +4,54 @@
 #include "Utils/SystemHelper.h"
 #include "Utils/InputHelper.h"
 #include "Utils/StringHelper.h"
+#include "Utils/Validator.h"
 #include <iostream>
 #include <vector>
+#include <set>
+#include <cctype>
 
 using namespace std;
 
-PackageMenu::PackageMenu() : repo("Data/packages.txt", "Data/packages_counter.txt", "GOI")
+namespace {
+    string trimString(const string &s)
+    {
+        size_t start = 0;
+        while (start < s.size() && isspace(static_cast<unsigned char>(s[start])))
+        {
+            start++;
+        }
+        size_t end = s.size();
+        while (end > start && isspace(static_cast<unsigned char>(s[end - 1])))
+        {
+            end--;
+        }
+        return s.substr(start, end - start);
+    }
+}
+
+PackageMenu::PackageMenu() 
+    : repo("Data/packages.txt", "Data/packages_counter.txt", "GOI"),
+      repoChannel("Data/channels.txt", "Data/channels_counter.txt", "KENH"),
+      repoVOD("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD"),
+      repoContract("Data/contracts.txt", "Data/contracts_counter.txt", "HD")
 {
     repo.loadFromFile();
+    repoChannel.loadFromFile();
+    repoVOD.loadFromFile();
+    repoContract.loadFromFile();
+}
+
+bool PackageMenu::isPackageInActiveContract(const string &packageID)
+{
+    repoContract.loadFromFile();
+    for (const auto &c : repoContract.readAll())
+    {
+        if (c.get_packageID() == packageID && c.get_status() == ContractStatus::ACTIVE)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 
 PackageStatus PackageMenu::inputPackageStatus(bool isOptional, PackageStatus currentStatus)
@@ -23,18 +63,152 @@ PackageStatus PackageMenu::inputPackageStatus(bool isOptional, PackageStatus cur
         cout << "2. NGUNG_DANG_KY (Ngung dang ky)" << endl;
         if (isOptional)
         {
-            cout << "0. Skip (Keep current: " << packageStatusToString(currentStatus) << ")" << endl;
+            cout << "(Press Enter to skip, keep current: " << packageStatusToString(currentStatus) << ")" << endl;
         }
 
-        int choice = InputHelper::getInputInt("Choice: ");
-        if (isOptional && choice == 0)
+        string input = InputHelper::getInputOptionalString("Choice: ");
+        if (isOptional && input.empty())
         {
             return currentStatus;
         }
-        if (choice == 1) return PackageStatus::DANG_CUNG_CAP;
-        if (choice == 2) return PackageStatus::NGUNG_DANG_KY;
+        if (input == "1") return PackageStatus::DANG_CUNG_CAP;
+        if (input == "2") return PackageStatus::NGUNG_DANG_KY;
 
         cout << "Invalid choice! Please try again." << endl;
+    }
+}
+
+vector<string> PackageMenu::inputChannelIDs(bool isOptional, const vector<string> &currentIDs)
+{
+    repoChannel.loadFromFile();
+    while (true)
+    {
+        string prompt = isOptional 
+            ? "Enter Channel IDs separated by comma (Press Enter to keep current): " 
+            : "Enter Channel IDs separated by comma (e.g. KENH001,KENH002): ";
+        
+        string channelsStr = isOptional ? InputHelper::getInputOptionalString(prompt) : InputHelper::getInputString(prompt);
+        
+        if (isOptional && channelsStr.empty())
+        {
+            return currentIDs;
+        }
+
+        vector<string> rawList = splitString(channelsStr, ',');
+        vector<string> validList;
+        set<string> seen;
+        bool allValid = true;
+
+        for (string id : rawList)
+        {
+            string upperID = convertToUpper(trimString(id));
+            if (upperID.empty()) continue;
+
+            if (!Validator::isValidID(upperID, "KENH", static_cast<short>(upperID.length())))
+            {
+                cout << "[Error] ID '" << upperID << "' has invalid format! (Must start with 'KENH' followed by numbers)\n";
+                allValid = false;
+                break;
+            }
+
+            if (repoChannel.readByID(upperID) == nullptr)
+            {
+                cout << "[Error] Channel ID '" << upperID << "' does not exist in repository!\n";
+                allValid = false;
+                break;
+            }
+
+            if (seen.find(upperID) != seen.end())
+            {
+                cout << "[Error] Duplicate Channel ID '" << upperID << "' in list!\n";
+                allValid = false;
+                break;
+            }
+
+            seen.insert(upperID);
+            validList.push_back(upperID);
+        }
+
+        if (!allValid)
+        {
+            cout << "Please re-enter all Channel IDs.\n\n";
+            continue;
+        }
+
+        if (validList.size() <= 1)
+        {
+            cout << "[Error] Package must contain more than 1 channel (> 1 channel)!\n\n";
+            continue;
+        }
+
+        return validList;
+    }
+}
+
+vector<string> PackageMenu::inputVodIDs(bool isOptional, const vector<string> &currentIDs)
+{
+    repoVOD.loadFromFile();
+    while (true)
+    {
+        string prompt = isOptional 
+            ? "Enter VOD IDs separated by comma (Press Enter to keep current): " 
+            : "Enter VOD IDs separated by comma (e.g. VOD001,VOD002): ";
+        
+        string vodsStr = isOptional ? InputHelper::getInputOptionalString(prompt) : InputHelper::getInputString(prompt);
+        
+        if (isOptional && vodsStr.empty())
+        {
+            return currentIDs;
+        }
+
+        vector<string> rawList = splitString(vodsStr, ',');
+        vector<string> validList;
+        set<string> seen;
+        bool allValid = true;
+
+        for (string id : rawList)
+        {
+            string upperID = convertToUpper(trimString(id));
+            if (upperID.empty()) continue;
+
+            if (!Validator::isValidID(upperID, "VOD", static_cast<short>(upperID.length())))
+            {
+                cout << "[Error] ID '" << upperID << "' has invalid format! (Must start with 'VOD' followed by numbers)\n";
+                allValid = false;
+                break;
+            }
+
+            if (repoVOD.readByID(upperID) == nullptr)
+            {
+                cout << "[Error] VOD ID '" << upperID << "' does not exist in repository!\n";
+                allValid = false;
+                break;
+            }
+
+            if (seen.find(upperID) != seen.end())
+            {
+                cout << "[Error] Duplicate VOD ID '" << upperID << "' in list!\n";
+                allValid = false;
+                break;
+            }
+
+            seen.insert(upperID);
+            validList.push_back(upperID);
+        }
+
+        if (!allValid)
+        {
+            cout << "Please re-enter all VOD IDs.\n\n";
+            continue;
+        }
+
+        if (validList.size() <= 1)
+        {
+            cout << "[Error] Package must contain more than 1 VOD (> 1 VOD)!\n\n";
+            continue;
+        }
+
+        return validList;
     }
 }
 
@@ -56,28 +230,11 @@ void PackageMenu::createPackage()
 
     PackageStatus status = inputPackageStatus(false);
 
-    cout << "\nEnter Channel IDs separated by comma (e.g. KENH001,KENH002):" << endl;
-    string channelsStr = "";
-    vector<string> channelIDs;
-    while (true)
-    {
-        channelsStr = InputHelper::getInputString("Channel IDs (at least 1 required): ");
-        if (!channelsStr.empty())
-        {
-            channelIDs = splitString(channelsStr, ',');
-            if (!channelIDs.empty() && !channelIDs[0].empty())
-                break;
-        }
-        cout << "[Error] Package must contain at least 1 channel!\n";
-    }
+    cout << "\nChannels configuration (Must have > 1 channel and all must exist):\n";
+    vector<string> channelIDs = inputChannelIDs(false);
 
-    cout << "\nEnter VOD IDs separated by comma (optional, leave empty if none):" << endl;
-    string vodsStr = InputHelper::getInputOptionalString("VOD IDs: ");
-    vector<string> vodIDs;
-    if (!vodsStr.empty())
-    {
-        vodIDs = splitString(vodsStr, ',');
-    }
+    cout << "\nVODs configuration (Must have > 1 VOD and all must exist):\n";
+    vector<string> vodIDs = inputVodIDs(false);
 
     Package temp(repo.generateNextID(), name, monthlyPrice, status, channelIDs, vodIDs);
     if (repo.create(temp))
@@ -154,49 +311,54 @@ void PackageMenu::updatePackage()
     cout << "===== Current Package Information =====" << endl;
     TablePrinter::printSingle(widths, headers, pkg->exportToVector());
 
-    cout << "\nLeave field empty to keep current value.\n";
-
-    string newName = InputHelper::getInputOptionalString("New Name [" + pkg->getName() + "]: ");
-    if (!newName.empty())
-        pkg->setName(newName);
-
-    string newPriceStr = InputHelper::getInputOptionalString("New Monthly Price [" + to_string(pkg->getMonthlyPrice()) + "]: ");
-    if (!newPriceStr.empty())
+    bool inActiveContract = isPackageInActiveContract(pkg->getID());
+    if (inActiveContract)
     {
-        try {
-            long long newPrice = stoll(newPriceStr);
-            if (newPrice > 0)
-                pkg->setMonthlyPrice(newPrice);
-            else
-                cout << "[Notice] Invalid price, keeping current price.\n";
-        } catch (...) {
-            cout << "[Notice] Invalid price format, keeping current price.\n";
-        }
+        cout << "\n[Notice] This package is currently in an ACTIVE contract.\n";
+        cout << "[Rule] You can ONLY change its Status.\n\n";
+
+        PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
+        pkg->setStatus(newStatus);
     }
-
-    PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
-    pkg->setStatus(newStatus);
-
-    string newChannelsStr = InputHelper::getInputOptionalString("New Channel IDs [" + pkg->getChannelIDsString() + "]: ");
-    if (!newChannelsStr.empty())
+    else
     {
-        vector<string> channels = splitString(newChannelsStr, ',');
-        if (!channels.empty() && !channels[0].empty())
-            pkg->setChannelIDs(channels);
-    }
+        cout << "\nLeave field empty (Press Enter) to keep current value.\n";
 
-    string newVodsStr = InputHelper::getInputOptionalString("New VOD IDs [" + pkg->getVodIDsString() + "] (enter '-' to clear): ");
-    if (!newVodsStr.empty())
-    {
-        if (newVodsStr == "-")
+        string newName = InputHelper::getInputOptionalString("New Name [" + pkg->getName() + "]: ");
+        if (!newName.empty())
+            pkg->setName(newName);
+
+        while (true)
         {
-            pkg->setVodIDs({});
+            string newPriceStr = InputHelper::getInputOptionalString("New Monthly Price [" + to_string(pkg->getMonthlyPrice()) + "]: ");
+            if (newPriceStr.empty())
+                break;
+            try {
+                long long newPrice = stoll(newPriceStr);
+                if (newPrice > 0)
+                {
+                    pkg->setMonthlyPrice(newPrice);
+                    break;
+                }
+                else
+                {
+                    cout << "[Error] Price must be positive (> 0)! Please try again.\n";
+                }
+            } catch (...) {
+                cout << "[Error] Invalid price format! Please try again.\n";
+            }
         }
-        else
-        {
-            vector<string> vods = splitString(newVodsStr, ',');
-            pkg->setVodIDs(vods);
-        }
+
+        PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
+        pkg->setStatus(newStatus);
+
+        cout << "\nNew Channels [" << pkg->getChannelIDsString() << "]:\n";
+        vector<string> newChannels = inputChannelIDs(true, pkg->getChannelIDs());
+        pkg->setChannelIDs(newChannels);
+
+        cout << "\nNew VODs [" << pkg->getVodIDsString() << "]:\n";
+        vector<string> newVods = inputVodIDs(true, pkg->getVodIDs());
+        pkg->setVodIDs(newVods);
     }
 
     if (repo.update(*pkg))
@@ -235,10 +397,14 @@ void PackageMenu::deletePackage()
     cout << "You are about to delete Package:" << endl;
     TablePrinter::printSingle(widths, headers, pkg->exportToVector());
 
-    // =====================================================================
-    // [PLACEHOLDER] Delete conditions
-    // Kiem tra hop dong tham chieu truoc khi xoa se tich hop o IntegrityValidator
-    // =====================================================================
+    // Check Removal dependency: Must not be in any active contract
+    if (isPackageInActiveContract(targetID))
+    {
+        cout << "\n[Error] Cannot delete Package " << targetID << " because it is currently assigned to an ACTIVE contract!\n";
+        cout << "Please update or terminate the active contract before deleting this package.\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+        return;
+    }
 
     string confirm = InputHelper::getInputString("Are you sure you want to delete this Package? (y/n): ");
     if (confirm == "y" || confirm == "Y")
@@ -295,4 +461,3 @@ void PackageMenu::handleChoice(int choice)
         break;
     }
 }
-

@@ -1,3 +1,10 @@
-PHT001|HD001|STB001|2026-09-20 08:00|STB khong len nguon|UU_TIEN|DA_DONG|Da kiem tra va thay bo nguon|2026-09-20 10:00
+PHT001|HD001|STB001|2026-09-20 08:00|STB khong len nguon|BINH_THUONG|DA_DONG|Da kiem tra va thay the bo xu ly|2026-09-20 10:00
 PHT002|HD001||2026-09-22 14:30|Khong xem duoc kenh the thao|BINH_THUONG|TIEP_NHAN||
-
+PHT003|HD002|STB008|2026-09-23 09:15|Dieu khien tu xa bi liet phim|BINH_THUONG|DA_DONG|Doi remote moi cho khach hang|2026-09-23 15:30
+PHT004|HD003|STB009|2026-09-25 19:40|Hinh anh bi giat lag va vo hinh|UU_TIEN|DANG_XU_LY||
+PHT005|HD004||2026-09-26 10:20|Muon doi sang goi VIP Premium|BINH_THUONG|DA_DONG|Da huong dan thu tuc doi goi|2026-09-26 11:00
+PHT006|HD004|STB010|2026-09-27 16:05|STB bi treo logo khi khoi dong|KHAN_CAP|DANG_XU_LY||
+PHT007|HD005|STB014|2026-09-28 08:45|Cong HDMI chap chon khong co am thanh|UU_TIEN|DA_DONG|Thay day cap HDMI moi|2026-09-28 11:20
+PHT008|HD006|STB015|2026-09-29 13:10|STB bao loi khong co tin hieu mang|KHAN_CAP|TIEP_NHAN||
+PHT009|HD007|STB016|2026-09-30 17:25|Khong vao duoc kho noi dung VOD|BINH_THUONG|DA_DONG|Kich hoat lai quyen truy cap VOD|2026-09-30 18:00
+PHT010|HD007||2026-10-01 20:00|Thac mac ve cuoc phi tren hoa don|BINH_THUONG|DA_DONG|Da giai thich chi tiet cac khoan phi|2026-10-01 20:30
