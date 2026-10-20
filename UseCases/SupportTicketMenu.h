@@ -16,7 +16,6 @@ private:
     void deleteTicket();
 
     TicketPriority inputTicketPriority(bool isOptional = false, TicketPriority current = TicketPriority::BINH_THUONG);
-    TicketStatus inputTicketStatus(bool isOptional = false, TicketStatus current = TicketStatus::TIEP_NHAN);
 
 protected:
     void printMenu() override;

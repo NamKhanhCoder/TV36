@@ -22,9 +22,6 @@ enum class TicketStatus
 string ticketPriorityToString(TicketPriority priority);
 TicketPriority stringToTicketPriority(const string &str);
 
-string ticketStatusToString(TicketStatus status);
-TicketStatus stringToTicketStatus(const string &str);
-
 class SupportTicket : public Entity
 {
 private:
@@ -33,14 +30,13 @@ private:
     string receivedDate;  // yyyy-mm-dd HH:mm
     string content;
     TicketPriority priority;
-    TicketStatus status;
-    string resolution;    // Bắt buộc khi DA_DONG, để trống khi chưa đóng
-    string closedDate;    // yyyy-mm-dd HH:mm, bắt buộc khi DA_DONG, để trống khi chưa đóng
+    string resolution;    // Tuỳ chọn / ket qua xu ly
+    string closedDate;    // yyyy-mm-dd HH:mm
 
 public:
     SupportTicket();
     SupportTicket(string id, string contractID, string stbID, string receivedDate,
-                  string content, TicketPriority priority, TicketStatus status,
+                  string content, TicketPriority priority,
                   string resolution = "", string closedDate = "");
 
     void setContractID(const string &contractID);
@@ -48,7 +44,6 @@ public:
     void setReceivedDate(const string &receivedDate);
     void setContent(const string &content);
     void setPriority(TicketPriority priority);
-    void setStatus(TicketStatus status);
     void setResolution(const string &resolution);
     void setClosedDate(const string &closedDate);
 
@@ -58,13 +53,14 @@ public:
     string getContent() const;
     TicketPriority getPriority() const;
     string getPriorityString() const;
-    TicketStatus getStatus() const;
-    string getStatusString() const;
     string getResolution() const;
     string getClosedDate() const;
+
+    // Giu lai phuong thuc getStatus de khong lam hong cac use case khac goi den (nhu SetTopBoxMenu)
+    TicketStatus getStatus() const;
+    string getStatusString() const;
 
     string exportToString() const override;
     vector<string> exportToVector() const override;
     void parseFromString(const string &data) override;
 };
-

@@ -217,31 +217,91 @@ void PackageMenu::createPackage()
     SystemHelper::clearScreen();
     cout << "===== Create New Package =====" << endl;
 
-    string name = InputHelper::getInputString("Package Name: ");
-    
-    long long monthlyPrice = 0;
+    Package temp;
+
+    // 1. Name with setter try-catch
     while (true)
     {
-        monthlyPrice = static_cast<long long>(InputHelper::getInputDouble("Monthly Price (VND > 0): "));
-        if (monthlyPrice > 0)
+        string name = InputHelper::getInputString("Package Name: ");
+        try
+        {
+            temp.setName(name);
             break;
-        cout << "[Error] Price must be greater than 0! Please enter again.\n";
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[PackageMenu] Invalid Name input during creation: " + string(e.what()));
+        }
+    }
+    
+    // 2. Monthly Price with setter try-catch
+    while (true)
+    {
+        long long monthlyPrice = static_cast<long long>(InputHelper::getInputDouble("Monthly Price (VND > 0): "));
+        try
+        {
+            temp.setMonthlyPrice(monthlyPrice);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[PackageMenu] Invalid Monthly Price input during creation: " + string(e.what()));
+        }
     }
 
+    // 3. Status with setter try-catch
     PackageStatus status = inputPackageStatus(false);
+    try
+    {
+        temp.setStatus(status);
+    }
+    catch (const exception &e)
+    {
+        cout << "[Validation Error] " << e.what() << endl;
+    }
 
+    // 4. Channels configuration with setter try-catch
     cout << "\nChannels configuration (Must have > 1 channel and all must exist):\n";
-    vector<string> channelIDs = inputChannelIDs(false);
+    while (true)
+    {
+        vector<string> channelIDs = inputChannelIDs(false);
+        try
+        {
+            temp.setChannelIDs(channelIDs);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[PackageMenu] Invalid Channel IDs input during creation: " + string(e.what()));
+        }
+    }
 
+    // 5. VODs configuration with setter try-catch
     cout << "\nVODs configuration (Must have > 1 VOD and all must exist):\n";
-    vector<string> vodIDs = inputVodIDs(false);
+    while (true)
+    {
+        vector<string> vodIDs = inputVodIDs(false);
+        try
+        {
+            temp.setVodIDs(vodIDs);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[PackageMenu] Invalid VOD IDs input during creation: " + string(e.what()));
+        }
+    }
 
-    Package temp(repo.generateNextID(), name, monthlyPrice, status, channelIDs, vodIDs);
-    if (repo.create(temp))
+    Package newPkg(repo.generateNextID(), temp.getName(), temp.getMonthlyPrice(), temp.getStatus(), temp.getChannelIDs(), temp.getVodIDs());
+    if (repo.create(newPkg))
     {
         repo.writeToFile();
-        LOG("[PackageMenu] Package created successfully, ID: " + temp.getID());
-        cout << "Package created successfully! ID: " << temp.getID() << endl;
+        LOG("[PackageMenu] Package created successfully, ID: " + newPkg.getID());
+        cout << "Package created successfully! ID: " << newPkg.getID() << endl;
     }
     else
     {
@@ -318,47 +378,91 @@ void PackageMenu::updatePackage()
         cout << "[Rule] You can ONLY change its Status.\n\n";
 
         PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
-        pkg->setStatus(newStatus);
+        try
+        {
+            pkg->setStatus(newStatus);
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << endl;
+        }
     }
     else
     {
         cout << "\nLeave field empty (Press Enter) to keep current value.\n";
 
-        string newName = InputHelper::getInputOptionalString("New Name [" + pkg->getName() + "]: ");
-        if (!newName.empty())
-            pkg->setName(newName);
+        while (true)
+        {
+            string newName = InputHelper::getInputOptionalString("New Name [" + pkg->getName() + "]: ");
+            if (newName.empty())
+                break;
+            try
+            {
+                pkg->setName(newName);
+                break;
+            }
+            catch (const exception &e)
+            {
+                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            }
+        }
 
         while (true)
         {
             string newPriceStr = InputHelper::getInputOptionalString("New Monthly Price [" + to_string(pkg->getMonthlyPrice()) + "]: ");
             if (newPriceStr.empty())
                 break;
-            try {
+            try
+            {
                 long long newPrice = stoll(newPriceStr);
-                if (newPrice > 0)
-                {
-                    pkg->setMonthlyPrice(newPrice);
-                    break;
-                }
-                else
-                {
-                    cout << "[Error] Price must be positive (> 0)! Please try again.\n";
-                }
-            } catch (...) {
-                cout << "[Error] Invalid price format! Please try again.\n";
+                pkg->setMonthlyPrice(newPrice);
+                break;
+            }
+            catch (const exception &e)
+            {
+                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
             }
         }
 
         PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
-        pkg->setStatus(newStatus);
+        try
+        {
+            pkg->setStatus(newStatus);
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << endl;
+        }
 
         cout << "\nNew Channels [" << pkg->getChannelIDsString() << "]:\n";
-        vector<string> newChannels = inputChannelIDs(true, pkg->getChannelIDs());
-        pkg->setChannelIDs(newChannels);
+        while (true)
+        {
+            vector<string> newChannels = inputChannelIDs(true, pkg->getChannelIDs());
+            try
+            {
+                pkg->setChannelIDs(newChannels);
+                break;
+            }
+            catch (const exception &e)
+            {
+                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            }
+        }
 
         cout << "\nNew VODs [" << pkg->getVodIDsString() << "]:\n";
-        vector<string> newVods = inputVodIDs(true, pkg->getVodIDs());
-        pkg->setVodIDs(newVods);
+        while (true)
+        {
+            vector<string> newVods = inputVodIDs(true, pkg->getVodIDs());
+            try
+            {
+                pkg->setVodIDs(newVods);
+                break;
+            }
+            catch (const exception &e)
+            {
+                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            }
+        }
     }
 
     if (repo.update(*pkg))
