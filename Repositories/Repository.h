@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <filesystem>
 #include "Utils/Debugger.h"
 #include <chrono>
 #include <thread>
@@ -22,6 +23,40 @@ private:
         }
         return res;
     }
+    void ensureFileExists(const string &path, const string &default_content = "")
+    {
+        ifstream check(path);
+        if (!check.is_open())
+        {
+            try
+            {
+                std::filesystem::path p(path);
+                if (p.has_parent_path() && !std::filesystem::exists(p.parent_path()))
+                {
+                    std::filesystem::create_directories(p.parent_path());
+                }
+            }
+            catch (...)
+            {
+            }
+
+            ofstream create_file(path);
+            if (create_file.is_open())
+            {
+                if (!default_content.empty())
+                {
+                    create_file << default_content;
+                }
+                create_file.close();
+                LOG("[Repository] Created file: " + path);
+            }
+            else
+            {
+                LOG("[Repository] Failed to create file: " + path);
+            }
+        }
+    }
+
     void loadIDCount()
     {
         ifstream file(counter_path);
@@ -30,6 +65,12 @@ private:
         {
             file >> counter;
             file.close();
+        }
+        else
+        {
+            // Neu file counter chua ton tai, tu tao file voi gia tri 0
+            ensureFileExists(counter_path, "0\n");
+            counter = 0;
         }
         this->id_count = counter;
         // in case the file is not openned, ID will be 0
@@ -72,9 +113,11 @@ public:
         LOG("[Repository] Attempt loading from " + file_path);
         ifstream file(file_path);
 
-        if (file.is_open() == false) // cant open case
+        if (file.is_open() == false) // cant open case -> file chua ton tai
         {
-            LOG("[Repository] Failed to open " + file_path);
+            LOG("[Repository] File not found: " + file_path + ", creating new empty file...");
+            ensureFileExists(file_path);
+            items.clear();
             return;
         }
 
@@ -83,6 +126,8 @@ public:
 
         while (getline(file, line)) // read line by line
         {
+            if (line.empty()) continue;
+
             T item;
             try
             {
@@ -98,11 +143,12 @@ public:
             items.push_back(item);
         }
         file.close();
-        LOG("[Repository] Successfully loaded from   file: " + file_path);
+        LOG("[Repository] Successfully loaded from file: " + file_path);
     }
     void writeToFile() // convert and save to file
     {
         LOG("[Repository] Attempt saving to " + file_path);
+        ensureFileExists(file_path);
         ofstream file(file_path);
 
         if (file.is_open() == false) // cant open case

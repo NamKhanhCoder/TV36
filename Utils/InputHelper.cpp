@@ -46,15 +46,19 @@ string InputHelper::getInputChannelStatus(const string &message, bool optional)
     while (true)
     {
         cout << message << " (0: Ngung phat, 1: Dang phat";
-        if (optional) cout << ", Enter: giu nguyen";
+        if (optional)
+            cout << ", Enter: giu nguyen";
         cout << "): " << endl;
         if (!getline(cin, input))
             throw runtime_error("Khong doc duoc trang thai kenh.");
         input = trim_end_spaces(input);
 
-        if (optional && input.empty()) return "";
-        if (input == "0") return "NGUNG_PHAT";
-        if (input == "1") return "DANG_PHAT";
+        if (optional && input.empty())
+            return "";
+        if (input == "0")
+            return "NGUNG_PHAT";
+        if (input == "1")
+            return "DANG_PHAT";
         cout << "[Error] Chi nhap 0 hoac 1. Vui long nhap lai.\n";
     }
 }
@@ -65,11 +69,14 @@ string InputHelper::getInputID(const string &message, const string &prefix, bool
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input)) throw runtime_error("Khong doc duoc ma.");
+        if (!getline(cin, input))
+            throw runtime_error("Khong doc duoc ma.");
         input = trim_end_spaces(input);
-        if (optional && input.empty()) return "";
+        if (optional && input.empty())
+            return "";
         transform(input.begin(), input.end(), input.begin(),
-                  [](unsigned char c) { return static_cast<char>(toupper(c)); });
+                  [](unsigned char c)
+                  { return static_cast<char>(toupper(c)); });
         // Repository padding toi thieu 3 chu so; chap nhan ca TL1000, KENH1000.
         if (input.size() >= prefix.size() + 3 &&
             input.size() <= static_cast<size_t>(numeric_limits<short>::max()) &&
@@ -86,13 +93,16 @@ int InputHelper::getInputPositiveInt(const string &message, bool optional)
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input)) throw runtime_error("Khong doc duoc so.");
+        if (!getline(cin, input))
+            throw runtime_error("Khong doc duoc so.");
         input = trim_end_spaces(input);
-        if (optional && input.empty()) return 0;
+        if (optional && input.empty())
+            return 0;
         if (Validator::isValidInt(input))
         {
             int value = stoi(input);
-            if (value > 0) return value;
+            if (value > 0)
+                return value;
         }
         cout << "[Error] So kenh phai la so nguyen lon hon 0. Nhap lai.\n";
     }
@@ -104,11 +114,14 @@ string InputHelper::getInputChannelResolution(const string &message, bool option
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input)) throw runtime_error("Khong doc duoc do phan giai.");
+        if (!getline(cin, input))
+            throw runtime_error("Khong doc duoc do phan giai.");
         input = trim_end_spaces(input);
-        if (optional && input.empty()) return "";
+        if (optional && input.empty())
+            return "";
         transform(input.begin(), input.end(), input.begin(),
-                  [](unsigned char c) { return static_cast<char>(toupper(c)); });
+                  [](unsigned char c)
+                  { return static_cast<char>(toupper(c)); });
         if (input == "SD" || input == "HD" || input == "FHD" || input == "UHD")
             return input;
         cout << "[Error] Do phan giai chi nhan SD, HD, FHD hoac UHD. Nhap lai.\n";
@@ -121,12 +134,17 @@ string InputHelper::getInputText(const string &message, bool optional)
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input)) throw runtime_error("Khong doc duoc du lieu.");
+        if (!getline(cin, input))
+            throw runtime_error("Khong doc duoc du lieu.");
         size_t first = input.find_first_not_of(" \t\v\f");
-        if (first == string::npos) input.clear();
-        else input = input.substr(first, input.find_last_not_of(" \t\v\f") - first + 1);
-        if (optional && input.empty()) return "";
-        if (!input.empty() && input.find_first_of("|\r\n") == string::npos) return input;
+        if (first == string::npos)
+            input.clear();
+        else
+            input = input.substr(first, input.find_last_not_of(" \t\v\f") - first + 1);
+        if (optional && input.empty())
+            return "";
+        if (!input.empty() && input.find_first_of("|\r\n") == string::npos)
+            return input;
         cout << "[Error] Text must not be empty or contain | / line breaks. Please enter again.\n";
     }
 }
@@ -136,7 +154,8 @@ string InputHelper::getInputDateTime(const string &message, bool optional)
     while (true)
     {
         string input = getInputText(message, optional);
-        if (optional && input.empty()) return "";
+        if (optional && input.empty())
+            return "";
         try
         {
             if (input.size() != 16 || input[4] != '-' || input[7] != '-' ||
@@ -144,7 +163,8 @@ string InputHelper::getInputDateTime(const string &message, bool optional)
                 throw invalid_argument("Use yyyy-mm-dd HH:mm.");
             for (size_t i = 0; i < input.size(); ++i)
             {
-                if (i == 4 || i == 7 || i == 10 || i == 13) continue;
+                if (i == 4 || i == 7 || i == 10 || i == 13)
+                    continue;
                 if (input[i] < '0' || input[i] > '9')
                     throw invalid_argument("Date/time must contain digits.");
             }
@@ -152,7 +172,7 @@ string InputHelper::getInputDateTime(const string &message, bool optional)
             Time(input.substr(11, 5));
             return input;
         }
-        catch (const exception& error)
+        catch (const exception &error)
         {
             cout << "[Error] Invalid date/time: " << error.what() << " Please enter again.\n";
         }
@@ -164,8 +184,10 @@ bool InputHelper::getInputConfirmation(const string &message)
     while (true)
     {
         string input = getInputText(message);
-        if (input == "y" || input == "Y") return true;
-        if (input == "n" || input == "N") return false;
+        if (input == "y" || input == "Y")
+            return true;
+        if (input == "n" || input == "N")
+            return false;
         cout << "[Error] Please enter y or n.\n";
     }
 }
@@ -177,7 +199,11 @@ int InputHelper::getInputInt(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        if (!getline(cin, input))
+        {
+            cin.clear();
+            continue;
+        }
         input = trim_end_spaces(input);
         LOG("[InputHelper] Integer sanitized to: " + input);
         if (Validator::isValidInt(input))
@@ -198,7 +224,11 @@ double InputHelper::getInputDouble(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        if (!getline(cin, input))
+        {
+            cin.clear();
+            continue;
+        }
         input = trim_end_spaces(input);
         LOG("[InputHelper] Double sanitized to: " + input);
         if (Validator::isValidDouble(input))
@@ -219,35 +249,51 @@ string InputHelper::getInputString(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
-        input = trim_end_spaces(input);
-        if (input.length() != 0) // not empty case
+        if (!getline(cin, input))
         {
-            LOG("[InputHelper] String is accepted, returning");
-            return input;
+            cin.clear(); // Xóa cờ lỗi EOF/failbit để bàn phím nhận diện lại
+            continue;    // Quay lại đầu vòng lặp chờ người dùng gõ tiếp
         }
-        else
+
+        input = trim_end_spaces(input);
+        if (input.empty())
         {
             cout << "[Error] The entered value is invalid, please try again" << endl;
             LOG("[InputHelper] String is rejected, please try again");
+            continue;
         }
+        if (input.find_first_of("|\r\n") != string::npos)
+        {
+            cout << "[Error] The entered value contains illegal characters, please try again" << endl;
+            LOG("[InputHelper] String is rejected, please try again");
+            continue;
+        }
+        return input;
     }
 }
 string InputHelper::getInputOptionalString(const string &message)
 {
     string input;
-    cout << message << endl;
-    getline(cin, input);
-    input = trim_end_spaces(input);
-    
-    if (input.empty())
+    while (true)
     {
-        LOG("[InputHelper] Optional String skipped, returning empty string");
-        return "";
+        cout << message << endl;
+        if (!getline(cin, input))
+        {
+            cin.clear();
+            return "";
+        }
+
+        input = trim_end_spaces(input);
+        if (input.empty())
+            return "";
+
+        if (input.find_first_of("|\r\n") != string::npos) // case ịnection
+        {
+            cout << "[Error] The entered value contains illegal characters, please try again" << endl;
+            continue;
+        }
+        return input;
     }
-    
-    LOG("[InputHelper] OptionalString is accepted, returning");
-    return input;
 }
 
 string InputHelper::getInputEmail(const string &message)
@@ -417,7 +463,7 @@ Date InputHelper::getInputDate(const string &message)
         cout << message << " (dd/mm/yyyy): " << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
-        
+
         LOG("[InputHelper] Date sanitized to: " + input);
         if (Validator::isValidDate(input))
         {
@@ -440,12 +486,12 @@ Time InputHelper::getInputTime(const string &message)
         cout << message << " (hh:mm): " << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
-        
+
         LOG("[InputHelper] Time sanitized to: " + input);
         if (Validator::isValidTime(input))
         {
             LOG("[InputHelper] Time is accepted, returning Time object");
-            return Time(input); 
+            return Time(input);
         }
         else
         {

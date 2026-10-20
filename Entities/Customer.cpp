@@ -23,21 +23,33 @@ Customer::Customer(string id, string name, string phone, string email, string ad
 
 void Customer::setName(const string &name)
 {
+    if (name.empty())
+        throw invalid_argument("[Customer] Ten khach hang khong duoc de trong!");
+    if (name.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Customer] Ten khach hang khong duoc chua ky tu '|' hoac xuong dong!");
     this->name = name;
 }
 
 void Customer::setPhone(const string &phone)
 {
+    if (!Validator::isValidPhone(phone))
+        throw invalid_argument("[Customer] So dien thoai khong hop le (phai gom 10 chu so va bat dau bang 0)!");
     this->phone = phone;
 }
 
 void Customer::setEmail(const string &email)
 {
+    if (!Validator::isValidEmail(email))
+        throw invalid_argument("[Customer] Email khong dung dinh dang hop le!");
     this->email = email;
 }
 
 void Customer::setAddress(const string &address)
 {
+    if (address.empty())
+        throw invalid_argument("[Customer] Dia chi khong duoc de trong!");
+    if (address.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Customer] Dia chi khong duoc chua ky tu '|' hoac xuong dong!");
     this->address = address;
 }
 
@@ -76,31 +88,24 @@ void Customer::parseFromString(const string &data)
 {
     vector<string> words = splitString(data);
 
-    if(words.size()!=5)
+    if (words.size() != 5)
     {
-        throw invalid_argument("[Customer] The line of data is not valid: "+data);
+        throw invalid_argument("[Customer] The line of data is not valid: " + data);
     }
 
     id = words[0];
-    if(Validator::isValidID(id,"KH",5) == false)
+    if (Validator::isValidID(id, "KH", 5) == false)
     {
-        throw invalid_argument("[Customer] The ID of data is not valid: "+data);
+        throw invalid_argument("[Customer] The ID of data is not valid: " + data);
     }
-    name = words[1];
-    phone = words[2];
-    if(Validator::isValidPhone(phone)==false)
-    {
-        throw invalid_argument("[Customer] The Phone of data is not valid: "+data);
-    }
-    email = words[3];
-    if(Validator::isValidEmail(email)==false)
-    {
-        throw invalid_argument("[Customer] The Email of data is not valid: "+data);
-    }
+
+    setName(words[1]);
+    setPhone(words[2]);
+    setEmail(words[3]);
     string addr = words[4];
     if (!addr.empty() && addr.back() == '\r')
         addr.pop_back();
-    address = addr;
+    setAddress(addr);
 }
 
 bool Customer::operator<(const Customer &other) const

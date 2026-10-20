@@ -23,16 +23,28 @@ SetTopBox::SetTopBox(string id, string serial, string manufacturer, string model
 
 void SetTopBox::setSerial(const string &serial)
 {
+    if (serial.empty())
+        throw invalid_argument("[SetTopBox] So Serial khong duoc de trong!");
+    if (serial.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[SetTopBox] So Serial khong duoc chua ky tu '|' hoac xuong dong!");
     this->serial = serial;
 }
 
 void SetTopBox::setManufacturer(const string &manufacturer)
 {
+    if (manufacturer.empty())
+        throw invalid_argument("[SetTopBox] Nha san xuat khong duoc de trong!");
+    if (manufacturer.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[SetTopBox] Nha san xuat khong duoc chua ky tu '|' hoac xuong dong!");
     this->manufacturer = manufacturer;
 }
 
 void SetTopBox::setModel(const string &model)
 {
+    if (model.empty())
+        throw invalid_argument("[SetTopBox] Model khong duoc de trong!");
+    if (model.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[SetTopBox] Model khong duoc chua ky tu '|' hoac xuong dong!");
     this->model = model;
 }
 
@@ -135,18 +147,18 @@ void SetTopBox::parseFromString(const string &data)
     vector<string> words = splitString(data);
     if (words.size() != 6)
     {
-        throw invalid_argument("[Customer] The line of data is not valid: " + data);
+        throw invalid_argument("[SetTopBox] The line of data is not valid: " + data);
     }
     id = words[0];
-    if(Validator::isValidID(id,"STB",6)==false)
+    if (Validator::isValidID(id, "STB", 6) == false)
     {
-        throw invalid_argument("[Customer] The ID is not valid: " + data);
+        throw invalid_argument("[SetTopBox] The ID is not valid: " + data);
     }
-    serial = words[1];
-    manufacturer = words[2];
-    model = words[3];
-    importDate = Date(words[4]);
-    technicalStatus = parseTechnicalStatus(words[5]);
+    setSerial(words[1]);
+    setManufacturer(words[2]);
+    setModel(words[3]);
+    setImportDate(Date(words[4]));
+    setTechnicalStatus(parseTechnicalStatus(words[5]));
 }
 
 bool SetTopBox::operator<(const SetTopBox &other) const
