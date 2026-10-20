@@ -261,7 +261,21 @@ void ContractMenu::createContract()
     Date endDate = calculateEndDate(startDate);
 
     // Dia chi
-    string installationAddress = InputHelper::getInputString("Installation Address: ");
+    string installationAddress;
+    while (true)
+    {
+        installationAddress = InputHelper::getInputString("Installation Address: ");
+        try
+        {
+            Contract dummy;
+            dummy.set_installationAddress(installationAddress);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
+    }
 
     // Tinh phi thang: Mac dinh theo Package, co the tuy chinh gia thoa thuan
     Package *pkg = repoPackage.readByID(packageID);
@@ -481,15 +495,25 @@ void ContractMenu::updateAddress(Contract *contract)
     cout << "\n--- Change Installation Address ---\n";
     cout << "Current Address: " << contract->get_installationAddress() << "\n";
 
-    string newAddress = InputHelper::getInputString("Enter new installation address (or leave empty to cancel): ");
-    if (!newAddress.empty())
+    while (true)
     {
-        contract->set_installationAddress(newAddress);
-        cout << "[Success] Installation address updated successfully!\n";
-    }
-    else
-    {
-        cout << "[Notice] Address update cancelled.\n";
+        string newAddress = InputHelper::getInputOptionalString("Enter new installation address (or leave empty to cancel): ");
+        if (newAddress.empty())
+        {
+            cout << "[Notice] Address update cancelled.\n";
+            return;
+        }
+
+        try
+        {
+            contract->set_installationAddress(newAddress);
+            cout << "[Success] Installation address updated successfully!\n";
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
     }
 }
 

@@ -64,6 +64,7 @@ void ChannelCategoryMenu::createChannelCategory()
     cout << "       CREATE NEW CHANNEL CATEGORY\n";
     cout << "=========================================\n";
 
+    ChannelCategory temp;
     string name;
     while (true)
     {
@@ -75,9 +76,13 @@ void ChannelCategoryMenu::createChannelCategory()
             return;
         }
 
-        if (name.empty())
+        try
         {
-            cout << "[Error] Category name cannot be empty! Please try again.\n";
+            temp.setName(name);
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
             continue;
         }
 
@@ -90,9 +95,22 @@ void ChannelCategoryMenu::createChannelCategory()
         break;
     }
 
-    string description = InputHelper::getInputOptionalString("Category's description: ");
+    string description;
+    while (true)
+    {
+        description = InputHelper::getInputOptionalString("Category's description: ");
+        try
+        {
+            temp.setDescription(description);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
+    }
 
-    ChannelCategory newCategory(repo.generateNextID(), name, description);
+    ChannelCategory newCategory(repo.generateNextID(), temp.getName(), temp.getDescription());
     if (repo.create(newCategory))
     {
         repo.writeToFile();
@@ -184,9 +202,16 @@ void ChannelCategoryMenu::updateName(ChannelCategory *category)
             continue;
         }
 
-        category->setName(newName);
-        cout << "[Success] Category name updated successfully to: \"" << newName << "\"!\n";
-        break;
+        try
+        {
+            category->setName(newName);
+            cout << "[Success] Category name updated successfully to: \"" << newName << "\"!\n";
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
     }
 }
 
@@ -195,15 +220,25 @@ void ChannelCategoryMenu::updateDescription(ChannelCategory *category)
     cout << "\n--- Update Category Description ---\n";
     cout << "Current Description: " << category->getDescription() << "\n";
 
-    string newDesc = InputHelper::getInputOptionalString("Enter new description (or leave empty to keep current): ");
-    if (!newDesc.empty())
+    while (true)
     {
-        category->setDescription(newDesc);
-        cout << "[Success] Description updated successfully!\n";
-    }
-    else
-    {
-        cout << "[Notice] Description unchanged.\n";
+        string newDesc = InputHelper::getInputOptionalString("Enter new description (or leave empty to keep current): ");
+        if (newDesc.empty())
+        {
+            cout << "[Notice] Description unchanged.\n";
+            return;
+        }
+
+        try
+        {
+            category->setDescription(newDesc);
+            cout << "[Success] Description updated successfully!\n";
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
     }
 }
 
