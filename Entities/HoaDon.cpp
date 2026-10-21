@@ -18,7 +18,7 @@ HoaDon::HoaDon()
     maHopDong = "";
     maKhachHang = "";
     soTien = 0.0;
-    trangThai = "UnPaid";
+    trangThai = "Unpaid";
 }
 // Cac ham getter lay gia tri thuoc tinh
 string HoaDon::getMaHopDong() const
@@ -100,9 +100,13 @@ void HoaDon::setNgayTraTien(Date ngayTraTien)
 }
 void HoaDon::setTrangThai(string trangThai)
 {
-    if (trangThai == "Paid" || trangThai == "UnPaid" || trangThai == "Unpaid")
+    if (this->trangThai == "Paid" && trangThai != "Paid")
     {
-        this->trangThai = (trangThai == "Unpaid") ? "UnPaid" : trangThai;
+        throw invalid_argument("Hoa don da thanh toan (Paid), khong the thay doi trang thai!");
+    }
+    if (trangThai == "Paid" || trangThai == "Unpaid")
+    {
+        this->trangThai = trangThai;
     }
     else
         throw invalid_argument("[INVOICE] the status of the data is not valid: " + trangThai);
@@ -164,6 +168,7 @@ void HoaDon::parseFromString(const string &data)
             throw invalid_argument("[INVOICE] Payment date is not a valid date in: " + data);
         }
     }
+
     setTrangThai(words[7]);
 }
 // Xuat cac thuoc tinh thanh vector string phuc vu in bang can cot TablePrinter
