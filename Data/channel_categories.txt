@@ -1,10 +1,10 @@
-TL001|The thao|Kenh the thao, bong da trong nuoc va quoc te
-TL002|Giao duc|Kenh day hoc, ky nang song va khoa hoc vui
-TL003|Phim truyen|Phim dien anh bom tan, phim truyen hinh chau A va My
-TL004|Thoi su|Tin tuc thoi su chinh tri, kinh te xa hoi 24/7
-TL005|Giai tri|Chuong trinh truyen hinh thuc te, gameshow ca nhac
-TL006|Thieu nhi|Phim hoat hinh, ca nhac thieu nhi va chuong trinh tuoi tho
-TL007|Kham pha|The gioi dong vat, thien nhien va khoa hoc vu tru
-TL008|Am nhac|Kenh am nhac Viet Nam va quoc te top trending
-TL009|Quoc te|Kenh tin tuc quoc te CNN, BBC, NHK World
-TL010|Dia phuong|Kenh truyen hinh thiet yeu cua cac tinh thanh pho
+TL001|The thao|Bong da va cac mon the thao
+TL002|Giao duc|Hoc tap va ky nang
+TL003|Phim truyen|Phim dai tap va dien anh
+TL004|Thoi su|Tin tuc trong nuoc va quoc te
+TL005|Khoa hoc|Khoa hoc va cong nghe
+TL006|Thieu nhi|Chuong trinh danh cho tre em
+TL007|Am nhac|Ca nhac va bieu dien
+TL008|Du lich|Kham pha van hoa va dia danh
+TL009|Doi song|Gia dinh va suc khoe
+TL010|Nong nghiep|Danh muc du phong de thu sua xoa

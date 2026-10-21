@@ -1,10 +1,10 @@
-TL001|The thao|Cac kenh the thao trong nuoc va quoc te
-TL002|Giao duc|Kenh giao duc, hoc tap va tre em
-TL003|Giai tri|Kenh phim truyen, ca nhac va gameshow
-TL004|Thoi su|Ban tin thoi su, chinh luan va tin tuc 24/7
-TL005|Kham pha|Kenh the gioi dong vat, khoa hoc va doi song
-TL006|Dien anh|Kenh chuyen chieu phim bom tan Hollywood va Chau A
-TL007|Am nhac|Kenh am nhac Viet Nam va quoc te
-TL008|Tre em|Phim hoat hinh va chuong trinh thieu nhi
-TL009|Kinh te|Tin tuc thi truong tai chinh va kinh doanh
-TL010|Quoc te|Cac kenh truyen hinh thong tin quoc te tong hop
+TL001|The thao|Bong da va cac mon the thao
+TL002|Giao duc|Hoc tap va ky nang
+TL003|Phim truyen|Phim dai tap va dien anh
+TL004|Thoi su|Tin tuc trong nuoc va quoc te
+TL005|Khoa hoc|Khoa hoc va cong nghe
+TL006|Thieu nhi|Chuong trinh danh cho tre em
+TL007|Am nhac|Ca nhac va bieu dien
+TL008|Du lich|Kham pha van hoa va dia danh
+TL009|Doi song|Gia dinh va suc khoe
+TL010|Nong nghiep|Danh muc du phong de thu sua xoa

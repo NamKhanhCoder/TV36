@@ -1,10 +1,12 @@
-KH001|Le Tran Nam Khanh|0912345671|khanh@gmail.com|12 Hang Bai, Ha Noi
-KH002|Nguyen Hong Anh|0912345672|honganh@gmail.com|45 Le Loi, TP HCM
-KH003|Phan Quoc Trung|0912345673|quoctrung@gmail.com|78 Nguyen Van Linh, Da Nang
-KH004|Nguyen Khac Hieu|0912345674|khachieu@gmail.com|23 Tran Phu, Hai Phong
-KH005|Duong Bao Long|0912345675|baolong@gmail.com|56 30 Thang 4, Can Tho
-KH006|Tran Van An|0912345676|an.tran@gmail.com|89 Hoang Dieu, Ha Noi
-KH007|Le Thi Binh|0912345677|binh.le@gmail.com|101 Nguyen Hue, TP HCM
-KH008|Pham Quang Cuong|0912345678|cuong.pham@gmail.com|12 Hai Ba Trung, Hue
-KH009|Hoang Minh Duc|0912345679|duc.hoang@gmail.com|34 Quang Trung, Nha Trang
-KH010|Vu Thi Mai|0912345680|mai.vu@gmail.com|67 Phan Chu Trinh, Da Lat
+KH001|Nguyen Minh An|0900000001|kh001@example.com|10 Duong Mau, Quan Ha Dong, Ha Noi
+KH002|Tran Bao Binh|0900000002|kh002@example.com|20 Duong Mau, Quan Ha Dong, Ha Noi
+KH003|Le Ngoc Chi|0900000003|kh003@example.com|30 Duong Mau, Quan Ha Dong, Ha Noi
+KH004|Pham Quang Duy|0900000004|kh004@example.com|40 Duong Mau, Quan Ha Dong, Ha Noi
+KH005|Hoang Thu Giang|0900000005|kh005@example.com|50 Duong Mau, Quan Ha Dong, Ha Noi
+KH006|Vu Duc Hai|0900000006|kh006@example.com|60 Duong Mau, Quan Ha Dong, Ha Noi
+KH007|Do Thanh Lam|0900000007|kh007@example.com|70 Duong Mau, Quan Ha Dong, Ha Noi
+KH008|Bui Khanh Linh|0900000008|kh008@example.com|80 Duong Mau, Quan Ha Dong, Ha Noi
+KH009|Dang Hoai Nam|0900000009|kh009@example.com|90 Duong Mau, Quan Ha Dong, Ha Noi
+KH010|Ngo Minh Phuong|0900000010|kh010@example.com|100 Duong Mau, Quan Ha Dong, Ha Noi
+KH011|Dinh Gia Quan|0900000011|kh011@example.com|110 Duong Mau, Quan Ha Dong, Ha Noi
+KH012|Mai Anh Thu|0900000012|kh012@example.com|120 Duong Mau, Quan Ha Dong, Ha Noi

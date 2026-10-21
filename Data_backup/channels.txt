@@ -1,10 +1,12 @@
-KENH001|VTV1 HD|TL004|1|HD|https://stream.tv360.vn/live/vtv1_hd.m3u8|DANG_PHAT
-KENH002|VTV3 HD|TL003|3|FHD|https://stream.tv360.vn/live/vtv3_hd.m3u8|DANG_PHAT
-KENH003|VTV7 HD|TL002|7|HD|https://stream.tv360.vn/live/vtv7_hd.m3u8|DANG_PHAT
-KENH004|VTV Cung The Thao|TL001|6|FHD|https://stream.tv360.vn/live/vtv_sports.m3u8|DANG_PHAT
-KENH005|Discovery Channel|TL005|50|FHD|https://stream.tv360.vn/live/discovery.m3u8|DANG_PHAT
-KENH006|HBO Cinema|TL006|40|FHD|https://stream.tv360.vn/live/hbo_hd.m3u8|DANG_PHAT
-KENH007|Cartoon Network|TL008|30|HD|https://stream.tv360.vn/live/cartoon_net.m3u8|DANG_PHAT
-KENH008|MTV Music|TL007|25|HD|https://stream.tv360.vn/live/mtv_hd.m3u8|DANG_PHAT
-KENH009|Bloomberg TV|TL009|15|HD|https://stream.tv360.vn/live/bloomberg.m3u8|DANG_PHAT
-KENH010|CNN International|TL010|10|FHD|https://stream.tv360.vn/live/cnn_intl.m3u8|DANG_PHAT
+KENH001|TV36 Thoi Su|TL004|1|HD|https://example.com/tv36/live/kenh001.m3u8|DANG_PHAT
+KENH002|TV36 The Thao|TL001|2|FHD|https://example.com/tv36/live/kenh002.m3u8|DANG_PHAT
+KENH003|TV36 Giao Duc|TL002|3|HD|https://example.com/tv36/live/kenh003.m3u8|DANG_PHAT
+KENH004|TV36 Phim|TL003|4|FHD|https://example.com/tv36/live/kenh004.m3u8|DANG_PHAT
+KENH005|TV36 Khoa Hoc|TL005|5|UHD|https://example.com/tv36/live/kenh005.m3u8|DANG_PHAT
+KENH006|TV36 Thieu Nhi|TL006|6|HD|https://example.com/tv36/live/kenh006.m3u8|DANG_PHAT
+KENH007|TV36 Am Nhac|TL007|7|FHD|https://example.com/tv36/live/kenh007.m3u8|DANG_PHAT
+KENH008|TV36 Du Lich|TL008|8|UHD|https://example.com/tv36/live/kenh008.m3u8|DANG_PHAT
+KENH009|TV36 Doi Song|TL009|9|HD|https://example.com/tv36/live/kenh009.m3u8|DANG_PHAT
+KENH010|TV36 Tin Quoc Te|TL004|10|SD|https://example.com/tv36/live/kenh010.m3u8|DANG_PHAT
+KENH011|TV36 Phim Cu|TL003|11|SD|https://example.com/tv36/live/kenh011.m3u8|NGUNG_PHAT
+KENH012|TV36 Thu Nghiem|TL004|12|HD|https://example.com/tv36/live/kenh012.m3u8|DANG_PHAT

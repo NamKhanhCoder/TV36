@@ -1,10 +1,24 @@
-LPS001|KENH001|Thoi su 19h|2026-10-17 19:00|2026-10-17 19:45|Ban tin thoi su Viet Nam va quoc te
-LPS002|KENH001|Chao buoi sang|2026-10-18 06:00|2026-10-18 07:00|Diem tin dau ngay
-LPS003|KENH002|Ca phe sang|2026-10-18 07:00|2026-10-18 08:00|Giai tri va loi song
-LPS004|KENH002|Chieu phim cuoi tuan|2026-10-18 20:00|2026-10-18 22:00|Phim truyen chon loc
-LPS005|KENH003|Day tieng Anh tren truyen hinh|2026-10-18 08:30|2026-10-18 09:15|Hoc tieng Anh giao tiep
-LPS006|KENH004|Ngoai hang Anh truc tiep|2026-10-18 21:00|2026-10-18 23:00|Vong 8 Premier League
-LPS007|KENH005|Hanh tinh xanh|2026-10-18 14:00|2026-10-18 15:00|Kham pha dai duong ky thu
-LPS008|KENH006|Phim bom tan HBO|2026-10-18 21:30|2026-10-18 23:30|The Dark Knight Rises
-LPS009|KENH007|Ben 10|2026-10-18 16:00|2026-10-18 17:00|Phim hoat hinh thieu nhi
-LPS010|KENH010|Global News Hour|2026-10-18 18:00|2026-10-18 19:00|World news update
+LPS001|KENH001|Thoi su chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS002|KENH001|Thoi su toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS003|KENH002|Tong hop the thao chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS004|KENH002|Tong hop the thao toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS005|KENH003|Hoc cung em chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS006|KENH003|Hoc cung em toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS007|KENH004|Phim truyen chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS008|KENH004|Phim truyen toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS009|KENH005|Kham pha khoa hoc chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS010|KENH005|Kham pha khoa hoc toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS011|KENH006|Hoat hinh chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS012|KENH006|Hoat hinh toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS013|KENH007|Ca nhac chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS014|KENH007|Ca nhac toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS015|KENH008|Du lich Viet Nam chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS016|KENH008|Du lich Viet Nam toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS017|KENH009|Song khoe chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS018|KENH009|Song khoe toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS019|KENH010|Tin tuc quoc te chieu|2026-10-22 18:00|2026-10-22 19:00|Lich phat mau TV36
+LPS020|KENH010|Tin tuc quoc te toi|2026-10-22 19:00|2026-10-22 20:00|Lich phat mau TV36
+LPS021|KENH001|Ban tin dem|2026-10-22 23:30|2026-10-23 00:30|
+LPS022|KENH001|Tin sang som|2026-10-23 00:30|2026-10-23 01:00|
+LPS023|KENH002|The thao sang|2026-10-23 06:00|2026-10-23 07:00|
+LPS024|KENH003|Lop hoc sang|2026-10-23 08:00|2026-10-23 09:00|
