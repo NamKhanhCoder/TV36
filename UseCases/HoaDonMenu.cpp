@@ -123,7 +123,7 @@ void HoaDonMenu::themHoaDon()
         ngayTraTien = InputHelper::getInputOptionalDate("Enter pay date (DD/MM/YYYY): ");
         if (ngayTraTien.isEmpty())
         {
-            trangThai = "UnPaid";
+            trangThai = "Unpaid";
         }
         else
         {
@@ -177,7 +177,7 @@ void HoaDonMenu::timKiem()
         {
             cout << "[Error] Invoice not found, ID: " << id << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printSingle(widths, headers, p->exportToVector());
@@ -199,7 +199,7 @@ void HoaDonMenu::timKiem()
         {
             cout << "[Error] No invoice found with contract ID: " << maHopDong << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -221,7 +221,7 @@ void HoaDonMenu::timKiem()
         {
             cout << "[Error] No invoice found with customer ID: " << maKhachHang << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -242,7 +242,7 @@ void HoaDonMenu::timKiem()
         {
             cout << "[Error] No invoice found with issue date: " << ngayLap.toString() << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -263,7 +263,7 @@ void HoaDonMenu::timKiem()
         {
             cout << "[Error] No invoice found with due date: " << hanTraTien.toString() << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -286,7 +286,7 @@ void HoaDonMenu::timKiem()
             {
                 cout << "[Error] No invoice found with payment date: " << "NONE" << endl;
                 cout << "Try again!" << endl;
-                return;
+                break;
             }
             else
                 TablePrinter::printTable(widths, headers, data);
@@ -304,7 +304,7 @@ void HoaDonMenu::timKiem()
             {
                 cout << "[Error] No invoice found with payment date: " << ngayTraTien.toString() << endl;
                 cout << "Try again!" << endl;
-                return;
+                break;
             }
             else
                 TablePrinter::printTable(widths, headers, data);
@@ -315,7 +315,7 @@ void HoaDonMenu::timKiem()
 
     case 7:
     {
-        int choice = InputHelper::getInputInt("Enter payment status (1. Paid / 2. UnPaid): ");
+        int choice = InputHelper::getInputInt("Enter payment status (1. Paid / 2. Unpaid): ");
         vector<vector<string>> data;
         if (choice == 1)
         {
@@ -331,7 +331,7 @@ void HoaDonMenu::timKiem()
         {
             for (int i = 0; i < s; i++)
             {
-                if (danhSach[i].getTrangThai() == "UnPaid" || danhSach[i].getTrangThai() == "Unpaid")
+                if (danhSach[i].getTrangThai() == "Unpaid")
                 {
                     data.push_back(danhSach[i].exportToVector());
                 }
@@ -340,7 +340,7 @@ void HoaDonMenu::timKiem()
         else
         {
             cout << "[Error] Invalid option, try again!" << endl;
-            return;
+            break;
         }
         if (!data.empty())
         {
@@ -625,31 +625,38 @@ void HoaDonMenu::capNhat()
                 }
             }
         }
-        while (true)
+        if (p->getTrangThai() != "Paid")
         {
-            Date ngayTraTien = InputHelper::getInputOptionalDate("Enter payment date: ");
-            if (ngayTraTien.isEmpty())
-                break;
-            else
+            while (true)
             {
-                if (ngayTraTien < p->getNgayLap())
-                {
-                    cout << "The payment date cannot be earlier than the date of issuance, please try again!" << endl;
-                    continue;
-                }
+                Date ngayTraTien = InputHelper::getInputOptionalDate("Enter payment date: ");
+                if (ngayTraTien.isEmpty())
+                    break;
                 else
                 {
-                    p->setNgayTraTien(ngayTraTien);
-                    cout << "Pay date updated successfully" << endl;
-                    p->setTrangThai("Paid");
-                    cout << "Payment status updated successfully!" << endl;
-                    if (ngayTraTien > p->getHanTraTien())
+                    if (ngayTraTien < p->getNgayLap())
                     {
-                        cout << "[Notice] Late payment: Payment was made after the due date!" << endl;
+                        cout << "The payment date cannot be earlier than the date of issuance, please try again!" << endl;
+                        continue;
                     }
-                    break;
+                    else
+                    {
+                        p->setNgayTraTien(ngayTraTien);
+                        cout << "Pay date updated successfully" << endl;
+                        p->setTrangThai("Paid");
+                        cout << "Payment status updated successfully!" << endl;
+                        if (ngayTraTien > p->getHanTraTien())
+                        {
+                            cout << "[Notice] Late payment: Payment was made after the due date!" << endl;
+                        }
+                        break;
+                    }
                 }
             }
+        }
+        else
+        {
+            cout << "[Notice] Invoice is already Paid, payment date and status cannot be modified!" << endl;
         }
     }
     repoHoaDon.writeToFile();
@@ -719,7 +726,7 @@ void HoaDonMenu::handleChoice(int choice)
 }
 // Hien thi giao dien menu quan ly hoa don
 void HoaDonMenu::printMenu()
-{   
+{
     SystemHelper::clearScreen();
     cout << "=====Invoice Management=====" << endl;
     cout << "1. Add new invoice" << endl;

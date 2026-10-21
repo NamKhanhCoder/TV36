@@ -213,7 +213,7 @@ void NoiDungVODMenu::timKiem()
         {
             cout << "[Error] VOD content not found, ID: " << id << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printSingle(widths, headers, p->exportToVector()); // Dấu -> có nghĩa là: "Hãy đi đến địa chỉ ô nhớ mà p đang chỉ tới, rồi gọi hàm exportToVector() của đối tượng tại đó"
@@ -234,7 +234,7 @@ void NoiDungVODMenu::timKiem()
         {
             cout << "[Error] No content found with name: " << tuKhoa << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -255,7 +255,7 @@ void NoiDungVODMenu::timKiem()
         {
             cout << "[Error] No content found with genre: " << theLoai << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -276,7 +276,7 @@ void NoiDungVODMenu::timKiem()
         {
             cout << "[Error] No content found with release year: " << namPhatHanh << endl;
             cout << "Try again!" << endl;
-            return;
+            break;
         }
         else
             TablePrinter::printTable(widths, headers, data);
@@ -299,7 +299,7 @@ void NoiDungVODMenu::timKiem()
             {
                 cout << "[Error] No content found with status: ACTIVE" << endl;
                 cout << "Try again!" << endl;
-                return;
+                break;
             }
             else
                 TablePrinter::printTable(widths, headers, data);
@@ -317,7 +317,7 @@ void NoiDungVODMenu::timKiem()
             {
                 cout << "[Error] No content found with status: INACTIVE" << endl;
                 cout << "Try again!" << endl;
-                return;
+                break;
             }
             else
                 TablePrinter::printTable(widths, headers, data);
@@ -326,7 +326,6 @@ void NoiDungVODMenu::timKiem()
         default:
         {
             cout << "[Error] Invalid option, try again!" << endl;
-            return;
             break;
         }
         }
