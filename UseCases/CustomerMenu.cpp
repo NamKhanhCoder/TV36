@@ -503,7 +503,7 @@ void CustomerMenu::deleteCustomer()
     const vector<HoaDon> &invoiceList = repoHoaDon.readAll();
     for (const HoaDon &hd : invoiceList)
     {
-        if (targetID == hd.getMaKhachHang() && hd.getTrangThai() == "chua_thanh_toan")
+        if (targetID == hd.getMaKhachHang() && hd.getTrangThai() == "Unpaid")
         {
             LOG("[CustomerMenu] Customer deletion rejected: Unpaid Invoice [" + hd.getID() + "]");
             cout << "\n[Deletion Rejected] This customer has an unpaid Invoice [" << hd.getID() 
