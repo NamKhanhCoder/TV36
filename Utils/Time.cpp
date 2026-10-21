@@ -29,7 +29,7 @@ Time::Time(int h, int m)
 {
     if (!isValidTime(h, m))
     {
-        throw std::invalid_argument("Gio phut khong hop le!");
+        throw std::invalid_argument("[Time] Invalid hour or minute value!");
     }
     hour = h;
     minute = m;
@@ -46,20 +46,20 @@ Time::Time(const string& timeStr)
         size_t pos = timeStr.find(':');
         if (pos == string::npos || timeStr.find(':', pos + 1) != string::npos)
         {
-            throw std::invalid_argument("Loi cat chuoi thoi gian!");
+            throw std::invalid_argument("[Time] Error parsing time string (expected hh:mm)!");
         }
         string hSub = timeStr.substr(0, pos);
         string mSub = timeStr.substr(pos + 1);
         if (hSub.empty() || mSub.empty())
         {
-            throw std::invalid_argument("Loi cat chuoi thoi gian!");
+            throw std::invalid_argument("[Time] Error parsing time string (expected hh:mm)!");
         }
         size_t idxH = 0, idxM = 0;
         h = stoi(hSub, &idxH);
         m = stoi(mSub, &idxM);
         if (idxH != hSub.length() || idxM != mSub.length())
         {
-            throw std::invalid_argument("Loi cat chuoi thoi gian!");
+            throw std::invalid_argument("[Time] Error parsing time string (expected hh:mm)!");
         }
     } 
     catch (...) 
@@ -69,7 +69,7 @@ Time::Time(const string& timeStr)
 
     if (!isValidTime(h, m))
     {
-        throw std::invalid_argument("Gia tri gio phut khong hop le!");
+        throw std::invalid_argument("[Time] Time value is out of valid range (00:00 - 23:59)!");
     }
     
     hour = h;

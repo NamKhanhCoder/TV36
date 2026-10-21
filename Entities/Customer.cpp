@@ -24,32 +24,32 @@ Customer::Customer(string id, string name, string phone, string email, string ad
 void Customer::setName(const string &name)
 {
     if (name.empty())
-        throw invalid_argument("[Customer] Ten khach hang khong duoc de trong!");
+        throw invalid_argument("[Customer] Customer name cannot be empty!");
     if (name.find_first_of("|\r\n") != string::npos)
-        throw invalid_argument("[Customer] Ten khach hang khong duoc chua ky tu '|' hoac xuong dong!");
+        throw invalid_argument("[Customer] Customer name must not contain '|' or line breaks!");
     this->name = name;
 }
 
 void Customer::setPhone(const string &phone)
 {
     if (!Validator::isValidPhone(phone))
-        throw invalid_argument("[Customer] So dien thoai khong hop le (phai gom 10 chu so va bat dau bang 0)!");
+        throw invalid_argument("[Customer] Invalid phone number (must be 10 digits and start with 0)!");
     this->phone = phone;
 }
 
 void Customer::setEmail(const string &email)
 {
     if (!Validator::isValidEmail(email))
-        throw invalid_argument("[Customer] Email khong dung dinh dang hop le!");
+        throw invalid_argument("[Customer] Invalid email address format!");
     this->email = email;
 }
 
 void Customer::setAddress(const string &address)
 {
     if (address.empty())
-        throw invalid_argument("[Customer] Dia chi khong duoc de trong!");
+        throw invalid_argument("[Customer] Address cannot be empty!");
     if (address.find_first_of("|\r\n") != string::npos)
-        throw invalid_argument("[Customer] Dia chi khong duoc chua ky tu '|' hoac xuong dong!");
+        throw invalid_argument("[Customer] Address must not contain '|' or line breaks!");
     this->address = address;
 }
 

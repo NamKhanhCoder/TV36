@@ -11,9 +11,14 @@
 #include <algorithm>
 #include "Utils/TablePrinter.h"
 #include "Utils/InputHelper.h"
-#include "Utils/Validator.h"
 #include "Utils/SystemHelper.h"
+#include "Utils/StringHelper.h"
 using namespace std;
+namespace
+{
+    const vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
+    const vector<string> headers = {"VOD ID", "Content Name", "Genre", "Duration (min)", "Description", "Release Year", "Video URL", "Status"};
+}
 // Ham khoi tao: khoi tao 2 repository (NoiDungVOD va Package) va nap du lieu tu file
 NoiDungVODMenu::NoiDungVODMenu() : repo("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD"),
                                    repopackage("Data/packages.txt", "Data/packages_counter.txt", "GOI")
@@ -26,99 +31,116 @@ void NoiDungVODMenu::xemDanhSach()
 {
     if (repo.readAll().empty())
     {
-        cout << "Danh sach noi dung hien dang rong !" << endl;
+        cout << "[Error] VOD content list is empty!" << endl;
         return;
     }
-    vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
-    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong (phut)", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
+
     TablePrinter::printTable(widths, headers, repo.exportToVector());
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Chuc nang them noi dung moi: nhap thong tin, validate du lieu, check trung URL va ghi file
 void NoiDungVODMenu::themNoiDung()
 {
     string id = repo.generateNextID();
-    string tenNoiDung;
+    NoiDungVOD noiDungMoi;
+    noiDungMoi.setID(id);
+
     while (true)
     {
-        tenNoiDung = InputHelper::getInputString("Nhap ten noi dung: ");
-        if (tenNoiDung.find('|') != string::npos)
+        string tenNoiDung = InputHelper::getInputString("Enter content name: ");
+        try
         {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-            continue;
+            noiDungMoi.setTenNoiDung(tenNoiDung);
+            break;
         }
-        break;
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[VODMenu] Invalid name input during creation: " + string(e.what()));
+        }
     }
-    string theLoai;
     while (true)
     {
-        theLoai = InputHelper::getInputString("Nhap the loai noi dung: ");
-        if (theLoai.find('|') != string::npos)
+        string theLoai = InputHelper::getInputString("Enter content genre: ");
+        try
         {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-            continue;
+            noiDungMoi.setTheLoai(theLoai);
+            break;
         }
-        break;
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[VODMenu] Invalid genre input during creation: " + string(e.what()));
+        }
     }
 
-    int thoiLuong;
     while (true)
     {
-        thoiLuong = InputHelper::getInputInt("Nhap thoi luong cua noi dung (phut): ");
-        if (thoiLuong <= 0)
+        int thoiLuong = InputHelper::getInputInt("Enter duration (minutes): ");
+        try
         {
-            cout << "Thoi luong phai lon hon 0!" << endl;
-            continue;
-        }
-        else
+            noiDungMoi.setThoiLuong(thoiLuong);
             break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[VODMenu] Invalid duration(minutes) input during creation: " + string(e.what()));
+        }
     }
-    string moTa;
+
     while (true)
     {
-        moTa = InputHelper::getInputOptionalString("Nhap mo ta noi dung: ");
-        if (moTa.find('|') != string::npos)
+        string moTa = InputHelper::getInputOptionalString("Enter content description: ");
+        try
         {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-            continue;
-        }
-        break;
-    }
-    int namPhatHanh;
-    while (true)
-    {
-        namPhatHanh = InputHelper::getInputInt("Nhap nam phat hanh noi dung: ");
-        if (namPhatHanh < 1950 || namPhatHanh > 2026)
-        {
-            cout << "Nam phat hanh phai tu 1950 den nam 2026!" << endl;
-            continue;
-        }
-        else
+            noiDungMoi.setMoTa(moTa);
             break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[VODMenu] Invalid description input during creation: " + string(e.what()));
+        }
+    }
+
+    while (true)
+    {
+        int namPhatHanh = InputHelper::getInputInt("Enter release year: ");
+        try
+        {
+            noiDungMoi.setNamPhatHanh(namPhatHanh);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[VODMenu] Invalid release year input during creation: " + string(e.what()));
+        }
     }
     string url;
     vector<NoiDungVOD> danhSach = repo.readAll();
     int s = danhSach.size();
     while (true)
     {
-        int choice = InputHelper::getInputInt("Chon dinh dang url (1. Netflix / 2. TV360): ");
+        int choice = InputHelper::getInputInt("Choose URL format (1. Netflix / 2. TV360): ");
         switch (choice)
         {
         case 1:
         {
-            int num = InputHelper::getInputInt("Nhap ma cua noi dung can them vao: ");
+            int num = InputHelper::getInputInt("Enter content ID: ");
             url = "https://www.netflix.com/vn/phim" + to_string(num);
             break;
         }
         case 2:
         {
-            int num = InputHelper::getInputInt("Nhap ma cua noi dung can them vao: ");
+            int num = InputHelper::getInputInt("Enter content ID: ");
             url = "https://www.tv360.com/vn/phim" + to_string(num);
             break;
         }
         default:
-            cout << "Lua chon khong hop le, vui long thu lai!" << endl;
+            cout << "[Error] Invalid option, try again!" << endl;
             continue;
         }
         bool check = true;
@@ -132,62 +154,51 @@ void NoiDungVODMenu::themNoiDung()
         }
         if (!check)
         {
-            cout << "URL da bi trung voi noi dung khac, vui long thu lai!" << endl;
+            cout << "[Error] URL already exists, try again!" << endl;
             continue;
         }
+        else
+            noiDungMoi.setUrl(url);
         break;
     }
-    string trangThai;
     while (true)
     {
-        int choice = InputHelper::getInputInt("Lua chon trang thai cua noi dung (1. DANG_PHUC_VU/ 2. NGUNG_PHUC_VU): ");
+        int choice = InputHelper::getInputInt("Choose content status (1. ACTIVE / 2. INACTIVE): ");
         switch (choice)
         {
         case 1:
         {
-            trangThai = "DANG_PHUC_VU";
+            noiDungMoi.setTrangThai("ACTIVE");
             break;
         }
         case 2:
         {
-            trangThai = "NGUNG_PHUC_VU";
+            noiDungMoi.setTrangThai("INACTIVE");
             break;
         }
         default:
-            cout << "Lua chon khong hop le, vui long thu lai!" << endl;
+            cout << "[Error] Invalid option, try again!" << endl;
             continue;
         }
         break;
     }
-
-    NoiDungVOD noiDungMoi;
-    noiDungMoi.setID(id);
-    noiDungMoi.setTenNoiDung(tenNoiDung);
-    noiDungMoi.setTheLoai(theLoai);
-    noiDungMoi.setThoiLuong(thoiLuong);
-    noiDungMoi.setMoTa(moTa);
-    noiDungMoi.setNamPhatHanh(namPhatHanh);
-    noiDungMoi.setUrl(url);
-    noiDungMoi.setTrangThai(trangThai);
     repo.create(noiDungMoi); // gọi hàm trong repository đêu phải thông qua repo
     repo.writeToFile();
-    cout << "Them noi dung moi thanh cong!" << endl;
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    cout << "VOD content created successfully!" << endl;
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Chuc nang tim kiem: ho tro tim theo ma VOD, ten, the loai, nam phat hanh, trang thai
 void NoiDungVODMenu::timKiem()
 {
-    cout << "+---TIM KIEM NOI DUNG---+" << endl;
-    cout << "1. Tim theo ma VOD" << endl;
-    cout << "2. Tim theo Ten noi dung" << endl;
-    cout << "3. Tim theo the loai" << endl;
-    cout << "4. Tim theo nam phat hanh" << endl;
-    cout << "5. Tim kiem theo trang thai" << endl;
-    cout << "Bam bat ki de quay lai." << endl;
-    int luaChon = InputHelper::getInputInt("Nhap lua chon: ");
-    vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
-    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong (phut)", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
+    cout << "=====Search VOD content=====" << endl;
+    cout << "1. Search by VOD ID" << endl;
+    cout << "2. Search by content name" << endl;
+    cout << "3. Search by genre" << endl;
+    cout << "4. Search by release year" << endl;
+    cout << "5. Search by status" << endl;
+    cout << "Enter any other option to go back." << endl;
+    int luaChon = InputHelper::getInputInt("Enter your choice: ");
     repo.loadFromFile();
     const vector<NoiDungVOD> &danhSach = repo.readAll(); // ta chỉ đọc để tìm kiếm chứ không sửa đổi hay hoán đổi vị trí các phần tử như bên sapXep, nên  có thể dùng tham chiếu const &
     int s = danhSach.size();
@@ -195,12 +206,13 @@ void NoiDungVODMenu::timKiem()
     {
     case 1:
     { // khiến cho biến string id có thể bị bỏ qua quá trình khởi tạo nên khắc phục bằng thêm {} trc các case rồi mới thi hành lệnh
-        string id = InputHelper::getInputString("Nhap ma VOD (VODXXX): ");
+        string id = InputHelper::getInputString("Enter VOD ID (VODXXX): ");
+        id = convertToUpper(id);
         NoiDungVOD *p = repo.readByID(id);
         if (p == nullptr)
         {
-            cout << "Khong tim thay noi dung co ma VOD: " << id << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] VOD content not found, ID: " << id << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -209,7 +221,7 @@ void NoiDungVODMenu::timKiem()
     }
     case 2:
     {
-        string tuKhoa = InputHelper::getInputString("Nhap Ten noi dung: ");
+        string tuKhoa = InputHelper::getInputString("Enter content name: ");
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -220,8 +232,8 @@ void NoiDungVODMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay noi dung co ten gan dung: " << tuKhoa << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No content found with name: " << tuKhoa << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -230,7 +242,7 @@ void NoiDungVODMenu::timKiem()
     }
     case 3:
     {
-        string theLoai = InputHelper::getInputString("Nhap the loai: ");
+        string theLoai = InputHelper::getInputString("Enter genre: ");
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -241,8 +253,8 @@ void NoiDungVODMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay noi dung co the loai: " << theLoai << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No content found with genre: " << theLoai << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -251,7 +263,7 @@ void NoiDungVODMenu::timKiem()
     }
     case 4:
     {
-        int namPhatHanh = InputHelper::getInputInt("Nhap nam phat hanh: ");
+        int namPhatHanh = InputHelper::getInputInt("Enter release year: ");
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -262,8 +274,8 @@ void NoiDungVODMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay noi dung co nam phat hanh: " << namPhatHanh << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No content found with release year: " << namPhatHanh << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -272,7 +284,7 @@ void NoiDungVODMenu::timKiem()
     }
     case 5:
     {
-        int choice = InputHelper::getInputInt("Lua chon trang thai cua noi dung(1.DANG_PHUC_VU/ 2.NGUNG_PHUC_VU): ");
+        int choice = InputHelper::getInputInt("Choose status (1. ACTIVE / 2. INACTIVE): ");
         switch (choice)
         {
         case 1:
@@ -280,13 +292,13 @@ void NoiDungVODMenu::timKiem()
             vector<vector<string>> data;
             for (int i = 0; i < s; i++)
             {
-                if (danhSach[i].getTrangThai() == "DANG_PHUC_VU")
+                if (danhSach[i].getTrangThai() == "ACTIVE")
                     data.push_back(danhSach[i].exportToVector());
             }
             if (data.empty())
             {
-                cout << "Khong tim thay noi dung co trang thai : DANG_PHUC_VU" << endl;
-                cout << "Vui long thu lai!" << endl;
+                cout << "[Error] No content found with status: ACTIVE" << endl;
+                cout << "Try again!" << endl;
                 return;
             }
             else
@@ -298,27 +310,33 @@ void NoiDungVODMenu::timKiem()
             vector<vector<string>> data;
             for (int i = 0; i < s; i++)
             {
-                if (danhSach[i].getTrangThai() == "NGUNG_PHUC_VU")
+                if (danhSach[i].getTrangThai() == "INACTIVE")
                     data.push_back(danhSach[i].exportToVector());
             }
             if (data.empty())
             {
-                cout << "Khong tim thay noi dung co trang thai : NGUNG_PHUC_VU" << endl;
-                cout << "Vui long thu lai!" << endl;
+                cout << "[Error] No content found with status: INACTIVE" << endl;
+                cout << "Try again!" << endl;
                 return;
             }
             else
                 TablePrinter::printTable(widths, headers, data);
             break;
         }
+        default:
+        {
+            cout << "[Error] Invalid option, try again!" << endl;
+            return;
+            break;
+        }
         }
         break;
     }
     default:
-        return;
+        SystemHelper::clearScreen();
         break;
     }
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // ham duoi dung cho ham sapXep
@@ -333,15 +351,14 @@ bool soSanhTheoNamPhatHanhGiamDan(const NoiDungVOD &c, const NoiDungVOD &d)
 // Chuc nang sap xep: sap xep theo ten (A-Z, Z-A) hoac nam phat hanh va cap nhat file
 void NoiDungVODMenu::sapXep()
 {
-    cout << "+---SAP XEP DANH SACH NOI DUNG---+" << endl;
-    cout << "1. Sap xep theo thu tu (A -> Z)" << endl;
-    cout << "2. Sap xep theo thu tu (Z -> A)" << endl;
-    cout << "3. Sap xep theo nam phat hanh (moi -> cu)" << endl;
-    cout << "4. Sap xep theo nam phat hanh (cu -> moi)" << endl;
-    cout << "0. Quay lai" << endl;
-    int luaChon = InputHelper::getInputInt("Nhap lua chon: ");
-    vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
-    vector<string> headers = {"Ma VOD", "Ten noi dung", "The loai", "Thoi luong (phut)", "Mo ta", "Nam phat hanh", "Video URL", "Trang thai"};
+    cout << "=====Sort VOD content list=====" << endl;
+    cout << "1. Sort by name (A -> Z)" << endl;
+    cout << "2. Sort by name (Z -> A)" << endl;
+    cout << "3. Sort by release year (newest -> oldest)" << endl;
+    cout << "4. Sort by release year (oldest -> newest)" << endl;
+    cout << "Press any key to go back: " << endl;
+    int luaChon = InputHelper::getInputInt("Enter your choice: ");
+
     vector<NoiDungVOD> danhSach = repo.readAll();
     switch (luaChon)
     {
@@ -349,7 +366,7 @@ void NoiDungVODMenu::sapXep()
     {
         sort(danhSach.begin(), danhSach.end());  // tự động gọi toán tử operator <, ko cần thêm tiêu chí so sánh
         ofstream tenFile("Data/noidungvod.txt"); // goi hàm ofstream là mặc định sẽ xoá nội dung trong file
-        cout << "Danh sach noi dung sau khi sap xep xong: " << endl;
+        cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
@@ -360,14 +377,14 @@ void NoiDungVODMenu::sapXep()
         tenFile.close();
         repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 2:
     {
         sort(danhSach.begin(), danhSach.end(), greater<NoiDungVOD>()); // tự động gọi toán tử operator >, ko cần thêm tiêu chí so sánh
         ofstream tenFile("Data/noidungvod.txt");                       // goi hàm ofstream là mặc định sẽ xoá nội dung trong file
-        cout << "Danh sach noi dung sau khi sap xep xong: " << endl;
+        cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
@@ -378,14 +395,14 @@ void NoiDungVODMenu::sapXep()
         tenFile.close();
         repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 3:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNamPhatHanhGiamDan);
         ofstream tenFile("Data/noidungvod.txt");
-        cout << "Danh sach noi dung sau khi sap xep xong: " << endl;
+        cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
@@ -396,14 +413,14 @@ void NoiDungVODMenu::sapXep()
         tenFile.close();
         repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 4:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhNamPhatHanhTangDan);
         ofstream tenFile("Data/noidungvod.txt");
-        cout << "Danh sach noi dung sau khi sap xep xong: " << endl;
+        cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
@@ -414,129 +431,188 @@ void NoiDungVODMenu::sapXep()
         tenFile.close();
         repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
-        break;
-    }
-    case 0:
-    {
-        return;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     default:
-        cout << "Lua chon khong hop le!" << endl;
+        SystemHelper::clearScreen();
         break;
     }
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Chuc nang cap nhat: tim theo ma VOD, hien thi thong tin hien tai va cho phep sua tung truong
 void NoiDungVODMenu::capNhat()
 {
-    string id = InputHelper::getInputString("Nhap ma VOD can cap nhat: ");
-    if (id.find('|') != string::npos)
-    {
-        cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-        return;
-    }
+    string id = InputHelper::getInputString("Enter VOD ID to update: ");
+    id = convertToUpper(id);
     NoiDungVOD *p = repo.readByID(id);
     if (p == nullptr)
     {
-        cout << "Khong tim thay ma VOD hop le, vui long thu lai!" << endl;
+        cout << "[Error] VOD ID not found, try again!" << endl;
         return;
     }
     else
     {
 
-        cout << "+---THONG TIN NOI DUNG HIEN TAI---+" << endl;
-        cout << "MA NOI DUNG HIEN TAI: " << id << endl;
-        cout << "Ten noi dung: " << p->getTenNoiDung() << endl;
-        cout << "The loai: " << p->getTheLoai() << endl;
-        cout << "Thoi Luong (phut): " << p->getThoiLuong() << endl;
-        cout << "Mo ta: " << p->getMoTa() << endl;
-        cout << "Nam phat hanh: " << p->getNamPhatHanh() << endl;
+        cout << "=====Current VOD content information=====" << endl;
+        cout << "CURRENT VOD ID: " << id << endl;
+        cout << "Content name: " << p->getTenNoiDung() << endl;
+        cout << "Genre: " << p->getTheLoai() << endl;
+        cout << "Duration (minutes): " << p->getThoiLuong() << endl;
+        cout << "Description: " << p->getMoTa() << endl;
+        cout << "Release year: " << p->getNamPhatHanh() << endl;
         cout << "URL: " << p->getUrl() << endl;
-        cout << "Trang thai: " << p->getTrangThai() << endl;
-        cout << "(Nhan Enter neu muon giu nguyen gia tri cu)" << endl;
-        string tenNoiDung = InputHelper::getInputOptionalString("Cap nhat Ten noi dung: ");
-        if (tenNoiDung.find('|') != string::npos)
-        {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-            return;
-        }
-        string theLoai;
+        cout << "Status: " << p->getTrangThai() << endl;
+        cout << "(Press Enter to keep current value)" << endl;
         while (true)
         {
-            theLoai = InputHelper::getInputOptionalString("Cap nhat the loai: ");
-            if (theLoai.find('|') != string::npos)
+            string tenNoiDung = InputHelper::getInputOptionalString("Update content name: ");
+            if (tenNoiDung.empty())
+                break;
+            else
             {
-                cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-                continue;
+                try
+                {
+                    p->setTenNoiDung(tenNoiDung);
+                    cout << "Content name updated successfully!" << endl;
+                    break;
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid content name input during update: " + string(e.what()));
+                }
             }
-            break;
         }
 
-        int thoiLuong = InputHelper::getInputOptionalInt("Cap nhat thoi luong (phut): ");
-        string moTa;
         while (true)
         {
-            moTa = InputHelper::getInputOptionalString("Cap nhat mo ta: ");
-            if (moTa.find('|') != string::npos)
+            string theLoai = InputHelper::getInputOptionalString("Update genre: ");
+            if (theLoai.empty())
+                break;
+            else
             {
-                cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-                continue;
+                try
+                {
+                    p->setTheLoai(theLoai);
+                    cout << "Genre updated successfully!" << endl;
+                    break;
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid genre input during update: " + string(e.what()));
+                }
             }
-            break;
         }
 
-        int namPhatHanh = InputHelper::getInputOptionalInt("Cap nhat nam phat hanh: ");
-        int choice = InputHelper::getInputOptionalInt("Cap nhat trang thai phim (1.DANG_PHUC_VU/ 2. NGUNG_PHUC_VU): ");
-        if (!tenNoiDung.empty())
+        while (true)
         {
-            p->setTenNoiDung(tenNoiDung);
-            cout << "Cap nhat Ten noi dung thanh cong!" << endl;
+            int thoiLuong = InputHelper::getInputOptionalInt("Update duration (minutes): ");
+            if (thoiLuong == -1)
+                break;
+            else
+            {
+                try
+                {
+                    p->setThoiLuong(thoiLuong);
+                    cout << "Duration updated successfully!" << endl;
+                    break;
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid duration(minutes) input during update: " + string(e.what()));
+                }
+            }
         }
-        if (!theLoai.empty())
+        while (true)
         {
-            p->setTheLoai(theLoai);
-            cout << "Cap nhat the loai thanh cong!" << endl;
+            string moTa = InputHelper::getInputOptionalString("Update description: ");
+            if (moTa.empty())
+                break;
+            else
+            {
+                try
+                {
+                    p->setMoTa(moTa);
+                    cout << "Description updated successfully!" << endl;
+                    break;
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid description input during update: " + string(e.what()));
+                }
+            }
         }
-        if (thoiLuong > 0)
+        while (true)
         {
-            p->setThoiLuong(thoiLuong);
-            cout << "Cap nhat thoi luong thanh cong!" << endl;
+            int namPhatHanh = InputHelper::getInputOptionalInt("Update release year: ");
+            if (namPhatHanh == -1)
+                break;
+            else
+            {
+                try
+                {
+                    p->setNamPhatHanh(namPhatHanh);
+                    cout << "Release year updated successfully!" << endl;
+                    break;
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid release year input during update: " + string(e.what()));
+                }
+            }
         }
-        if (!moTa.empty())
+        while (true)
         {
-            p->setMoTa(moTa);
-            cout << "Cap nhat mo ta thanh cong!" << endl;
-        }
-        if (namPhatHanh >= 1950 && namPhatHanh <= 2026)
-        {
-            p->setNamPhatHanh(namPhatHanh);
-            cout << "Cap nhat nam phat hanh thanh cong!" << endl;
-        }
-        if (choice == 1)
-        {
-            p->setTrangThai("DANG_PHUC_VU");
-        }
-        if (choice == 2)
-        {
-            p->setTrangThai("NGUNG_PHUC_VU");
+            int choice = InputHelper::getInputOptionalInt("Update status (1. ACTIVE / 2. INACTIVE): ");
+            if (choice == -1)
+                break;
+            else
+            {
+                try
+                {
+                    if (choice == 1)
+                    {
+                        p->setTrangThai("ACTIVE");
+                        cout << "Status updated successfully!" << endl;
+                        break;
+                    }
+                    else if (choice == 2)
+                    {
+                        p->setTrangThai("INACTIVE");
+                        cout << "Status updated successfully!" << endl;
+                        break;
+                    }
+                    cout << "[Error] Invalid option, please enter 1 or 2!\n";
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid status input during update: " + string(e.what()));
+                }
+            }
         }
     }
     repo.writeToFile();
-    cout << "Cap nhat thong tin noi dung thanh cong!" << endl;
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    cout << "VOD content updated successfully!" << endl;
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Chuc nang xoa noi dung: tim theo ma VOD, xac nhan Y/N truoc khi xoa va luu file
 void NoiDungVODMenu::xoaNoiDung()
 {
-    string id = InputHelper::getInputString("Nhap ma VOD can xoa: ");
+    string id = InputHelper::getInputString("Enter VOD ID to delete: ");
+    id = convertToUpper(id);
     NoiDungVOD *p = repo.readByID(id);
     if (p == nullptr)
     {
-        cout << "Ma VOD khong hop le, vui long thu lai" << endl;
+        cout << "[Error] Invalid VOD ID, try again" << endl;
+        return;
     }
     else
     {
@@ -567,27 +643,27 @@ void NoiDungVODMenu::xoaNoiDung()
         // Neu VOD dang duoc su dung boi it nhat 1 goi cuoc thi chan xoa va thong bao
         if (check)
         {
-            cout << "Khong the xoa! Noi dung VOD nay dang thuoc goi cuoc: " << tenGoiCuoc << endl;
+            cout << "[Error] Cannot delete! VOD content belongs to package: " << tenGoiCuoc << endl;
             return;
         }
         string line = p->exportToString();
         cout << line << endl;
-        string xacNhan = InputHelper::getInputString("Ban co chac muon xoa noi dung nay khong ? (y/n): ");
+        string xacNhan = InputHelper::getInputString("Are you sure you want to delete this content? (y/n): ");
         if (xacNhan == "Y" || xacNhan == "y" || xacNhan == "YES" || xacNhan == "yes" || xacNhan == "Yes")
         {
             repo.remove(id);
             repo.writeToFile();
-            cout << "Xoa noi dung VOD thanh cong!" << endl;
+            cout << "VOD content deleted successfully!" << endl;
         }
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
         {
-            cout << "Da huy thao tac xoa noi dung!" << endl;
+            cout << "[Abort] Deletion aborted" << endl;
             return;
         }
         else
             return;
     }
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Xu ly lua chon chuc nang tu menu VOD
@@ -595,33 +671,26 @@ void NoiDungVODMenu::handleChoice(int choice)
 {
     switch (choice)
     {
-    case 1:
-        SystemHelper::clearScreen();
+    case 2:
         xemDanhSach();
         break;
-    case 2:
-        SystemHelper::clearScreen();
+    case 1:
         themNoiDung();
         break;
     case 3:
-        SystemHelper::clearScreen();
         timKiem();
         break;
     case 4:
-        SystemHelper::clearScreen();
         sapXep();
         break;
     case 5:
-        SystemHelper::clearScreen();
         capNhat();
         break;
     case 6:
-        SystemHelper::clearScreen();
         xoaNoiDung();
         break;
     default:
-        SystemHelper::clearScreen();
-        cout << "Lua chon khong hop le, vui long thu lai!" << endl;
+        cout << "[Error] Invalid option, try again!" << endl;
         break;
     }
 }
@@ -629,11 +698,11 @@ void NoiDungVODMenu::handleChoice(int choice)
 void NoiDungVODMenu::printMenu()
 {
     SystemHelper::clearScreen();
-    cout << "======QUAN LY NOI DUNG VOD======" << endl;
-    cout << "1. Xem danh sach noi dung VOD" << endl;
-    cout << "2. Them noi dung VOD moi" << endl;
-    cout << "3. Tim kiem noi dung VOD" << endl;
-    cout << "4. Sap xep danh sach noi dung VOD" << endl;
-    cout << "5. Cap nhat noi dung VOD" << endl;
-    cout << "6. Xoa noi dung VOD" << endl;
+    cout << "=====VOD Content Management=====" << endl;
+    cout << "1. Add new VOD content" << endl;
+    cout << "2. View all VOD content" << endl;
+    cout << "3. Search VOD content" << endl;
+    cout << "4. Sort VOD content list" << endl;
+    cout << "5. Update VOD content" << endl;
+    cout << "6. Delete VOD content" << endl;
 }

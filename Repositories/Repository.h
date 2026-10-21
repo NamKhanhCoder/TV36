@@ -61,7 +61,6 @@ private:
             }
         }
     }
-
     void loadIDCount()
     {
         ifstream file(counter_path);
@@ -81,7 +80,6 @@ private:
         // in case the file is not openned, ID will be 0
         LOG("[Repository] Read counter = " + to_string(counter) + " from " + counter_path);
     }
-
 protected:
     vector<T> items;
     string file_path;
@@ -139,7 +137,7 @@ public:
             }
             catch(const std::exception& err)
             {
-                cout<<"[Warning] The data is corupted: "<<err.what()<<endl;
+                cout << "[Warning] Data corrupted: " << err.what() << endl;
                 InputHelper::getInputOptionalString("Press Enter to continue...");
                 continue;
             }
@@ -157,8 +155,8 @@ public:
 
         if (file.is_open() == false) // cant open case
         {
-            LOG("[Repository] File is failed to open to write: "+file_path);
-            throw std::runtime_error("[Repository] The current file is inaccessible: " + file_path);
+            LOG("[Repository] Failed to open file for writing: " + file_path);
+            throw std::runtime_error("[Repository] Cannot access file for writing: " + file_path);
             return;
         }
 
@@ -243,7 +241,6 @@ public:
                 return true;
             }
         }
-
         LOG("[Repository] Failed to remove, ID not found: " + target_ID);
         return false;
     }

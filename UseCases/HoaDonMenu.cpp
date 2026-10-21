@@ -11,8 +11,13 @@
 #include <fstream>
 #include "Utils/TablePrinter.h"
 #include "Utils/InputHelper.h"
-#include "Utils/Validator.h"
+#include "Utils/StringHelper.h"
 using namespace std;
+namespace
+{
+    const vector<int> widths = {12, 12, 12, 12, 12, 14, 15, 17};
+    const vector<string> headers = {"Invoice ID", "Contract ID", "Customer ID", "Amount", "Issue Date", "Due Date", "Payment Date", "Status"};
+}
 // Ham khoi tao: khoi tao 3 repository (HoaDon, Customer, Contract) va nap du lieu tu file
 HoaDonMenu::HoaDonMenu() : repoHoaDon("Data/hoadon.txt", "Data/hdn_counter.txt", "HDN"),
                            repoCustomer("Data/customers.txt", "Data/customers_counter.txt", "KH"),
@@ -27,11 +32,10 @@ void HoaDonMenu::xemDanhSach()
 {
     if (repoHoaDon.readAll().empty())
     {
-        cout << "Danh sach hoa don hien dang trong!" << endl;
+        cout << "[Error] Invoice list is empty!" << endl;
         return;
     }
-    vector<int> widths = {8, 8, 8, 12, 12, 14, 15, 17};
-    vector<string> headers = {"Ma HDN", "Ma HD", "Ma KH", "So tien", "Ngay lap", "Han tra tien", "Ngay tra tien", "Trang thai"};
+
     TablePrinter::printTable(widths, headers, repoHoaDon.exportToVector());
     vector<HoaDon> danhSach = repoHoaDon.readAll();
     double tongDoanhThu = 0;
@@ -40,105 +44,139 @@ void HoaDonMenu::xemDanhSach()
     {
         tongDoanhThu += danhSach[i].getSoTien();
     }
-    cout << "Tong doanh thu: " << (long long)tongDoanhThu << " VND" << endl;
+    cout << "Total revenue: " << (long long)tongDoanhThu << " VND" << endl;
+    InputHelper::getInputOptionalString("Press any key to go back: ");
+    SystemHelper::clearScreen();
 }
 // Chuc nang them hoa don: validate ma hop dong, ma khach hang, so tien va trang thai thanh toan
 void HoaDonMenu::themHoaDon()
 {
-    string id = repoHoaDon.generateNextID();
+    HoaDon hoaDonMoi;
     string maHopDong;
     while (true)
     {
-        maHopDong = InputHelper::getInputString("Nhap ma hop dong: ");
-        if (maHopDong.find('|') != string::npos)
+        maHopDong = InputHelper::getInputString("Enter contract ID: ");
+        maHopDong = convertToUpper(maHopDong);
+        try
         {
-            cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
+            if (!kiemTraHopDongTonTai(maHopDong))
+            {
+                cout << "[Error] Contract ID not found or invalid, try again!" << endl;
+                continue;
+            }
+            else
+            {
+                hoaDonMoi.setMaHopDong(maHopDong);
+                break;
+            }
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[INVOICEMenu] Invalid contract id input during creation: " + string(e.what()));
+        }
+    }
+    Contract *pcontract = repoContract.readByID(maHopDong);
+    string maKhachHang = pcontract->get_customerID();
+    hoaDonMoi.setMaKhachHang(maKhachHang);
+    cout << "Customer representative: " << maKhachHang << endl;
+    Date ngayLap = Date::getCurrentDate();
+    if (ngayLap > pcontract->get_endDate())
+    {
+        cout << "The date of issuance cannot be later than the end date of contract, please try again!" << endl;
+        return;
+    }
+    // Lay thong tin hop dong tu repoContract de tu dong trich xuat ma khach hang, dam bao rang buoc toan ven khoa ngoai
+    else
+        hoaDonMoi.setNgayLap(ngayLap);
+    while (true)
+    {
+        double soTien = InputHelper::getInputDouble("Enter amount: ");
+        try
+        {
+            hoaDonMoi.setSoTien(soTien);
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            LOG("[INVOICEMenu] Invalid amount input during creation: " + string(e.what()));
+        }
+    }
+
+    Date hanTraTien;
+    while (true)
+    {
+        hanTraTien = InputHelper::getInputDate("Enter due date (DD/MM/YYYY): ");
+        if (hanTraTien < ngayLap || hanTraTien > pcontract->get_endDate())
+        {
+            cout << "The due date cannot be earlier than the date of issuance and later than end date of contract, please try again!" << endl;
             continue;
         }
         break;
     }
-    if (!kiemTraHopDongTonTai(maHopDong))
-    {
-        cout << "Ma hop dong khong ton tai hoac chua hop le, vui long thu lai!" << endl;
-        return;
-    }
-    // Lay thong tin hop dong tu repoContract de tu dong trich xuat ma khach hang, dam bao rang buoc toan ven khoa ngoai
-    Contract *pcontract = repoContract.readByID(maHopDong);
-    string maKhachHang = pcontract->get_customerID();
-    cout << "Khach hang dai dien hop dong: " << maKhachHang << endl;
-    double soTien = InputHelper::getInputDouble("Nhap so tien: ");
-    if (soTien <= 0.0)
-    {
-        cout << "So tien khong hop le, vui long thu lai" << endl;
-        return;
-    }
-    /*Contract* p = repoContract.readByID(maHopDong);
-    Date ngayLap = p->get_signDate();
-    */
-    Date ngayLap = InputHelper::getInputDate("Nhap ngay lap (DD/MM/YYYY): ");
-    Date hanTraTien = InputHelper::getInputDate("Nhap han tra tien (DD/MM/YYYY): ");
+    hoaDonMoi.setHanTraTien(hanTraTien);
     string trangThai;
     Date ngayTraTien;
     while (true)
     {
-        int choice = InputHelper::getInputInt("Nhap trang thai (1/2) (1. Da thanh toan/ 2. Chua thanh toan): ");
-        switch (choice)
+        ngayTraTien = InputHelper::getInputOptionalDate("Enter pay date (DD/MM/YYYY): ");
+        if (ngayTraTien.isEmpty())
         {
-        case 1:
-            trangThai = "da_thanh_toan";
-            ngayTraTien = InputHelper::getInputDate("Nhap ngay tra tien (DD/MM/YYYY): ");
-            break;
-        case 2:
-            trangThai = "chua_thanh_toan";
-            ngayTraTien = Date();
-            break;
-        default:
-            cout << "Lua chon khong hop le, vui long thu lai" << endl;
-            continue;
+            trangThai = "UnPaid";
+        }
+        else
+        {
+            if (ngayTraTien < ngayLap)
+            {
+                cout << "The payment date cannot be earlier than the date of issuance, please try again!" << endl;
+                continue;
+            }
+            else
+            {
+                trangThai = "Paid";
+            }
         }
         break;
     }
-    HoaDon hoaDonMoi;
-    hoaDonMoi.setID(id);
-    hoaDonMoi.setMaHopDong(maHopDong);
-    hoaDonMoi.setMaKhachHang(maKhachHang);
-    hoaDonMoi.setSoTien(soTien);
-    hoaDonMoi.setNgayLap(ngayLap);
-    hoaDonMoi.setHanTraTien(hanTraTien);
     hoaDonMoi.setNgayTraTien(ngayTraTien);
     hoaDonMoi.setTrangThai(trangThai);
+
+    string id = repoHoaDon.generateNextID();
+    hoaDonMoi.setID(id);
     repoHoaDon.create(hoaDonMoi);
-    cout << "Them hoa don moi thanh cong!" << endl;
+    cout << "Invoice created successfully!" << endl;
     repoHoaDon.writeToFile();
+    InputHelper::getInputOptionalString("Press any key to go back: ");
+    SystemHelper::clearScreen();
 }
 // Chuc nang tim kiem hoa don: tim theo ma HDN, ma HD, ma KH, ngay lap, han tra, ngay tra, trang thai
 void HoaDonMenu::timKiem()
 {
-    cout << "+---TIM KIEM HOA DON---+" << endl;
-    cout << "1. Tim theo ma hoa don" << endl;
-    cout << "2. Tim theo ma hop dong" << endl;
-    cout << "3. Tim theo ma khach hang" << endl;
-    cout << "4. Tim theo ngay lap hoa don" << endl;
-    cout << "5. Tim theo han tra tien hoa don" << endl;
-    cout << "6. Tim theo ngay tra tien hoa don" << endl;
-    cout << "7. Tim theo trang thai thanh toan" << endl;
-    cout << "Bam bat ki de quay lai." << endl;
-    int choice = InputHelper::getInputInt("Nhap lua chon: ");
+    cout << "=====Search invoice=====" << endl;
+    cout << "1. Search by invoice ID" << endl;
+    cout << "2. Search by contract ID" << endl;
+    cout << "3. Search by customer ID" << endl;
+    cout << "4. Search by issue date" << endl;
+    cout << "5. Search by due date" << endl;
+    cout << "6. Search by payment date" << endl;
+    cout << "7. Search by payment status" << endl;
+    cout << "Enter any other option to go back." << endl;
+    int choice = InputHelper::getInputInt("Enter your choice: ");
     repoHoaDon.loadFromFile();
-    vector<int> widths = {8, 8, 8, 12, 12, 14, 15, 17};
-    vector<string> headers = {"Ma HDN", "Ma HD", "Ma KH", "So tien", "Ngay lap", "Han tra tien", "Ngay tra tien", "Trang thai"};
     const vector<HoaDon> &danhSach = repoHoaDon.readAll();
     int s = danhSach.size();
     switch (choice)
     {
     case 1:
     {
-        string id = InputHelper::getInputString("Nhap ma hoa don (HDNXXX): ");
+        string id = InputHelper::getInputString("Enter invoice ID (HDNXXX): ");
+        id = convertToUpper(id);
         HoaDon *p = repoHoaDon.readByID(id);
         if (p == nullptr)
         {
-            cout << "Khong tim thay hoa don co ma hoa don: " << id << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] Invoice not found, ID: " << id << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -147,7 +185,8 @@ void HoaDonMenu::timKiem()
     }
     case 2:
     {
-        string maHopDong = InputHelper::getInputString("Nhap ma hop dong (HDXXX): ");
+        string maHopDong = InputHelper::getInputString("Enter contract ID (HDXXX): ");
+        maHopDong = convertToUpper(maHopDong);
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -158,8 +197,8 @@ void HoaDonMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay hoa don co ma hop dong: " << maHopDong << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No invoice found with contract ID: " << maHopDong << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -168,7 +207,8 @@ void HoaDonMenu::timKiem()
     }
     case 3:
     {
-        string maKhachHang = InputHelper::getInputString("Nhap ma khach hang (KHXXX): ");
+        string maKhachHang = InputHelper::getInputString("Enter customer ID (KHXXX): ");
+        maKhachHang = convertToUpper(maKhachHang);
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -179,8 +219,8 @@ void HoaDonMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay hoa don co ma khach hang: " << maKhachHang << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No invoice found with customer ID: " << maKhachHang << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -189,7 +229,7 @@ void HoaDonMenu::timKiem()
     }
     case 4:
     {
-        Date ngayLap = InputHelper::getInputDate("Nhap ngay lap hoa don (DD/MM/YYYY): ");
+        Date ngayLap = InputHelper::getInputDate("Enter issue date (DD/MM/YYYY): ");
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -200,8 +240,8 @@ void HoaDonMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay hoa don co ngay lap: " << ngayLap.toString() << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No invoice found with issue date: " << ngayLap.toString() << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -210,7 +250,7 @@ void HoaDonMenu::timKiem()
     }
     case 5:
     {
-        Date hanTraTien = InputHelper::getInputDate("Nhap han tra tien hoa don (DD/MM/YYYY): ");
+        Date hanTraTien = InputHelper::getInputDate("Enter due date (DD/MM/YYYY): ");
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -221,8 +261,8 @@ void HoaDonMenu::timKiem()
         }
         if (data.empty())
         {
-            cout << "Khong tim thay hoa don co han tra: " << hanTraTien.toString() << endl;
-            cout << "Vui long thu lai!" << endl;
+            cout << "[Error] No invoice found with due date: " << hanTraTien.toString() << endl;
+            cout << "Try again!" << endl;
             return;
         }
         else
@@ -231,7 +271,7 @@ void HoaDonMenu::timKiem()
     }
     case 6:
     {
-        Date ngayTraTien = InputHelper::getInputOptionalDate("Nhap ngay tra tien hoa don (DD/MM/YYYY): ");
+        Date ngayTraTien = InputHelper::getInputOptionalDate("Enter payment date (DD/MM/YYYY): ");
         vector<vector<string>> data;
         if (ngayTraTien.isEmpty())
         {
@@ -244,8 +284,8 @@ void HoaDonMenu::timKiem()
             }
             if (data.empty())
             {
-                cout << "Khong tim thay hoa don co ngay tra: " << "NONE" << endl;
-                cout << "Vui long thu lai!" << endl;
+                cout << "[Error] No invoice found with payment date: " << "NONE" << endl;
+                cout << "Try again!" << endl;
                 return;
             }
             else
@@ -262,8 +302,8 @@ void HoaDonMenu::timKiem()
             }
             if (data.empty())
             {
-                cout << "Khong tim thay hoa don co ngay tra: " << ngayTraTien.toString() << endl;
-                cout << "Vui long thu lai!" << endl;
+                cout << "[Error] No invoice found with payment date: " << ngayTraTien.toString() << endl;
+                cout << "Try again!" << endl;
                 return;
             }
             else
@@ -275,13 +315,13 @@ void HoaDonMenu::timKiem()
 
     case 7:
     {
-        int choice = InputHelper::getInputInt("Nhap trang thai thanh toan (1/2) (1. Da thanh toan/ 2. Chua thanh toan)");
+        int choice = InputHelper::getInputInt("Enter payment status (1. Paid / 2. UnPaid): ");
         vector<vector<string>> data;
         if (choice == 1)
         {
             for (int i = 0; i < s; i++)
             {
-                if (danhSach[i].getTrangThai() == "da_thanh_toan")
+                if (danhSach[i].getTrangThai() == "Paid")
                 {
                     data.push_back(danhSach[i].exportToVector());
                 }
@@ -291,7 +331,7 @@ void HoaDonMenu::timKiem()
         {
             for (int i = 0; i < s; i++)
             {
-                if (danhSach[i].getTrangThai() == "chua_thanh_toan")
+                if (danhSach[i].getTrangThai() == "UnPaid" || danhSach[i].getTrangThai() == "Unpaid")
                 {
                     data.push_back(danhSach[i].exportToVector());
                 }
@@ -299,18 +339,25 @@ void HoaDonMenu::timKiem()
         }
         else
         {
-            cout << "Lua chon khong hop le, vui long thu lai!" << endl;
+            cout << "[Error] Invalid option, try again!" << endl;
             return;
         }
-        TablePrinter::printTable(widths, headers, data);
+        if (!data.empty())
+        {
+            TablePrinter::printTable(widths, headers, data);
+        }
+        else
+            cout << "[Error] No invoice found with that status!" << endl;
         break;
     }
     default:
     {
-        return;
+        SystemHelper::clearScreen();
         break;
     }
     }
+    InputHelper::getInputOptionalString("Press any key to go back: ");
+    SystemHelper::clearScreen();
 }
 // Cac ham so sanh phuc vu sap xep danh sach hoa don theo ngay thang
 bool soSanhTheoNgayLapTangDan(const HoaDon &a, const HoaDon &b)
@@ -348,28 +395,26 @@ bool soSanhTheoNgayTraTienGiamDan(const HoaDon &a, const HoaDon &b)
 // Chuc nang sap xep hoa don: sap xep theo so tien, ngay lap, han tra, ngay tra va cap nhat file
 void HoaDonMenu::sapXep()
 {
-    cout << "+---SAP XEP DANH SACH HOA DON---+" << endl;
-    cout << "1. Sap xep theo so tien (Min -> Max)" << endl;
-    cout << "2. Sap xep theo so tien (Max -> Min)" << endl;
-    cout << "3. Sap xep theo ngay lap (Moi nhat -> Cu nhat)" << endl;
-    cout << "4. Sap xep theo ngay lap (Cu nhat -> Moi nhat)" << endl;
-    cout << "5. Sap xep theo han tra tien (Moi nhat -> Cu nhat)" << endl;
-    cout << "6. Sap xep theo han tra tien (Cu nhat -> Moi nhat)" << endl;
-    cout << "7. Sap xep theo ngay tra tien (Moi nhat -> Cu nhat)" << endl;
-    cout << "8. Sap xep theo ngay tra tien (Cu nhat -> Moi nhat)" << endl;
-    cout << "0. Quay lai" << endl;
-    int choice = InputHelper::getInputInt("Nhap lua chon cua ban : ");
+    cout << "=====Sort invoice list=====" << endl;
+    cout << "1. Sort by amount (Min -> Max)" << endl;
+    cout << "2. Sort by amount (Max -> Min)" << endl;
+    cout << "3. Sort by issue date (newest -> oldest)" << endl;
+    cout << "4. Sort by issue date (oldest -> newest)" << endl;
+    cout << "5. Sort by due date (newest -> oldest)" << endl;
+    cout << "6. Sort by due date (oldest -> newest)" << endl;
+    cout << "7. Sort by payment date (newest -> oldest)" << endl;
+    cout << "8. Sort by payment date (oldest -> newest)" << endl;
+    cout << "Press any key to go back: " << endl;
+    int choice = InputHelper::getInputInt("Enter your choice: ");
     vector<HoaDon> danhSach = repoHoaDon.readAll();
     int s = danhSach.size();
-    vector<int> widths = {8, 8, 8, 12, 12, 14, 15, 17};
-    vector<string> headers = {"Ma HDN", "Ma HD", "Ma KH", "So tien", "Ngay lap", "Han tra tien", "Ngay tra tien", "Trang thai"};
     switch (choice)
     {
     case 1:
     {
         sort(danhSach.begin(), danhSach.end());
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -379,14 +424,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 2:
     {
         sort(danhSach.begin(), danhSach.end(), greater<HoaDon>());
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -396,14 +441,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 3:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayLapGiamDan);
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -413,14 +458,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 4:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayLapTangDan);
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -430,14 +475,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 5:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoHanTraTienGiamDan);
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -447,14 +492,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 6:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoHanTraTienTangDan);
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -464,14 +509,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 7:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayTraTienGiamDan);
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -481,14 +526,14 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     case 8:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayTraTienTangDan);
         ofstream tenFile("Data/hoadon.txt");
-        cout << "Danh sach hoa don sau khi sap xep xong: " << endl;
+        cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
@@ -498,127 +543,150 @@ void HoaDonMenu::sapXep()
         tenFile.close();
         repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Da cap nhat thu tu sap xep vao file thanh cong!" << endl;
-        break;
-    }
-    case 0:
-    {
-        return;
+        cout << "Sort order saved to file successfully!" << endl;
         break;
     }
     default:
-        cout << "Lua chon khong hop le!" << endl;
+        SystemHelper::clearScreen();
         break;
     }
+    InputHelper::getInputOptionalString("Press any key to go back: ");
+    SystemHelper::clearScreen();
 }
 // Chuc nang cap nhat hoa don: tim theo ma HDN, hien thi thong tin hien tai va cap nhat tung truong
 void HoaDonMenu::capNhat()
 {
-    string id = InputHelper::getInputString("Nhap ma hoa don: ");
-    if (id.find('|') != string::npos)
-    {
-        cout << "Du lieu khong duoc chua ky tu '|', vui long thu lai!" << endl;
-        return;
-    }
+    string id = InputHelper::getInputString("Enter invoice ID: ");
+    id = convertToUpper(id);
     HoaDon *p = repoHoaDon.readByID(id);
+
     if (p == nullptr)
     {
-        cout << "Ma hoa don khong hop le, vui long thu lai!" << endl;
+        cout << "[Error] Invalid invoice ID, try again!" << endl;
         return;
     }
     else
     {
-        cout << "+---THONG TIN HOA DON HIEN TAI---+" << endl;
-        cout << "Ma hoa don: " << id << endl;
-        cout << "Ma hop dong: " << p->getMaHopDong() << endl;
-        cout << "Ma khach hang: " << p->getMaKhachHang() << endl;
-        cout << "So tien: " << p->getSoTien() << endl;
-        cout << "Ngay lap: " << (p->getNgayLap()).toString() << endl;
-        cout << "Han tra tien: " << (p->getHanTraTien()).toString() << endl;
-        cout << "Ngay tra tien: " << (p->getNgayTraTien()).toString() << endl;
-        cout << "Trang thai: " << p->getTrangThai() << endl;
-        double soTien = InputHelper::getInputOptionalDouble("Nhap so tien: ");
-        Date ngayLap = InputHelper::getInputOptionalDate("Nhap ngay lap: ");
-        Date hanTraTien = InputHelper::getInputOptionalDate("Nhap han tra tien: ");
-        int choice = InputHelper::getInputOptionalInt("Nhap trang thai (1.da_thanh_toan/ 2.chua_thanh_toan)");
-        if (soTien > 0.0)
+        Contract *pcontract = repoContract.readByID(p->getMaHopDong());
+        cout << "=====Current invoice information=====" << endl;
+        cout << "Invoice ID: " << id << endl;
+        cout << "Contract ID: " << p->getMaHopDong() << endl;
+        cout << "Customer ID: " << p->getMaKhachHang() << endl;
+        cout << "Amount: " << p->getSoTien() << endl;
+        cout << "Issue date: " << (p->getNgayLap()).toString() << endl;
+        cout << "Due date: " << (p->getHanTraTien()).toString() << endl;
+        cout << "Payment date: ";
+        Date strNgayTra = p->getNgayTraTien();
+        if (strNgayTra.isEmpty())
         {
-            p->setSoTien(soTien);
-            cout << "Cap nhat so tien thanh cong" << endl;
+            cout << "NONE" << endl;
         }
-        if (!ngayLap.isEmpty())
+        else
         {
-            p->setNgayLap(ngayLap);
-            cout << "Cap nhat ngay lap thanh cong" << endl;
+            cout << strNgayTra.toString() << endl;
+            ;
         }
-        if (!hanTraTien.isEmpty())
+        cout << "Status: " << p->getTrangThai() << endl;
+
+        while (true)
         {
-            p->setHanTraTien(hanTraTien);
-            cout << "Cap nhat han tra tien thanh cong" << endl;
-        }
-        if (choice != -1)
-        {
-            switch (choice)
+            double soTien = InputHelper::getInputOptionalDouble("Enter amount: ");
+            if (soTien == -1.0)
+                break;
+            try
             {
-            case 1:
+                p->setSoTien(soTien);
+                cout << "Amount updated successfully" << endl;
+                break;
+            }
+            catch (const exception &e)
             {
-                p->setTrangThai("da_thanh_toan");
-                cout << "Cap nhat trang thai thanh cong!" << endl;
-                Date ngayTraTien = InputHelper::getInputDate("Nhap ngay tra tien: ");
-                if (!ngayTraTien.isEmpty())
+                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                LOG("[INVOICEMenu] Invalid amount input during update: " + string(e.what()));
+            }
+        }
+        while (true)
+        {
+            Date hanTraTien = InputHelper::getInputOptionalDate("Enter due date: ");
+            if (hanTraTien.isEmpty())
+                break;
+            else
+            {
+                if (hanTraTien < p->getNgayLap() || (pcontract != nullptr && hanTraTien > pcontract->get_endDate()))
+                {
+                    cout << "The due date cannot be earlier than the date of issuance, please try again!" << endl;
+                    continue;
+                }
+                else
+                {
+                    p->setHanTraTien(hanTraTien);
+                    cout << "Due date updated successfully" << endl;
+                    break;
+                }
+            }
+        }
+        while (true)
+        {
+            Date ngayTraTien = InputHelper::getInputOptionalDate("Enter payment date: ");
+            if (ngayTraTien.isEmpty())
+                break;
+            else
+            {
+                if (ngayTraTien < p->getNgayLap())
+                {
+                    cout << "The payment date cannot be earlier than the date of issuance, please try again!" << endl;
+                    continue;
+                }
+                else
                 {
                     p->setNgayTraTien(ngayTraTien);
-                    cout << "Cap nhat ngay tra tien thanh cong" << endl;
+                    cout << "Pay date updated successfully" << endl;
+                    p->setTrangThai("Paid");
+                    cout << "Payment status updated successfully!" << endl;
+                    if (ngayTraTien > p->getHanTraTien())
+                    {
+                        cout << "[Notice] Late payment: Payment was made after the due date!" << endl;
+                    }
+                    break;
                 }
-                break;
-            }
-            case 2:
-            {
-                p->setTrangThai("chua_thanh_toan");
-                cout << "Cap nhat trang thai thanh cong!" << endl;
-                p->setNgayTraTien(Date());
-                break;
-            }
-            default:
-            {
-                cout << "Lua chon khong hop le, vui long thu lai" << endl;
-                break;
-            }
             }
         }
     }
     repoHoaDon.writeToFile();
-    cout << "Cap nhat hoa don thanh cong" << endl;
+    cout << "Invoice updated successfully" << endl;
+    InputHelper::getInputOptionalString("Press any key to go back: ");
+    SystemHelper::clearScreen();
 }
 // Chuc nang xoa hoa don: tim theo ma HDN, xac nhan Y/N truoc khi xoa va luu lai file
 void HoaDonMenu::xoaHoaDon()
 {
-    string id = InputHelper::getInputString("Nhap ma hoa don: ");
+    string id = InputHelper::getInputString("Enter invoice ID: ");
+    id = convertToUpper(id);
     HoaDon *p = repoHoaDon.readByID(id);
     if (p == nullptr)
     {
-        cout << "Ma hoa don khong hop le, vui long thu lai!" << endl;
+        cout << "[Error] Invalid invoice ID, try again!" << endl;
         return;
     }
     else
     {
         cout << p->exportToString() << endl;
-        string xacNhan = InputHelper::getInputString("Ban co chac muon xoa hoa don nay khong ? (y/n): ");
+        string xacNhan = InputHelper::getInputString("Are you sure you want to delete this invoice? (y/n): ");
         if (xacNhan == "Y" || xacNhan == "y" || xacNhan == "YES" || xacNhan == "yes" || xacNhan == "Yes")
         {
             repoHoaDon.remove(id);
             repoHoaDon.writeToFile();
-            cout << "Xoa hoa don thanh cong!" << endl;
+            cout << "Invoice deleted successfully!" << endl;
         }
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
         {
-            cout << "Da huy thao tac xoa hoa don!" << endl;
+            cout << "[Abort] Deletion aborted" << endl;
             return;
         }
         else
             return;
     }
-    InputHelper::getInputOptionalString("Nhan bat ky de quay lai: ");
+    InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Xu ly lua chon chuc nang tu menu quan ly hoa don
@@ -626,10 +694,11 @@ void HoaDonMenu::handleChoice(int choice)
 {
     switch (choice)
     {
-    case 1:
+    case 2:
+        SystemHelper::clearScreen();
         xemDanhSach();
         break;
-    case 2:
+    case 1:
         themHoaDon();
         break;
     case 3:
@@ -641,22 +710,19 @@ void HoaDonMenu::handleChoice(int choice)
     case 5:
         capNhat();
         break;
-    case 6:
-        xoaHoaDon();
-        break;
     default:
-        cout << "Lua chon khong hop le, vui long thu lai!" << endl;
+        cout << "[Error] Invalid option, try again!" << endl;
         break;
     }
 }
 // Hien thi giao dien menu quan ly hoa don
 void HoaDonMenu::printMenu()
 {
-    cout << "======QUAN LY HOA DON======" << endl;
-    cout << "1. Xem danh sach hoa don" << endl;
-    cout << "2. Them hoa don moi" << endl;
-    cout << "3. Tim kiem hoa don" << endl;
-    cout << "4. Sap xep danh sach hoa don" << endl;
-    cout << "5. Cap nhat hoa don" << endl;
-    cout << "6. Xoa hoa don" << endl;
+    cout << "=====Invoice Management=====" << endl;
+    cout << "1. Add new invoice" << endl;
+    cout << "2. View all invoices" << endl;
+    cout << "3. Search invoice" << endl;
+    cout << "4. Sort invoice list" << endl;
+    cout << "5. Update invoice" << endl;
+    // phan xoa hoa don ko duoc thuc hien do quy dinh cua phap luat
 }

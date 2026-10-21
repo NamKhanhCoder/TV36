@@ -24,39 +24,39 @@ SetTopBox::SetTopBox(string id, string serial, string manufacturer, string model
 void SetTopBox::setSerial(const string &serial)
 {
     if (serial.empty())
-        throw invalid_argument("[SetTopBox] So Serial khong duoc de trong!");
+        throw invalid_argument("[SetTopBox] Serial number cannot be empty!");
     if (serial.find_first_of("|\r\n") != string::npos)
-        throw invalid_argument("[SetTopBox] So Serial khong duoc chua ky tu '|' hoac xuong dong!");
+        throw invalid_argument("[SetTopBox] Serial number must not contain '|' or line breaks!");
     this->serial = serial;
 }
 
 void SetTopBox::setManufacturer(const string &manufacturer)
 {
     if (manufacturer.empty())
-        throw invalid_argument("[SetTopBox] Nha san xuat khong duoc de trong!");
+        throw invalid_argument("[SetTopBox] Manufacturer cannot be empty!");
     if (manufacturer.find_first_of("|\r\n") != string::npos)
-        throw invalid_argument("[SetTopBox] Nha san xuat khong duoc chua ky tu '|' hoac xuong dong!");
+        throw invalid_argument("[SetTopBox] Manufacturer must not contain '|' or line breaks!");
     this->manufacturer = manufacturer;
 }
 
 void SetTopBox::setModel(const string &model)
 {
     if (model.empty())
-        throw invalid_argument("[SetTopBox] Model khong duoc de trong!");
+        throw invalid_argument("[SetTopBox] Model cannot be empty!");
     if (model.find_first_of("|\r\n") != string::npos)
-        throw invalid_argument("[SetTopBox] Model khong duoc chua ky tu '|' hoac xuong dong!");
+        throw invalid_argument("[SetTopBox] Model must not contain '|' or line breaks!");
     this->model = model;
 }
 
 void SetTopBox::setImportDate(const Date &importDate)
 {
     if (importDate.isEmpty())
-        throw invalid_argument("[SetTopBox] Import date can not be empty");
+        throw invalid_argument("[SetTopBox] Import date cannot be empty!");
 
     Date currentDate = Date::getCurrentDate();
 
     if (importDate > currentDate)
-        throw invalid_argument("[SetTopBox] Import date can not be in the future");
+        throw invalid_argument("[SetTopBox] Import date cannot be in the future!");
 
     this->importDate = importDate;
 }

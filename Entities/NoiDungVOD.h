@@ -8,6 +8,7 @@
 #pragma once
 #include<string>
 #include"Entity.h"
+#include "Utils/Date.h"
 using namespace std;
 // Lop thuc the NoiDungVOD ke thua lop truu tuong Entity
 class NoiDungVOD : public Entity{

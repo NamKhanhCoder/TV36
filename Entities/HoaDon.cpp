@@ -8,6 +8,8 @@
 #include "HoaDon.h"
 #include <iostream>
 #include <sstream>
+#include "Utils/Validator.h"
+#include "Utils/StringHelper.h"
 using namespace std;
 // Ham khoi tao mac dinh thiet lap gia tri ban dau
 HoaDon::HoaDon()
@@ -16,7 +18,7 @@ HoaDon::HoaDon()
     maHopDong = "";
     maKhachHang = "";
     soTien = 0.0;
-    trangThai = "chua_thanh_toan";
+    trangThai = "UnPaid";
 }
 // Cac ham getter lay gia tri thuoc tinh
 string HoaDon::getMaHopDong() const
@@ -50,19 +52,39 @@ string HoaDon::getTrangThai() const
 // Cac ham setter gan gia tri cho thuoc tinh
 void HoaDon::setID(string id)
 {
-    this->id = id;
+    if (Validator::isValidID(id, "HDN", 6))
+    {
+        this->id = id;
+    }
+    else
+        throw invalid_argument("[INVOICE] the invoice id of the data is not valid: " + id);
 }
 void HoaDon::setMaHopDong(string maHopDong)
 {
-    this->maHopDong = maHopDong;
+    if (Validator::isValidID(maHopDong, "HD", 5))
+    {
+        this->maHopDong = maHopDong;
+    }
+    else
+        throw invalid_argument("[INVOICE] the contract id of the data is not valid: " + maHopDong);
 }
 void HoaDon::setMaKhachHang(string maKhachHang)
 {
-    this->maKhachHang = maKhachHang;
+    if (Validator::isValidID(maKhachHang, "KH", 5))
+    {
+        this->maKhachHang = maKhachHang;
+    }
+    else
+        throw invalid_argument("[INVOICE] the customer id of the data is not valid: " + maKhachHang);
 }
 void HoaDon::setSoTien(double soTien)
 {
-    this->soTien = soTien;
+    if (soTien > 0.0)
+    {
+        this->soTien = soTien;
+    }
+    else
+        throw invalid_argument("[INVOICE] the amount of the data is not valid: " + to_string(soTien));
 }
 void HoaDon::setNgayLap(Date ngayLap)
 {
@@ -78,7 +100,12 @@ void HoaDon::setNgayTraTien(Date ngayTraTien)
 }
 void HoaDon::setTrangThai(string trangThai)
 {
-    this->trangThai = trangThai;
+    if (trangThai == "Paid" || trangThai == "UnPaid" || trangThai == "Unpaid")
+    {
+        this->trangThai = (trangThai == "Unpaid") ? "UnPaid" : trangThai;
+    }
+    else
+        throw invalid_argument("[INVOICE] the status of the data is not valid: " + trangThai);
 }
 // Chuyen doi doi tuong hoa don thanh chuoi ghi vao file (xu ly NONE neu chua thanh toan)
 string HoaDon::exportToString() const
@@ -97,38 +124,47 @@ string HoaDon::exportToString() const
 // Doc va phan tich chuoi tu file de nap vao doi tuong hoa don (xu ly NONE cho ngayTraTien)
 void HoaDon::parseFromString(const string &data)
 {
-    stringstream ss(data);
-    string token;
-    getline(ss, token, '|');
-    this->id = token;
-    getline(ss, token, '|');
-    this->maHopDong = token;
-    getline(ss, token, '|');
-    this->maKhachHang = token;
-    getline(ss, token, '|');
-    try // chua doan ma co nguy co sinh ra loi
+    vector<string> words = splitString(data);
+    if (words.size() != 8)
     {
-        this->soTien = stod(token);
+        throw invalid_argument("[INVOICE] The line of data is not valid: " + data);
     }
-    catch (...) // dung de bat tat ca cac ngoai le khac
+    setID(words[0]);
+    setMaHopDong(words[1]);
+    setMaKhachHang(words[2]);
+    try
     {
-        this->soTien = 0; // Neu chuoi loi thi gan ve 0 , ko bi crash
+        setSoTien(stod(words[3]));
     }
-    getline(ss, token, '|');
-    this->ngayLap = Date(token);
-    getline(ss, token, '|');
-    this->hanTraTien = Date(token);
-    getline(ss, token, '|');
-    if (token == "NONE")
+    catch (const exception &)
     {
-        this->ngayTraTien = Date();
+        throw invalid_argument("[INVOICE] Amount is not a valid number in: " + data);
+    }
+    try
+    {
+        setNgayLap(words[4]);
+        setHanTraTien(words[5]);
+    }
+    catch (const exception &)
+    {
+        throw invalid_argument("[INVOICE] Date of issuance or due date is not a valid date in: " + data);
+    }
+    if (words[6] == "NONE")
+    {
+        setNgayTraTien(Date());
     }
     else
     {
-        this->ngayTraTien = Date(token);
+        try
+        {
+            setNgayTraTien(words[6]);
+        }
+        catch (const exception &)
+        {
+            throw invalid_argument("[INVOICE] Payment date is not a valid date in: " + data);
+        }
     }
-    getline(ss, token);
-    this->trangThai = token;
+    setTrangThai(words[7]);
 }
 // Xuat cac thuoc tinh thanh vector string phuc vu in bang can cot TablePrinter
 vector<string> HoaDon::exportToVector() const

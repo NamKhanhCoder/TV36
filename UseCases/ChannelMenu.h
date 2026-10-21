@@ -13,7 +13,6 @@ private:
     Repository<ChannelCategory> repoCategory;
     Repository<Package> repoPackage;
     Repository<Schedule> repoSchedule;
-    bool dataLoaded;
     bool inputFields(Channel& item, bool editing);
     void loadChannels();
     bool isNumberUsed(int number, const string& excludeID);
@@ -22,7 +21,6 @@ private:
     void readChannel();
     void updateChannel();
     void deleteChannel();
-    void saveChanges();
 
 protected:
     void printMenu() override;

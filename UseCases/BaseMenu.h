@@ -36,8 +36,8 @@ public:
             }
             catch (const std::exception &e)
             {
-                std::cout << "\n[System Error] Da xay ra ngoai le: " << e.what() << "\n";
-                InputHelper::getInputOptionalString("Nhan Enter de tiep tuc...");
+                std::cout << "\n[System Error] An exception occurred: " << e.what() << "\n";
+                InputHelper::getInputOptionalString("Press Enter to continue...");
             }
         }
     }

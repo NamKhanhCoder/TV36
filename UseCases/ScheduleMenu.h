@@ -9,7 +9,6 @@ class ScheduleMenu : public BaseMenu
 private:
     Repository<Schedule> repo;
     Repository<Channel> repoChannel;
-    bool dataLoaded;
     bool inputFields(Schedule& item, bool editing);
     void loadSchedules();
     string findConflict(const Schedule& item);
@@ -18,7 +17,6 @@ private:
     void readSchedule();
     void updateSchedule();
     void deleteSchedule();
-    void saveChanges();
 
 protected:
     void printMenu() override;

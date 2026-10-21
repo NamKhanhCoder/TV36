@@ -8,6 +8,8 @@
 #include "NoiDungVOD.h"
 #include <iostream>
 #include <sstream>
+#include "Utils/Validator.h"
+#include "Utils/StringHelper.h"
 using namespace std;
 // Ham khoi tao mac dinh thiet lap cac gia tri ban dau
 NoiDungVOD::NoiDungVOD()
@@ -53,35 +55,70 @@ string NoiDungVOD::getTrangThai() const
 // Cac ham setter gan gia tri cho thuoc tinh
 void NoiDungVOD::setID(string id)
 {
-    this->id = id;
+    if (Validator::isValidID(id, "VOD", 6))
+    {
+        this->id = id;
+    }
+    else
+        throw invalid_argument("[VOD] the VOD id of the data is not valid: " + id);
 }
 void NoiDungVOD::setTenNoiDung(string tenNoiDung)
 {
-    this->tenNoiDung = tenNoiDung;
+    if (!tenNoiDung.empty() && tenNoiDung.find('|') == string::npos)
+    {
+        this->tenNoiDung = tenNoiDung;
+    }
+    else
+        throw invalid_argument("[VOD] the content name of the data is not valid: " + tenNoiDung);
 }
 void NoiDungVOD::setTheLoai(string theLoai)
 {
-    this->theLoai = theLoai;
+    if (!theLoai.empty() && theLoai.find('|') == string::npos)
+    {
+        this->theLoai = theLoai;
+    }
+    else
+        throw invalid_argument("[VOD] the genre of the data is not valid: " + theLoai);
 }
 void NoiDungVOD::setThoiLuong(int thoiLuong)
 {
-    this->thoiLuong = thoiLuong;
+    if (thoiLuong > 0)
+    {
+        this->thoiLuong = thoiLuong;
+    }
+    else
+        throw invalid_argument("[VOD] the duration(min) of the data is not valid: " + to_string(thoiLuong));
 }
 void NoiDungVOD::setMoTa(string moTa)
 {
-    this->moTa = moTa;
+    if (moTa.find('|') == string::npos)
+    {
+        this->moTa = moTa;
+    }
+    else
+        throw invalid_argument("[VOD] the description of the data is not valid: " + moTa);
 }
 void NoiDungVOD::setNamPhatHanh(int namPhatHanh)
 {
-    this->namPhatHanh = namPhatHanh;
+    if (namPhatHanh >= 1950 && namPhatHanh <= Date::getCurrentDate().getYear())
+    {
+        this->namPhatHanh = namPhatHanh;
+    }
+    else
+        throw invalid_argument("[VOD] the release year of the data is not valid: " + to_string(namPhatHanh));
 }
 void NoiDungVOD::setUrl(string url)
 {
-    this->url = url;
+        this->url = url;
 }
 void NoiDungVOD::setTrangThai(string trangThai)
 {
-    this->trangThai = trangThai;
+    if (trangThai == "ACTIVE" || trangThai == "INACTIVE")
+    {
+        this->trangThai = trangThai;
+    }
+    else
+        throw invalid_argument("[VOD] the status of the data is not valid: " + trangThai);
 }
 // Chuyen doi doi tuong thanh chuoi dinh dang luu vao file
 string NoiDungVOD::exportToString() const
@@ -91,38 +128,27 @@ string NoiDungVOD::exportToString() const
 // Doc va phan tich chuoi tu file de nap vao doi tuong
 void NoiDungVOD::parseFromString(const string &data)
 {
-    stringstream ss(data);
-    string token;
-    getline(ss, token, '|');
-    this->id = token;
-    getline(ss, token, '|');
-    this->tenNoiDung = token;
-    getline(ss, token, '|');
-    this->theLoai = token;
-    getline(ss, token, '|');
-    try // chua doan ma co nguy co sinh ra loi
+    vector<string> words = splitString(data);
+    if (words.size() != 8)
     {
-        this->thoiLuong = stoi(token);
+        throw invalid_argument("[VOD] The line of data is not valid: " + data);
     }
-    catch (...) // dung de bat tat ca cac ngoai le khac
-    {
-        this->thoiLuong = 0; // Neu chuoi loi thi gan ve 0 , ko bi crash
-    }
-    getline(ss, token, '|');
-    this->moTa = token;
-    getline(ss, token, '|');
+    setID(words[0]);
+    setTenNoiDung(words[1]);
+    setTheLoai(words[2]);
+
     try
     {
-        this->namPhatHanh = stoi(token);
+        setThoiLuong(stoi(words[3]));
+        setNamPhatHanh(stoi(words[5]));
     }
-    catch (...)
+    catch(const exception &)
     {
-        this->namPhatHanh = 0;
+        throw invalid_argument("[VOD] Duration or Release Year is not a valid number in: " + data);
     }
-    getline(ss, token, '|');
-    this->url = token;
-    getline(ss, token);
-    this->trangThai = token;
+    setMoTa(words[4]);
+    setUrl(words[6]);
+    setTrangThai(words[7]);
 }
 // Xuat cac thuoc tinh thanh vector string de hien thi bang TablePrinter
 vector<string> NoiDungVOD::exportToVector() const
