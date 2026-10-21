@@ -563,6 +563,7 @@ void HoaDonMenu::capNhat()
     if (p == nullptr)
     {
         cout << "[Error] Invalid invoice ID, try again!" << endl;
+        InputHelper::getInputOptionalString("Press any key to go back: ");
         return;
     }
     else
@@ -666,13 +667,15 @@ void HoaDonMenu::capNhat()
 }
 // Chuc nang xoa hoa don: tim theo ma HDN, xac nhan Y/N truoc khi xoa va luu lai file
 void HoaDonMenu::xoaHoaDon()
-{
+{   
+    repoHoaDon.loadFromFile();
     string id = InputHelper::getInputString("Enter invoice ID: ");
     id = convertToUpper(id);
     HoaDon *p = repoHoaDon.readByID(id);
     if (p == nullptr)
     {
         cout << "[Error] Invalid invoice ID, try again!" << endl;
+        InputHelper::getInputOptionalString("Press any key to go back: ");
         return;
     }
     else
@@ -688,7 +691,6 @@ void HoaDonMenu::xoaHoaDon()
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
         {
             cout << "[Abort] Deletion aborted" << endl;
-            return;
         }
         else
             return;

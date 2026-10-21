@@ -449,6 +449,7 @@ void NoiDungVODMenu::capNhat()
     if (p == nullptr)
     {
         cout << "[Error] VOD ID not found, try again!" << endl;
+        InputHelper::getInputOptionalString("Press any key to go back: ");
         return;
     }
     else
@@ -604,18 +605,21 @@ void NoiDungVODMenu::capNhat()
 }
 // Chuc nang xoa noi dung: tim theo ma VOD, xac nhan Y/N truoc khi xoa va luu file
 void NoiDungVODMenu::xoaNoiDung()
-{
+{   
+    repo.loadFromFile();
     string id = InputHelper::getInputString("Enter VOD ID to delete: ");
     id = convertToUpper(id);
     NoiDungVOD *p = repo.readByID(id);
     if (p == nullptr)
     {
         cout << "[Error] Invalid VOD ID, try again" << endl;
+        InputHelper::getInputOptionalString("Press any key to go back: ");
         return;
     }
     else
     {
         // Kiem tra rang buoc toan ven: chan xoa neu VOD dang nam trong goi cuoc (Package)
+        repopackage.loadFromFile();
         vector<Package> danhSachPackage = repopackage.readAll();
         int sPackage = danhSachPackage.size();
         int check = 0;
@@ -643,6 +647,7 @@ void NoiDungVODMenu::xoaNoiDung()
         if (check)
         {
             cout << "[Error] Cannot delete! VOD content belongs to package: " << tenGoiCuoc << endl;
+            InputHelper::getInputOptionalString("Press any key to go back: ");
             return;
         }
         string line = p->exportToString();
@@ -657,7 +662,6 @@ void NoiDungVODMenu::xoaNoiDung()
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
         {
             cout << "[Abort] Deletion aborted" << endl;
-            return;
         }
         else
             return;
