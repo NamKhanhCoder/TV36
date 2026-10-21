@@ -2,9 +2,6 @@
 #include "Utils/StringHelper.h"
 #include "Utils/TablePrinter.h"
 #include <algorithm>
-#include <fstream>
-#include <filesystem>
-#include <sstream>
 #include <set>
 #include <stdexcept>
 
@@ -12,41 +9,6 @@ namespace
 {
     const vector<int> widths = {10, 20, 10, 8, 10, 38, 14};
     const vector<string> headers = {"ID", "Name", "Category", "Number", "Resolution", "Stream URL", "Status"};
-
-    // Kiem tra file truoc khi goi Repository cua nhom (parser cu co the bo qua dong loi).
-    template<class T>
-    void loadChecked(Repository<T>& repo, const string& path, size_t fieldCount, const string& prefix)
-    {
-        ifstream file(path);
-        if (!file) throw runtime_error("Cannot read " + path + ". Run from the project folder.");
-        set<string> ids;
-        string line;
-        size_t lineNumber = 0;
-        while (getline(file, line))
-        {
-            ++lineNumber;
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line.empty()) continue;
-            try
-            {
-                vector<string> fields = splitString(line);
-                T item;
-                if (fields.size() != fieldCount || fields[0].size() < prefix.size() + 3 ||
-                    fields[0].size() > 32767 ||
-                    !Validator::isValidID(fields[0], prefix, static_cast<short>(fields[0].size())))
-                    throw invalid_argument("Invalid fields or ID.");
-                item.parseFromString(line);
-                if (item.exportToString() != line || !ids.insert(item.getID()).second)
-                    throw invalid_argument("Invalid data or duplicate ID.");
-            }
-            catch (const exception& error)
-            {
-                throw runtime_error(path + " line " + to_string(lineNumber) + ": " + error.what());
-            }
-        }
-        if (file.bad()) throw runtime_error("Read failed: " + path);
-        repo.loadFromFile();
-    }
 
     void printDetail(const vector<string>& values)
     {
@@ -72,28 +34,19 @@ ChannelMenu::ChannelMenu()
     : repo("Data/channels.txt", "Data/channels_counter.txt", "KENH"),
       repoCategory("Data/channel_categories.txt", "Data/channel_categories_counter.txt", "TL"),
       repoPackage("Data/packages.txt", "Data/packages_counter.txt", "GOI"),
-      repoSchedule("Data/schedules.txt", "Data/schedules_counter.txt", "LPS"),
-      dataLoaded(false)
+      repoSchedule("Data/schedules.txt", "Data/schedules_counter.txt", "LPS")
 {
-    try { loadChannels(); }
-    catch (const exception& error)
-    {
-        cout << "[Error] " << error.what() << "\n";
-        cout << "Menu locked to protect the data file. Fix the file and reopen this menu.\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
-    }
+    loadChannels();
 }
 
 void ChannelMenu::loadChannels()
 {
-    dataLoaded = false;
-    loadChecked(repo, "Data/channels.txt", 7, "KENH");
+    repo.loadFromFile();
     set<int> numbers;
     for (const Channel& channel : repo.readAll())
         if (!numbers.insert(channel.getChannelNumber()).second)
-            throw runtime_error("Duplicate channel number in Data/channels.txt: " +
-                                to_string(channel.getChannelNumber()));
-    dataLoaded = true;
+            cout << "[Warning] Duplicate channel number in Data/channels.txt: "
+                 << channel.getChannelNumber() << "\n";
 }
 
 bool ChannelMenu::isNumberUsed(int number, const string& excludeID)
@@ -104,32 +57,9 @@ bool ChannelMenu::isNumberUsed(int number, const string& excludeID)
     return false;
 }
 
-void ChannelMenu::saveChanges()
-{
-    // Ghi file tam cung thu muc, chi thay file goc khi da ghi/close thanh cong.
-    // Khong doi Repository chung cua cac thanh vien khac.
-    dataLoaded = false;
-    const string path = "Data/channels.txt";
-    const string pending = path + ".pending";
-    string expected;
-    for (const Channel& item : repo.readAll()) expected += item.exportToString() + "\n";
-    ofstream output(pending, ios::binary | ios::trunc);
-    if (!output) throw runtime_error("Cannot write temporary data file: " + pending);
-    output << expected;
-    output.close();
-    if (!output) throw runtime_error("Write failed. Original data file was preserved: " + path);
-    std::filesystem::rename(pending, path);
-    ifstream input(path, ios::binary);
-    ostringstream actual;
-    actual << input.rdbuf();
-    if (!input || input.bad() || actual.str() != expected)
-        throw runtime_error("Could not verify saving. Check the data file and reopen the menu.");
-    dataLoaded = true;
-}
-
 bool ChannelMenu::inputFields(Channel& item, bool editing)
 {
-    loadChecked(repoCategory, "Data/channel_categories.txt", 3, "TL");
+    repoCategory.loadFromFile();
     if (repoCategory.readAll().empty())
     {
         cout << "No categories available. Create a category first.\n";
@@ -138,9 +68,20 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
     cout << "Enter 0 at Name to cancel. ";
     if (editing) cout << "Leave fields empty to keep their current values.";
     cout << "\n";
-    string name = InputHelper::getInputText("Name (0 to cancel): ", editing);
-    if (name == "0") return false;
-    if (!name.empty()) item.setName(name);
+    while (true)
+    {
+        string name = InputHelper::getInputText("Name (0 to cancel): ", editing);
+        if (name == "0") return false;
+        try
+        {
+            if (!name.empty()) item.setName(name);
+            break;
+        }
+        catch (const invalid_argument& error)
+        {
+            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+        }
+    }
 
     cout << "\n===== Available Categories =====\n";
     TablePrinter::printTable({8, 22, 45}, {"ID", "Category", "Description"}, repoCategory.exportToVector());
@@ -150,8 +91,16 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
         if (id.empty()) id = item.getCategoryID();
         if (repoCategory.readByID(id))
         {
-            item.setCategoryID(id);
-            break;
+            try
+            {
+                item.setCategoryID(id);
+                break;
+            }
+            catch (const invalid_argument& error)
+            {
+                cout << "[Validation Error] " << error.what() << " Please try again.\n";
+                continue;
+            }
         }
         cout << "[Error] Category not found: " << id << ". Choose an existing category.\n";
     }
@@ -162,19 +111,58 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
         if (number == 0) number = item.getChannelNumber();
         if (!isNumberUsed(number, item.getID()))
         {
-            item.setChannelNumber(number);
-            break;
+            try
+            {
+                item.setChannelNumber(number);
+                break;
+            }
+            catch (const invalid_argument& error)
+            {
+                cout << "[Validation Error] " << error.what() << " Please try again.\n";
+                continue;
+            }
         }
         cout << "[Error] Channel number already exists: " << number << ". Please enter another.\n";
     }
-    string resolution = InputHelper::getInputChannelResolution("Resolution (SD/HD/FHD/UHD): ", editing);
-    if (!resolution.empty()) item.setResolution(resolution);
-
-    string streamURL = InputHelper::getInputText("Stream URL: ", editing);
-    if (!streamURL.empty()) item.setStreamURL(streamURL);
-
-    string status = InputHelper::getInputChannelStatus("Trang thai kenh", editing);
-    if (!status.empty()) item.setStatus(status);
+    while (true)
+    {
+        string resolution = InputHelper::getInputChannelResolution("Resolution (SD/HD/FHD/UHD): ", editing);
+        try
+        {
+            if (!resolution.empty()) item.setResolution(resolution);
+            break;
+        }
+        catch (const invalid_argument& error)
+        {
+            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+        }
+    }
+    while (true)
+    {
+        string streamURL = InputHelper::getInputText("Stream URL: ", editing);
+        try
+        {
+            if (!streamURL.empty()) item.setStreamURL(streamURL);
+            break;
+        }
+        catch (const invalid_argument& error)
+        {
+            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+        }
+    }
+    while (true)
+    {
+        string status = InputHelper::getInputChannelStatus("Trang thai kenh", editing);
+        try
+        {
+            if (!status.empty()) item.setStatus(status);
+            break;
+        }
+        catch (const invalid_argument& error)
+        {
+            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+        }
+    }
     return true;
 }
 
@@ -189,7 +177,7 @@ void ChannelMenu::createChannel()
     Channel item(id, draft.getName(), draft.getCategoryID(), draft.getChannelNumber(),
                  draft.getResolution(), draft.getStreamURL(), draft.getStatus());
     if (!repo.create(item)) throw runtime_error("Could not create channel.");
-    saveChanges();
+    repo.writeToFile();
     cout << "Channel created successfully! ID: " << id << "\n";
 }
 
@@ -256,7 +244,7 @@ void ChannelMenu::updateChannel()
     Channel candidate = *found;
     if (!inputFields(candidate, true)) { cout << "Update cancelled.\n"; return; }
     if (!repo.update(candidate)) throw runtime_error("Could not update channel.");
-    saveChanges();
+    repo.writeToFile();
     cout << "Channel updated successfully!\n";
 }
 
@@ -275,8 +263,8 @@ void ChannelMenu::deleteChannel()
         return;
     }
     // Nap lai ngay truoc khi kiem tra, ke ca kenh da NGUNG_PHAT va goi ngung dang ky.
-    loadChecked(repoPackage, "Data/packages.txt", 6, "GOI");
-    loadChecked(repoSchedule, "Data/schedules.txt", 6, "LPS");
+    repoPackage.loadFromFile();
+    repoSchedule.loadFromFile();
     bool used = false;
     for (const Package& package : repoPackage.readAll())
     {
@@ -297,7 +285,7 @@ void ChannelMenu::deleteChannel()
         }
     if (used) return;
     if (!repo.remove(id)) throw runtime_error("Could not delete channel.");
-    saveChanges();
+    repo.writeToFile();
     cout << "Channel deleted successfully!\n";
 }
 
@@ -307,28 +295,23 @@ void ChannelMenu::printMenu()
     cout << "===== Channel Management =====\n";
     cout << "1. Add Channel\n2. View/Search Channel\n3. Update Channel\n"
          << "4. Delete Channel\n5. Sort Channels\n";
-    if (!dataLoaded) cout << "[Error] Data unavailable. Enter 0 to return.\n";
 }
 
 void ChannelMenu::handleChoice(int choice)
 {
-    if (dataLoaded)
+    try
     {
-        try
+        loadChannels(); // Nap lai de thay cac thay doi cua thanh vien khac.
+        switch (choice)
         {
-            loadChannels(); // Tranh dung danh sach cu khi mo nhieu lan.
-            switch (choice)
-            {
-            case 1: createChannel(); break;
-            case 2: readChannel(); break;
-            case 3: updateChannel(); break;
-            case 4: deleteChannel(); break;
-            case 5: sortChannels(); break;
-            default: cout << "Invalid option.\n"; break;
-            }
+        case 1: createChannel(); break;
+        case 2: readChannel(); break;
+        case 3: updateChannel(); break;
+        case 4: deleteChannel(); break;
+        case 5: sortChannels(); break;
+        default: cout << "Invalid option.\n"; break;
         }
-        catch (const exception& error) { cout << "[Error] " << error.what() << "\n"; }
     }
-    else cout << "Data unavailable. Return and reopen after fixing the file.\n";
+    catch (const exception& error) { cout << "[Error] " << error.what() << "\n"; }
     InputHelper::getInputOptionalString("Press Enter to continue...");
 }

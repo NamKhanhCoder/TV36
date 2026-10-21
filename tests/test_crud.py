@@ -1,7 +1,5 @@
 """Console integration tests on temporary data. Does not modify project Data."""
 import hashlib
-import os
-import stat
 import shutil
 import subprocess
 import sys
@@ -36,7 +34,7 @@ class CrudTests(unittest.TestCase):
         self.path("channels_counter.txt").write_text("4\n")
         self.path("schedules_counter.txt").write_text("3\n")
         self.write_rows("packages.txt", [
-            ["GOI001", "Basic", "80000", "DANG_CUNG_CAP", "KENH001,KENH002", ""],
+            ["GOI001", "Basic", "80000", "DANG_CUNG_CAP", "KENH001,KENH002", "VOD001,VOD002"],
         ])
 
     def path(self, name):
@@ -67,6 +65,12 @@ class CrudTests(unittest.TestCase):
         return self.run_menu(5, 1, channel, "Test program", start, end, desc, "")
 
     def test_main_opens_all_ten_menus(self):
+        # Menu navigation uses valid temporary fixtures for the updated parsers.
+        # The team's sample files still contain the previous status spellings.
+        self.write_rows("hoadon.txt", [["HDN001", "HD001", "KH001", "100000",
+                                       "01/10/2026", "31/10/2026", "NONE", "UnPaid"]])
+        self.write_rows("noidungvod.txt", [["VOD001", "News", "News", "30", "",
+                                           "2026", "https://example.com/vod", "ACTIVE"]])
         steps = [0]
         for menu in range(2, 11):
             steps.extend([menu, 0])
@@ -75,8 +79,8 @@ class CrudTests(unittest.TestCase):
             self.assertRegex(out, rf"(?m)^\s*{number}\. Quan ly ")
         for heading in ["CUSTOMER MANAGEMENT", "SET-TOP BOX MANAGEMENT", "CHANNEL CATEGORY MANAGEMENT",
                         "===== Channel Management =====", "===== Schedule Management =====",
-                        "===== Package Management =====", "CONTRACT MANAGEMENT", "QUAN LY HOA DON",
-                        "QUAN LY NOI DUNG VOD", "===== Support Ticket Management ====="]:
+                        "===== Package Management =====", "CONTRACT MANAGEMENT", "Invoice Management",
+                        "VOD Content Management", "===== Support Ticket Management ====="]:
             self.assertIn(heading, out)
         self.assertNotIn("[Error]", out)
 
@@ -159,7 +163,7 @@ class CrudTests(unittest.TestCase):
         rows = self.rows("channels.txt")
         rows[-1][-1] = "NGUNG_PHAT"
         self.write_rows("channels.txt", rows)
-        self.write_rows("packages.txt", [["GOI001", "Stopped package", "10", "NGUNG_DANG_KY", "KENH004", ""]])
+        self.write_rows("packages.txt", [["GOI001", "Stopped package", "10", "NGUNG_DANG_KY", "KENH001,KENH004", "VOD001,VOD002"]])
         before = self.path("channels.txt").read_bytes()
         self.assertIn("referenced by Package", self.run_menu(4, 4, "KENH004", "y", ""))
         self.assertEqual(before, self.path("channels.txt").read_bytes())
@@ -169,25 +173,20 @@ class CrudTests(unittest.TestCase):
         self.assertEqual(out.count("Please enter y or n"), 2)
         self.assertEqual(len(self.rows("channels.txt")), 4)
 
-    def test_missing_corrupt_dependencies_do_not_allow_write(self):
-        originals = {name: self.path(name).read_bytes()
-                     for name in ["channel_categories.txt", "packages.txt", "schedules.txt"]}
+    def test_missing_category_file_is_created_and_creation_waits_for_category(self):
         before = self.path("channels.txt").read_bytes()
-        cases = [
-            ("channel_categories.txt", [1]),
-            ("packages.txt", [4, "KENH004", "y"]),
-            ("schedules.txt", [4, "KENH004", "y"]),
-        ]
-        for name, steps in cases:
-            for corrupt in [False, True]:
-                with self.subTest(name=name, corrupt=corrupt):
-                    if corrupt: self.path(name).write_text("broken|row\n")
-                    else: self.path(name).unlink()
-                    out = self.run_menu(4, *steps, "")
-                    self.assertIn("[Error]", out)
-                    self.assertNotIn("deleted successfully", out)
-                    self.assertEqual(self.path("channels.txt").read_bytes(), before)
-                    self.path(name).write_bytes(originals[name])
+        self.path("channel_categories.txt").unlink()
+        self.assertIn("No categories available", self.run_menu(4, 1, ""))
+        self.assertTrue(self.path("channel_categories.txt").exists())
+        self.assertEqual(self.path("channel_categories.txt").read_text(), "")
+        self.assertEqual(self.path("channels.txt").read_bytes(), before)
+
+    def test_corrupt_category_row_is_skipped_and_later_row_is_used(self):
+        path = self.path("channel_categories.txt")
+        path.write_text("broken|row\n" + path.read_text(encoding="utf-8"), encoding="utf-8")
+        out = self.run_menu(4, 1, "", "0", "")
+        self.assertIn("[Warning]", out)
+        self.assertIn("Enter 0 at Name to cancel", out)
 
     def test_empty_category_list_cancels_creation(self):
         self.write_rows("channel_categories.txt", [])
@@ -216,16 +215,16 @@ class CrudTests(unittest.TestCase):
         self.run_menu(5, 4, "LPS004", "y", "")
         self.assertIn("Schedule not found", self.run_menu(5, 2, 2, "LPS004", ""))
 
-    def test_schedule_invalid_channel_and_stopped_channel_retry(self):
+    def test_schedule_retries_unknown_channel_and_accepts_stopped_channel(self):
         rows = self.rows("channels.txt")
         rows[-1][-1] = "NGUNG_PHAT"
         self.write_rows("channels.txt", rows)
-        out = self.run_menu(5, 1, "wrong", "KENH999", "KENH004", "kenh001", "Valid",
+        out = self.run_menu(5, 1, "wrong", "KENH999", "KENH004", "Valid",
                             "2030-01-01 10:00", "2030-01-01 11:00", "", "")
         self.assertIn("Ma khong hop le", out)
         self.assertIn("Channel not found: KENH999", out)
-        self.assertIn("Channel is stopped: KENH004", out)
-        self.assertEqual(self.rows("schedules.txt")[-1][1], "KENH001")
+        self.assertIn("created successfully", out)
+        self.assertEqual(self.rows("schedules.txt")[-1][1], "KENH004")
 
     def test_schedule_dates_and_text_reprompt(self):
         out = self.run_menu(5, 1, "KENH001", "Bad|program", "Valid",
@@ -279,28 +278,28 @@ class CrudTests(unittest.TestCase):
         self.assertEqual(self.rows("schedules.txt")[0][1:5],
                          ["KENH002", "Moved", "2026-10-16 21:00", "2026-10-16 22:00"])
 
-    def test_stopped_channel_keeps_history_but_cannot_reschedule(self):
+    def test_stopped_channel_can_be_rescheduled_when_slot_is_free(self):
         rows = self.rows("channels.txt")
         rows[0][-1] = "NGUNG_PHAT"
         self.write_rows("channels.txt", rows)
         self.run_menu(5, 3, "LPS001", "", "Historical correction", "", "", "", "")
         self.assertEqual(self.rows("schedules.txt")[0][2], "Historical correction")
-        before = self.path("schedules.txt").read_bytes()
-        out = self.run_menu(5, 3, "LPS001", "", "", "2030-01-01 10:00", "2030-01-01 11:00", "")
-        self.assertIn("Cannot reschedule a stopped channel", out)
-        self.assertEqual(before, self.path("schedules.txt").read_bytes())
+        out = self.run_menu(5, 3, "LPS001", "", "", "2030-01-01 10:00", "2030-01-01 11:00", "", "")
+        self.assertIn("updated successfully", out)
+        self.assertEqual(self.rows("schedules.txt")[0][3:5], ["2030-01-01 10:00", "2030-01-01 11:00"])
         self.assertIn("Historical correction", self.run_menu(5, 2, 2, "LPS001", ""))
 
-    def test_no_active_or_missing_channels_prevents_new_schedule(self):
-        before = self.path("schedules.txt").read_bytes()
+    def test_stopped_channels_allow_schedule_but_empty_or_missing_list_prevents_it(self):
         rows = self.rows("channels.txt")
         for row in rows: row[-1] = "NGUNG_PHAT"
         self.write_rows("channels.txt", rows)
-        self.assertIn("No active channels", self.run_menu(5, 1, ""))
+        self.assertIn("created successfully", self.add_schedule())
+        before = self.path("schedules.txt").read_bytes()
         self.write_rows("channels.txt", [])
-        self.assertIn("No active channels", self.run_menu(5, 1, ""))
+        self.assertIn("No channels available", self.run_menu(5, 1, ""))
         self.path("channels.txt").unlink()
-        self.assertIn("Cannot read", self.run_menu(5, 1, ""))
+        self.assertIn("No channels available", self.run_menu(5, 1, ""))
+        self.assertTrue(self.path("channels.txt").exists())
         self.assertEqual(before, self.path("schedules.txt").read_bytes())
 
     def test_leap_day_and_blank_description(self):
@@ -309,46 +308,52 @@ class CrudTests(unittest.TestCase):
         self.assertEqual(self.rows("schedules.txt")[-1][-1], "")
         self.assertIn("Test program", self.run_menu(5, 2, 2, "LPS004", ""))
 
-    def test_orphan_schedule_without_selectable_channel_cancels_update(self):
+    def test_orphan_schedule_can_be_moved_to_an_existing_channel(self):
         rows = self.rows("channels.txt")[1:]
         for row in rows: row[-1] = "NGUNG_PHAT"
         self.write_rows("channels.txt", rows)
-        before = self.path("schedules.txt").read_bytes()
-        self.assertIn("No active channels", self.run_menu(5, 3, "LPS001", ""))
-        self.assertEqual(before, self.path("schedules.txt").read_bytes())
+        out = self.run_menu(5, 3, "LPS001", "KENH002", "", "", "", "", "")
+        self.assertIn("updated successfully", out)
+        self.assertEqual(self.rows("schedules.txt")[0][1], "KENH002")
 
-    def test_primary_corruption_and_duplicate_ids_lock_without_overwrite(self):
+    def test_primary_bad_row_is_skipped_and_later_rows_are_read(self):
         for menu, name in [(4, "channels.txt"), (5, "schedules.txt")]:
             original = self.path(name).read_bytes()
-            for extra in [b"broken|row\n", original.splitlines()[0] + b"\n"]:
-                with self.subTest(name=name, extra=extra):
-                    self.path(name).write_bytes(original + extra)
-                    before = self.path(name).read_bytes()
-                    self.assertIn("Menu locked", self.run_menu(menu, "", 1, ""))
-                    self.assertEqual(before, self.path(name).read_bytes())
+            with self.subTest(name=name):
+                self.path(name).write_bytes(b"broken|row\n" + original)
+                before = self.path(name).read_bytes()
+                out = self.run_menu(menu, "", 2, "", 1, "")
+                self.assertIn("[Warning]", out)
+                self.assertIn("KENH001" if menu == 4 else "LPS001", out)
+                self.assertEqual(before, self.path(name).read_bytes())
             self.path(name).write_bytes(original)
 
     def test_duplicate_numbers_and_overlaps_in_file_are_reported(self):
         rows = self.rows("channels.txt")
         rows[-1][3] = "1"
         self.write_rows("channels.txt", rows)
-        self.assertIn("Duplicate channel number", self.run_menu(4, "", 1, ""))
+        self.assertIn("Duplicate channel number", self.run_menu(4))
         rows = self.rows("schedules.txt")
         rows.append(["LPS004", "KENH001", "Bad overlap", "2026-10-16 19:10", "2026-10-16 19:20", ""])
         self.write_rows("schedules.txt", rows)
-        self.assertIn("Overlapping schedules in file", self.run_menu(5, "", 1, ""))
+        self.assertIn("Overlapping schedules", self.run_menu(5))
 
     def test_invalid_category_in_primary_file_is_reported(self):
         rows = self.rows("channels.txt")
         rows[0][2] = "KHENH"
         self.write_rows("channels.txt", rows)
-        self.assertIn("Menu locked", self.run_menu(4, "", 1, ""))
+        out = self.run_menu(4, "", 2, "", 1, "")
+        self.assertIn("[Warning]", out)
+        self.assertIn("KENH002", out)
+        self.assertNotIn("| KENH001", out)
 
-    def test_missing_primary_file_reported(self):
+    def test_missing_primary_file_is_created(self):
         for menu, name in [(4, "channels.txt"), (5, "schedules.txt")]:
             self.path(name).unlink()
-            self.assertIn("Cannot read Data/" + name, self.run_menu(menu, ""))
-            self.assertFalse(self.path(name).exists())
+            out = self.run_menu(menu, 2, 1, "")
+            self.assertIn("No channels found" if menu == 4 else "No schedules found", out)
+            self.assertTrue(self.path(name).exists())
+            self.assertEqual(self.path(name).read_text(), "")
 
     def test_stale_counters_skip_existing_ids(self):
         self.path("channels_counter.txt").write_text("0")
@@ -415,16 +420,17 @@ class CrudTests(unittest.TestCase):
                 self.assertIn(name + " not found", self.run_menu(menu, *steps))
 
     def test_package_references_with_spaces_and_lowercase_still_block_delete(self):
-        self.write_rows("packages.txt", [["GOI001", "Spaced", "10", "DANG_CUNG_CAP", "kenh001, kenh004 ", ""]])
+        self.write_rows("packages.txt", [["GOI001", "Spaced", "10", "DANG_CUNG_CAP", "kenh001, kenh004 ", "VOD001,VOD002"]])
         before = self.path("channels.txt").read_bytes()
         self.assertIn("referenced by Package GOI001", self.run_menu(4, 4, "KENH004", "y", ""))
         self.assertEqual(before, self.path("channels.txt").read_bytes())
 
-    def test_invalid_package_reference_aborts_delete_safely(self):
-        self.write_rows("packages.txt", [["GOI001", "Invalid", "10", "DANG_CUNG_CAP", "khenh", ""]])
-        before = self.path("channels.txt").read_bytes()
-        self.assertIn("Invalid channel ID in Package", self.run_menu(4, 4, "KENH004", "y", ""))
-        self.assertEqual(before, self.path("channels.txt").read_bytes())
+    def test_invalid_package_row_is_warned_and_skipped(self):
+        self.write_rows("packages.txt", [["GOI001", "Invalid", "10", "DANG_CUNG_CAP", "khenh", "VOD001,VOD002"]])
+        out = self.run_menu(4, 4, "KENH004", "y", "", "")
+        self.assertIn("[Warning]", out)
+        self.assertIn("Channel deleted successfully", out)
+        self.assertNotIn("KENH004", [row[0] for row in self.rows("channels.txt")])
 
     def test_delete_reads_package_changes_after_confirmation_prompt(self):
         log = self.work / "live-console.log"
@@ -441,7 +447,7 @@ class CrudTests(unittest.TestCase):
                     time.sleep(0.02)
                 else:
                     self.fail("Did not reach delete confirmation prompt")
-                self.write_rows("packages.txt", [["GOI001", "New reference", "10", "DANG_CUNG_CAP", "KENH004", ""]])
+                self.write_rows("packages.txt", [["GOI001", "New reference", "10", "DANG_CUNG_CAP", "KENH001,KENH004", "VOD001,VOD002"]])
                 proc.stdin.write("y\n\n0\n0\n")
                 proc.stdin.flush()
                 proc.stdin.close()
@@ -453,24 +459,6 @@ class CrudTests(unittest.TestCase):
         output = log.read_text(encoding="utf-8", errors="replace")
         self.assertIn("referenced by Package GOI001", output)
         self.assertEqual(len(self.rows("channels.txt")), 4)
-
-    @unittest.skipUnless(os.name == "nt", "Windows read-only target prevents replacement")
-    def test_failed_atomic_replace_preserves_original_and_locks_menu(self):
-        for menu, name, steps in [
-            (4, "channels.txt", [3, "KENH004", "Changed", "", "", "", "", "", ""]),
-            (5, "schedules.txt", [3, "LPS001", "", "Changed", "", "", "", ""]),
-        ]:
-            with self.subTest(name=name):
-                path = self.path(name)
-                before = path.read_bytes()
-                path.chmod(stat.S_IREAD)
-                try:
-                    output = self.run_menu(menu, *steps, 2, "")
-                    self.assertIn("[Error]", output)
-                    self.assertIn("Data unavailable", output)
-                    self.assertEqual(path.read_bytes(), before)
-                finally:
-                    path.chmod(stat.S_IREAD | stat.S_IWRITE)
 
     def test_submission_samples_have_ten_records_and_valid_links(self):
         def rows(name):

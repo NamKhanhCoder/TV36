@@ -2,51 +2,12 @@
 #include "Utils/StringHelper.h"
 #include "Utils/TablePrinter.h"
 #include <algorithm>
-#include <fstream>
-#include <filesystem>
-#include <sstream>
-#include <set>
 #include <stdexcept>
 
 namespace
 {
     const vector<int> widths = {10, 10, 22, 18, 18, 28};
     const vector<string> headers = {"ID", "Channel", "Program", "Start", "End", "Description"};
-
-    // Kiem tra file truoc khi goi Repository cua nhom (parser cu co the bo qua dong loi).
-    template<class T>
-    void loadChecked(Repository<T>& repo, const string& path, size_t fieldCount, const string& prefix)
-    {
-        ifstream file(path);
-        if (!file) throw runtime_error("Cannot read " + path + ". Run from the project folder.");
-        set<string> ids;
-        string line;
-        size_t lineNumber = 0;
-        while (getline(file, line))
-        {
-            ++lineNumber;
-            if (!line.empty() && line.back() == '\r') line.pop_back();
-            if (line.empty()) continue;
-            try
-            {
-                vector<string> fields = splitString(line);
-                T item;
-                if (fields.size() != fieldCount || fields[0].size() < prefix.size() + 3 ||
-                    fields[0].size() > 32767 ||
-                    !Validator::isValidID(fields[0], prefix, static_cast<short>(fields[0].size())))
-                    throw invalid_argument("Invalid fields or ID.");
-                item.parseFromString(line);
-                if (item.exportToString() != line || !ids.insert(item.getID()).second)
-                    throw invalid_argument("Invalid data or duplicate ID.");
-            }
-            catch (const exception& error)
-            {
-                throw runtime_error(path + " line " + to_string(lineNumber) + ": " + error.what());
-            }
-        }
-        if (file.bad()) throw runtime_error("Read failed: " + path);
-        repo.loadFromFile();
-    }
 
     void printDetail(const vector<string>& values)
     {
@@ -59,31 +20,22 @@ namespace
 
 ScheduleMenu::ScheduleMenu()
     : repo("Data/schedules.txt", "Data/schedules_counter.txt", "LPS"),
-      repoChannel("Data/channels.txt", "Data/channels_counter.txt", "KENH"),
-      dataLoaded(false)
+      repoChannel("Data/channels.txt", "Data/channels_counter.txt", "KENH")
 {
-    try { loadSchedules(); }
-    catch (const exception& error)
-    {
-        cout << "[Error] " << error.what() << "\n";
-        cout << "Menu locked to protect the data file. Fix the file and reopen this menu.\n";
-        InputHelper::getInputOptionalString("Press Enter to continue...");
-    }
+    loadSchedules();
 }
 
 void ScheduleMenu::loadSchedules()
 {
-    dataLoaded = false;
-    loadChecked(repo, "Data/schedules.txt", 6, "LPS");
+    repo.loadFromFile();
     const vector<Schedule>& list = repo.readAll();
     for (size_t i = 0; i < list.size(); ++i)
         for (size_t j = i + 1; j < list.size(); ++j)
             if (list[i].getChannelID() == list[j].getChannelID() &&
                 list[i].getStartTime() < list[j].getEndTime() &&
                 list[j].getStartTime() < list[i].getEndTime())
-                throw runtime_error("Overlapping schedules in file: " +
-                                    list[i].getID() + " and " + list[j].getID());
-    dataLoaded = true;
+                cout << "[Warning] Overlapping schedules in Data/schedules.txt: "
+                     << list[i].getID() << " and " << list[j].getID() << "\n";
 }
 
 string ScheduleMenu::findConflict(const Schedule& item)
@@ -95,39 +47,12 @@ string ScheduleMenu::findConflict(const Schedule& item)
     return "";
 }
 
-void ScheduleMenu::saveChanges()
-{
-    // Ghi file tam cung thu muc, chi thay file goc khi da ghi/close thanh cong.
-    // Khong doi Repository chung cua cac thanh vien khac.
-    dataLoaded = false;
-    const string path = "Data/schedules.txt";
-    const string pending = path + ".pending";
-    string expected;
-    for (const Schedule& item : repo.readAll()) expected += item.exportToString() + "\n";
-    ofstream output(pending, ios::binary | ios::trunc);
-    if (!output) throw runtime_error("Cannot write temporary data file: " + pending);
-    output << expected;
-    output.close();
-    if (!output) throw runtime_error("Write failed. Original data file was preserved: " + path);
-    std::filesystem::rename(pending, path);
-    ifstream input(path, ios::binary);
-    ostringstream actual;
-    actual << input.rdbuf();
-    if (!input || input.bad() || actual.str() != expected)
-        throw runtime_error("Could not verify saving. Check the data file and reopen the menu.");
-    dataLoaded = true;
-}
-
 bool ScheduleMenu::inputFields(Schedule& item, bool editing)
 {
-    loadChecked(repoChannel, "Data/channels.txt", 7, "KENH");
-    bool hasActive = false;
-    for (const Channel& channel : repoChannel.readAll())
-        if (channel.getStatus() == "DANG_PHAT") hasActive = true;
-    bool canKeepOldChannel = editing && repoChannel.readByID(item.getChannelID()) != nullptr;
-    if (!hasActive && !canKeepOldChannel)
+    repoChannel.loadFromFile();
+    if (repoChannel.readAll().empty())
     {
-        cout << "No active channels available. Create or activate a channel first.\n";
+        cout << "No channels available. Create a channel first.\n";
         return false;
     }
     const string oldChannel = item.getChannelID();
@@ -144,13 +69,33 @@ bool ScheduleMenu::inputFields(Schedule& item, bool editing)
         if (id.empty()) id = oldChannel;
         const Channel* channel = repoChannel.readByID(id);
         if (!channel) cout << "[Error] Channel not found: " << id << ". Choose an existing channel.\n";
-        else if (channel->getStatus() != "DANG_PHAT" && (!editing || id != oldChannel))
-            cout << "[Error] Channel is stopped: " << id << ". Choose an active channel.\n";
-        else { item.setChannelID(id); break; }
+        else
+        {
+            try
+            {
+                item.setChannelID(id);
+                break;
+            }
+            catch (const invalid_argument& error)
+            {
+                cout << "[Validation Error] " << error.what() << " Please try again.\n";
+            }
+        }
     }
-    string program = InputHelper::getInputText("Program name (0 to cancel): ", editing);
-    if (program == "0") return false;
-    if (!program.empty()) item.setProgramName(program);
+    while (true)
+    {
+        string program = InputHelper::getInputText("Program name (0 to cancel): ", editing);
+        if (program == "0") return false;
+        try
+        {
+            if (!program.empty()) item.setProgramName(program);
+            break;
+        }
+        catch (const invalid_argument& error)
+        {
+            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+        }
+    }
 
     string start, end;
     while (true)
@@ -162,27 +107,36 @@ bool ScheduleMenu::inputFields(Schedule& item, bool editing)
         {
             end = InputHelper::getInputDateTime("End   (yyyy-mm-dd HH:mm): ", editing);
             if (end.empty()) end = oldEnd;
-            if (end > start) break;
-            cout << "[Error] End time must be after start time. Enter the end time again.\n";
+            try
+            {
+                item.setTimeRange(start, end);
+                break;
+            }
+            catch (const invalid_argument& error)
+            {
+                cout << "[Validation Error] " << error.what() << " Enter the end time again.\n";
+            }
         }
-        const Channel* channel = repoChannel.readByID(item.getChannelID());
-        bool changedSlot = !editing || item.getChannelID() != oldChannel ||
-                           start != oldStart || end != oldEnd;
-        if (channel->getStatus() != "DANG_PHAT" && changedSlot)
-        {
-            cout << "[Error] Cannot reschedule a stopped channel. Activate the channel first.\n";
-            return false;
-        }
-        item.setTimeRange(start, end);
         string conflict = findConflict(item);
         if (conflict.empty()) break;
         cout << "[Error] Schedule overlaps " << conflict << " on " << item.getChannelID()
              << ". Enter a different start/end range.\n";
     }
-    string description = InputHelper::getInputText(
-        editing ? "Description (Enter: keep, '-': clear): " : "Description (optional): ", true);
-    if (!editing || !description.empty())
-        item.setDescription(editing && description == "-" ? "" : description);
+    while (true)
+    {
+        string description = InputHelper::getInputText(
+            editing ? "Description (Enter: keep, '-': clear): " : "Description (optional): ", true);
+        try
+        {
+            if (!editing || !description.empty())
+                item.setDescription(editing && description == "-" ? "" : description);
+            break;
+        }
+        catch (const invalid_argument& error)
+        {
+            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+        }
+    }
     return true;
 }
 
@@ -197,7 +151,7 @@ void ScheduleMenu::createSchedule()
     Schedule item(id, draft.getChannelID(), draft.getProgramName(), draft.getStartTime(),
                   draft.getEndTime(), draft.getDescription());
     if (!repo.create(item)) throw runtime_error("Could not create schedule.");
-    saveChanges();
+    repo.writeToFile();
     cout << "Schedule created successfully! ID: " << id << "\n";
 }
 
@@ -264,7 +218,7 @@ void ScheduleMenu::updateSchedule()
     Schedule candidate = *found;
     if (!inputFields(candidate, true)) { cout << "Update cancelled.\n"; return; }
     if (!repo.update(candidate)) throw runtime_error("Could not update schedule.");
-    saveChanges();
+    repo.writeToFile();
     cout << "Schedule updated successfully!\n";
 }
 
@@ -283,7 +237,7 @@ void ScheduleMenu::deleteSchedule()
         return;
     }
     if (!repo.remove(id)) throw runtime_error("Could not delete schedule.");
-    saveChanges();
+    repo.writeToFile();
     cout << "Schedule deleted successfully!\n";
 }
 
@@ -293,28 +247,23 @@ void ScheduleMenu::printMenu()
     cout << "===== Schedule Management =====\n";
     cout << "1. Add Schedule\n2. View/Search Schedule\n3. Update Schedule\n"
          << "4. Delete Schedule\n5. Sort by start time\n";
-    if (!dataLoaded) cout << "[Error] Data unavailable. Enter 0 to return.\n";
 }
 
 void ScheduleMenu::handleChoice(int choice)
 {
-    if (dataLoaded)
+    try
     {
-        try
+        loadSchedules();
+        switch (choice)
         {
-            loadSchedules();
-            switch (choice)
-            {
-            case 1: createSchedule(); break;
-            case 2: readSchedule(); break;
-            case 3: updateSchedule(); break;
-            case 4: deleteSchedule(); break;
-            case 5: sortSchedules(); break;
-            default: cout << "Invalid option.\n"; break;
-            }
+        case 1: createSchedule(); break;
+        case 2: readSchedule(); break;
+        case 3: updateSchedule(); break;
+        case 4: deleteSchedule(); break;
+        case 5: sortSchedules(); break;
+        default: cout << "Invalid option.\n"; break;
         }
-        catch (const exception& error) { cout << "[Error] " << error.what() << "\n"; }
     }
-    else cout << "Data unavailable. Return and reopen after fixing the file.\n";
+    catch (const exception& error) { cout << "[Error] " << error.what() << "\n"; }
     InputHelper::getInputOptionalString("Press Enter to continue...");
 }
