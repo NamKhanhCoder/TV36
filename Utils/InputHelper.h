@@ -22,7 +22,7 @@ public:
     static Date getInputDate(const string &message = "");
     static Time getInputTime(const string &message = "");
     // 0 -> NGUNG_PHAT, 1 -> DANG_PHAT; optional cho phep Enter de giu nguyen.
-    static string getInputChannelStatus(const string &message = "Trang thai kenh", bool optional = false);
+    static string getInputChannelStatus(const string &message = "Channel status", bool optional = false);
     static string getInputID(const string &message, const string &prefix, bool optional = false);
     // Tra 0 neu bo trong luc sua; du lieu nhap thuc te phai lon hon 0.
     static int getInputPositiveInt(const string &message, bool optional = false);

@@ -352,7 +352,7 @@ void CustomerMenu::updateCustomer()
     //         LOG("[CustomerMenu] Invalid Name input during update: " + string(e.what()));
     //     }
     // }
-    cout<<"[Customer Menu] Customer name can not be updated, skipping\n";
+    cout << "[CustomerMenu] Customer name cannot be updated, skipping\n";
 
     // 2. Update Phone
     string newPhone;

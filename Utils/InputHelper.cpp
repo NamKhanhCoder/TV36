@@ -52,12 +52,12 @@ string InputHelper::getInputChannelStatus(const string &message, bool optional)
     string input;
     while (true)
     {
-        cout << message << " (0: Ngung phat, 1: Dang phat";
+        cout << message << " (0: Stopped/NGUNG_PHAT, 1: Active/DANG_PHAT";
         if (optional)
-            cout << ", Enter: giu nguyen";
+            cout << ", Enter: keep current";
         cout << "): " << endl;
         if (!getline(cin, input))
-            throw runtime_error("Khong doc duoc trang thai kenh.");
+            throw runtime_error("Failed to read channel status.");
         input = trim_end_spaces(input);
 
         if (optional && input.empty())
@@ -66,7 +66,7 @@ string InputHelper::getInputChannelStatus(const string &message, bool optional)
             return "NGUNG_PHAT";
         if (input == "1")
             return "DANG_PHAT";
-        cout << "[Error] Chi nhap 0 hoac 1. Vui long nhap lai.\n";
+        cout << "[Error] Please enter 0 or 1 only (Chi nhap 0 hoac 1). Please try again.\n";
     }
 }
 
@@ -77,7 +77,7 @@ string InputHelper::getInputID(const string &message, const string &prefix, bool
     {
         cout << message << endl;
         if (!getline(cin, input))
-            throw runtime_error("Khong doc duoc ma.");
+            throw runtime_error("Failed to read ID.");
         input = trim_end_spaces(input);
         if (optional && input.empty())
             return "";
@@ -89,8 +89,8 @@ string InputHelper::getInputID(const string &message, const string &prefix, bool
             input.size() <= static_cast<size_t>(numeric_limits<short>::max()) &&
             Validator::isValidID(input, prefix, static_cast<short>(input.size())))
             return input;
-        cout << "[Error] Ma khong hop le. Dung " << prefix
-             << " va it nhat 3 chu so (vi du " << prefix << "004). Nhap lai.\n";
+        cout << "[Error] Invalid ID (Ma khong hop le). Use " << prefix
+             << " and at least 3 digits (e.g. " << prefix << "004). Please try again.\n";
     }
 }
 
@@ -101,7 +101,7 @@ int InputHelper::getInputPositiveInt(const string &message, bool optional)
     {
         cout << message << endl;
         if (!getline(cin, input))
-            throw runtime_error("Khong doc duoc so.");
+            throw runtime_error("Failed to read number.");
         input = trim_end_spaces(input);
         if (optional && input.empty())
             return 0;
@@ -111,7 +111,7 @@ int InputHelper::getInputPositiveInt(const string &message, bool optional)
             if (value > 0)
                 return value;
         }
-        cout << "[Error] So kenh phai la so nguyen lon hon 0. Nhap lai.\n";
+        cout << "[Error] Channel number must be an integer greater than 0 (So kenh phai la so nguyen lon hon 0). Please try again.\n";
     }
 }
 
@@ -122,7 +122,7 @@ string InputHelper::getInputChannelResolution(const string &message, bool option
     {
         cout << message << endl;
         if (!getline(cin, input))
-            throw runtime_error("Khong doc duoc do phan giai.");
+            throw runtime_error("Failed to read resolution.");
         input = trim_end_spaces(input);
         if (optional && input.empty())
             return "";
@@ -131,7 +131,7 @@ string InputHelper::getInputChannelResolution(const string &message, bool option
                   { return static_cast<char>(toupper(c)); });
         if (input == "SD" || input == "HD" || input == "FHD" || input == "UHD")
             return input;
-        cout << "[Error] Do phan giai chi nhan SD, HD, FHD hoac UHD. Nhap lai.\n";
+        cout << "[Error] Resolution only accepts SD, HD, FHD, or UHD (Do phan giai chi nhan SD, HD, FHD hoac UHD). Please try again.\n";
     }
 }
 
@@ -142,7 +142,7 @@ string InputHelper::getInputText(const string &message, bool optional)
     {
         cout << message << endl;
         if (!getline(cin, input))
-            throw runtime_error("Khong doc duoc du lieu.");
+            throw runtime_error("Failed to read data.");
         size_t first = input.find_first_not_of(" \t\v\f");
         if (first == string::npos)
             input.clear();
