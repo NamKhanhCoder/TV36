@@ -695,7 +695,6 @@ void HoaDonMenu::handleChoice(int choice)
     switch (choice)
     {
     case 2:
-        SystemHelper::clearScreen();
         xemDanhSach();
         break;
     case 1:
@@ -710,6 +709,9 @@ void HoaDonMenu::handleChoice(int choice)
     case 5:
         capNhat();
         break;
+    case 6:
+        xoaHoaDon();
+        break;
     default:
         cout << "[Error] Invalid option, try again!" << endl;
         break;
@@ -717,12 +719,14 @@ void HoaDonMenu::handleChoice(int choice)
 }
 // Hien thi giao dien menu quan ly hoa don
 void HoaDonMenu::printMenu()
-{
+{   
+    SystemHelper::clearScreen();
     cout << "=====Invoice Management=====" << endl;
     cout << "1. Add new invoice" << endl;
     cout << "2. View all invoices" << endl;
     cout << "3. Search invoice" << endl;
     cout << "4. Sort invoice list" << endl;
     cout << "5. Update invoice" << endl;
+    cout << "6. Delete invoice" << endl;
     // phan xoa hoa don ko duoc thuc hien do quy dinh cua phap luat
 }
