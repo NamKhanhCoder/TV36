@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Duong Bao Long (B24DCVT231)
+// Use Case 1: Quan ly Goi kenh Package 
+// ===============================================================
 #pragma once
 #include "Entity.h"
 #include <string>

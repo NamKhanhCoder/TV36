@@ -1,10 +1,10 @@
-PHT001|HD001|STB001|2026-09-20 08:00|STB khong len nguon|BINH_THUONG|Da kiem tra va thay the bo xu ly|2026-09-20 10:00
-PHT002|HD001||2026-09-22 14:30|Khong xem duoc kenh the thao|BINH_THUONG||
-PHT003|HD002|STB008|2026-09-23 09:15|Dieu khien tu xa bi liet phim|BINH_THUONG|Doi remote moi cho khach hang|2026-09-23 15:30
-PHT004|HD003|STB009|2026-09-25 19:40|Hinh anh bi giat lag va vo hinh|UU_TIEN||
-PHT005|HD004||2026-09-26 10:20|Muon doi sang goi VIP Premium|BINH_THUONG|Da huong dan thu tuc doi goi|2026-09-26 11:00
-PHT006|HD004|STB010|2026-09-27 16:05|STB bi treo logo khi khoi dong|KHAN_CAP||
-PHT007|HD005|STB014|2026-09-28 08:45|Cong HDMI chap chon khong co am thanh|UU_TIEN|Thay day cap HDMI moi|2026-09-28 11:20
-PHT008|HD006|STB015|2026-09-29 13:10|STB bao loi khong co tin hieu mang|KHAN_CAP||
-PHT009|HD007|STB016|2026-09-30 17:25|Khong vao duoc kho noi dung VOD|BINH_THUONG|Kich hoat lai quyen truy cap VOD|2026-09-30 18:00
-PHT010|HD007||2026-10-01 20:00|Thac mac ve cuoc phi tren hoa don|BINH_THUONG|Da giai thich chi tiet cac khoan phi|2026-10-01 20:30
+PHT001|HD001|STB001|2026-09-10 08:30|Thiet bi khong khoi dong duoc nguon|KHAN_CAP|DA_DONG|Kiem tra bo doi nguon adapter va thay the bo nguon 12V moi|2026-09-10 10:15
+PHT002|HD001||2026-09-15 14:20|Tin hieu kenh truyen hinh bi giat lag luc troi mua|UU_TIEN|DA_DONG|Can chinh lai dau thu jack cam va toi uu duong cap tin hieu|2026-09-15 16:45
+PHT003|HD002|STB008|2026-09-22 09:10|Dieu khien hong nut chuyen kenh va tang am luong|BINH_THUONG|DA_DONG|Cap phat va ban giao dieu khien STB moi cho khach hang|2026-09-22 11:30
+PHT004|HD003|STB009|2026-09-28 19:40|Hien thi man hinh den khong xuat am thanh qua cong HDMI|UU_TIEN|DA_DONG|Ve sinh cong cam HDMI va cap nhat firmware cho thiet bi|2026-09-28 21:00
+PHT005|HD004||2026-10-02 10:05|Yeu cau nang cap len goi kenh Premium co them kenh quoc te|BINH_THUONG|DA_DONG|Ho tro thu tuc chuyen doi goi kenh tren he thong thanh cong|2026-10-02 11:15
+PHT006|HD004|STB010|2026-10-08 15:30|STB bao loi the giai ma khong hop le E04|KHAN_CAP|DA_DONG|Kiem tra khe doc the giai ma va kich hoat lai the cho thiet bi|2026-10-08 16:20
+PHT007|HD005|STB014|2026-10-14 08:50|Thiet bi STB bi nong bat thuong va tu dong khoi dong lai|UU_TIEN|DANG_XU_LY||
+PHT008|HD006|STB015|2026-10-16 13:25|Khong vao duoc ung dung kho phim VOD theo yeu cau|BINH_THUONG|DANG_XU_LY||
+PHT009|HD007|STB016|2026-10-19 17:15|Tin hieu mang LAN cham khong tai duoc noi dung FHD|UU_TIEN|TIEP_NHAN||
+PHT010|HD007||2026-10-21 09:00|Thac mac ve cuoc phi phu troi tren hoa don thang vua roi|BINH_THUONG|TIEP_NHAN||

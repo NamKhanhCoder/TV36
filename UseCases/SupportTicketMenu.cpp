@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Duong Bao Long (B24DCVT231)
+// Use Case 2: Quan ly Phieu ho tro ki thuat Support Ticket (Menu dieu khien)
+// ===============================================================
 #include "UseCases/SupportTicketMenu.h"
 #include "Utils/Debugger.h"
 #include "Utils/TablePrinter.h"
@@ -54,6 +61,32 @@ TicketPriority SupportTicketMenu::inputTicketPriority(bool isOptional, TicketPri
         if (input == "1") return TicketPriority::BINH_THUONG;
         if (input == "2") return TicketPriority::UU_TIEN;
         if (input == "3") return TicketPriority::KHAN_CAP;
+
+        cout << "Invalid choice! Please try again." << endl;
+    }
+}
+
+TicketStatus SupportTicketMenu::inputTicketStatus(bool isOptional, TicketStatus current)
+{
+    while (true)
+    {
+        cout << "\nSelect Status:" << endl;
+        cout << "1. TIEP_NHAN" << endl;
+        cout << "2. DANG_XU_LY" << endl;
+        cout << "3. DA_DONG" << endl;
+        if (isOptional)
+        {
+            cout << "(Press Enter to skip, keep current: " << ticketStatusToString(current) << ")" << endl;
+        }
+
+        string input = InputHelper::getInputOptionalString("Choice: ");
+        if (isOptional && input.empty())
+        {
+            return current;
+        }
+        if (input == "1") return TicketStatus::TIEP_NHAN;
+        if (input == "2") return TicketStatus::DANG_XU_LY;
+        if (input == "3") return TicketStatus::DA_DONG;
 
         cout << "Invalid choice! Please try again." << endl;
     }
@@ -171,7 +204,7 @@ void SupportTicketMenu::createTicket()
     temp.setClosedDate("");
 
     SupportTicket newTicket(repo.generateNextID(), temp.getContractID(), temp.getStbID(), temp.getReceivedDate(),
-                            temp.getContent(), temp.getPriority(), temp.getResolution(), temp.getClosedDate());
+                            temp.getContent(), temp.getPriority(), TicketStatus::TIEP_NHAN, "", "");
     if (repo.create(newTicket))
     {
         repo.writeToFile();
@@ -193,8 +226,8 @@ void SupportTicketMenu::readTicket()
     cout << "1. View all Support Tickets" << endl;
     cout << "2. Search Support Ticket by ID" << endl;
 
-    vector<int> widths = {8, 10, 10, 17, 25, 13, 25, 17};
-    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Resolution", "Closed Date"};
+    vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
+    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
 
     int choice = InputHelper::getInputInt("Select an option (0 to go back): ");
     if (choice == 1)
@@ -228,10 +261,12 @@ void SupportTicketMenu::updateTicket()
 {
     SystemHelper::clearScreen();
     cout << "===== Update Support Ticket =====" << endl;
-    cout << "[Dependency Rule] Only allow: Content, Priority, Solution (Resolution), Close Date\n\n";
+    cout << "[Update Rules] Allowed fields: Content, Priority, Status, Solution.\n";
+    cout << "[Note] Solution can only be modified when Status is set to 'DA_DONG'.\n";
+    cout << "       Closed Date will be automatically set to current time upon closing.\n\n";
 
-    vector<int> widths = {8, 10, 10, 17, 25, 13, 25, 17};
-    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Resolution", "Closed Date"};
+    vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
+    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
     TablePrinter::printTable(widths, headers, repo.exportToVector());
 
     string inputID = convertToUpper(InputHelper::getInputString("Enter Ticket ID to update: "));
@@ -278,56 +313,65 @@ void SupportTicketMenu::updateTicket()
         cout << "[Validation Error] " << e.what() << endl;
     }
 
-    // 3. Solution (Resolution) with setter try-catch
-    while (true)
-    {
-        string currentRes = ticket->getResolution();
-        string newRes = InputHelper::getInputOptionalString("New Solution/Resolution [" + (currentRes.empty() ? "None" : currentRes) + "]: ");
-        if (newRes.empty())
-            break;
-        try
-        {
-            ticket->setResolution(newRes);
-            break;
-        }
-        catch (const exception &e)
-        {
-            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
-        }
-    }
+    // 3. Status with setter try-catch
+    TicketStatus newStatus = inputTicketStatus(true, ticket->getStatus());
+    ticket->setStatus(newStatus);
 
-    // 4. Close Date (yyyy-mm-dd HH:mm) with setter try-catch
-    while (true)
+    // 4. Solution (Resolution): Only modified right after setting status to DA_DONG
+    if (newStatus == TicketStatus::DA_DONG)
     {
-        string currentClosed = ticket->getClosedDate();
-        cout << "Note: Enter format 'yyyy-mm-dd HH:mm' or type 'now' for current time.\n";
-        string newClosed = InputHelper::getInputOptionalString("New Close Date [" + (currentClosed.empty() ? "None" : currentClosed) + "]: ");
-        if (newClosed.empty())
-            break;
-        if (newClosed == "now" || newClosed == "NOW")
+        cout << "\n[Status: DA_DONG] Solution is mandatory when closing ticket.\n";
+        while (true)
         {
-            newClosed = getCurrentDateTimeString();
+            string currentRes = ticket->getResolution();
+            string prompt = "Solution/Resolution [" + (currentRes.empty() ? "None" : currentRes) + "]: ";
+            string newRes = InputHelper::getInputOptionalString(prompt);
+            
+            if (newRes.empty())
+            {
+                if (!currentRes.empty())
+                {
+                    // Giu nguyen resolution cu neu da co
+                    break;
+                }
+                else
+                {
+                    cout << "[Error] Solution cannot be empty when status is DA_DONG! Please enter solution.\n";
+                    continue;
+                }
+            }
+
+            try
+            {
+                ticket->setResolution(newRes);
+                break;
+            }
+            catch (const exception &e)
+            {
+                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+            }
         }
-        try
-        {
-            ticket->setClosedDate(newClosed);
-            break;
-        }
-        catch (const exception &e)
-        {
-            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
-        }
+
+        // Closed Date se tu dong co ngay khi set trang thai DA_DONG
+        string closedDT = getCurrentDateTimeString();
+        ticket->setClosedDate(closedDT);
+        cout << "[Auto Closed Date] Closed Date automatically set to: " << closedDT << endl;
+    }
+    else
+    {
+        cout << "\n[Note] Ticket status is " << ticketStatusToString(newStatus) 
+             << ". Solution and Closed Date remain empty or unchanged.\n";
     }
 
     if (repo.update(*ticket))
     {
         repo.writeToFile();
         LOG("[SupportTicketMenu] Ticket updated successfully, ID: " + ticket->getID());
-        cout << "Support Ticket updated successfully!\n";
+        cout << "\nSupport Ticket updated successfully!\n";
     }
     else
     {
-        cout << "[Error] Update failed!\n";
+        cout << "\n[Error] Update failed!\n";
     }
 
     InputHelper::getInputOptionalString("Press Enter to continue...");
@@ -337,8 +381,8 @@ void SupportTicketMenu::deleteTicket()
 {
     SystemHelper::clearScreen();
     cout << "===== Delete Support Ticket =====" << endl;
-    vector<int> widths = {8, 10, 10, 17, 25, 13, 25, 17};
-    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Resolution", "Closed Date"};
+    vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
+    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
     TablePrinter::printTable(widths, headers, repo.exportToVector());
 
     string targetID = convertToUpper(InputHelper::getInputString("Enter Ticket ID to delete: "));
@@ -355,9 +399,35 @@ void SupportTicketMenu::deleteTicket()
     cout << "You are about to delete Support Ticket:" << endl;
     TablePrinter::printSingle(widths, headers, ticket->exportToVector());
 
-    // Removal dependency: Can not delete support ticket
-    cout << "\n[Error] Cannot delete Support Ticket " << targetID << "!\n";
-    cout << "[Rule] Removal dependency constraint: Support tickets cannot be deleted (must be kept for audit history).\n";
+    // Rang buoc xoa: Chi duoc phep xoa khi dang o trang thai "TIEP_NHAN"
+    if (ticket->getStatus() != TicketStatus::TIEP_NHAN)
+    {
+        cout << "\n[Deletion Rejected] Cannot delete Support Ticket " << targetID << "!\n";
+        cout << "[Rule] Only tickets with status 'TIEP_NHAN' can be deleted.\n";
+        cout << "       Current status is '" << ticket->getStatusString() << "' (must be kept for audit history).\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
+        return;
+    }
+
+    string confirm = InputHelper::getInputString("\nAre you sure you want to delete this ticket? (y/n): ");
+    if (confirm == "y" || confirm == "Y")
+    {
+        if (repo.remove(targetID))
+        {
+            repo.writeToFile();
+            LOG("[SupportTicketMenu] Ticket deleted successfully, ID: " + targetID);
+            cout << "\nSupport Ticket " << targetID << " deleted successfully!\n";
+        }
+        else
+        {
+            cout << "\n[Error] Failed to delete ticket " << targetID << "!\n";
+        }
+    }
+    else
+    {
+        cout << "\nDeletion cancelled.\n";
+    }
+
     InputHelper::getInputOptionalString("Press Enter to continue...");
 }
 

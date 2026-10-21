@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Duong Bao Long (B24DCVT231)
+// Use Case 2: Quan ly Phieu ho tro ki thuat Support Ticket
+// ===============================================================
 #pragma once
 #include "Entity.h"
 #include <string>
@@ -22,6 +29,9 @@ enum class TicketStatus
 string ticketPriorityToString(TicketPriority priority);
 TicketPriority stringToTicketPriority(const string &str);
 
+string ticketStatusToString(TicketStatus status);
+TicketStatus stringToTicketStatus(const string &str);
+
 class SupportTicket : public Entity
 {
 private:
@@ -30,6 +40,7 @@ private:
     string receivedDate;  // yyyy-mm-dd HH:mm
     string content;
     TicketPriority priority;
+    TicketStatus status;
     string resolution;    // Tuỳ chọn / ket qua xu ly
     string closedDate;    // yyyy-mm-dd HH:mm
 
@@ -37,6 +48,7 @@ public:
     SupportTicket();
     SupportTicket(string id, string contractID, string stbID, string receivedDate,
                   string content, TicketPriority priority,
+                  TicketStatus status = TicketStatus::TIEP_NHAN,
                   string resolution = "", string closedDate = "");
 
     void setContractID(const string &contractID);
@@ -44,6 +56,7 @@ public:
     void setReceivedDate(const string &receivedDate);
     void setContent(const string &content);
     void setPriority(TicketPriority priority);
+    void setStatus(TicketStatus status);
     void setResolution(const string &resolution);
     void setClosedDate(const string &closedDate);
 
@@ -53,12 +66,10 @@ public:
     string getContent() const;
     TicketPriority getPriority() const;
     string getPriorityString() const;
-    string getResolution() const;
-    string getClosedDate() const;
-
-    // Giu lai phuong thuc getStatus de khong lam hong cac use case khac goi den (nhu SetTopBoxMenu)
     TicketStatus getStatus() const;
     string getStatusString() const;
+    string getResolution() const;
+    string getClosedDate() const;
 
     string exportToString() const override;
     vector<string> exportToVector() const override;

@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Duong Bao Long (B24DCVT231)
+// Use Case 2: Quan ly Phieu ho tro ki thuat Support Ticket
+// ===============================================================
 #include "SupportTicket.h"
 #include "Utils/StringHelper.h"
 #include "Utils/Validator.h"
@@ -31,6 +38,32 @@ TicketPriority stringToTicketPriority(const string &str)
     throw invalid_argument("[SupportTicket] Muc do uu tien khong hop le: " + str);
 }
 
+string ticketStatusToString(TicketStatus status)
+{
+    switch (status)
+    {
+    case TicketStatus::TIEP_NHAN:
+        return "TIEP_NHAN";
+    case TicketStatus::DANG_XU_LY:
+        return "DANG_XU_LY";
+    case TicketStatus::DA_DONG:
+        return "DA_DONG";
+    default:
+        return "TIEP_NHAN";
+    }
+}
+
+TicketStatus stringToTicketStatus(const string &str)
+{
+    if (str == "TIEP_NHAN")
+        return TicketStatus::TIEP_NHAN;
+    if (str == "DANG_XU_LY")
+        return TicketStatus::DANG_XU_LY;
+    if (str == "DA_DONG")
+        return TicketStatus::DA_DONG;
+    throw invalid_argument("[SupportTicket] Trang thai phieu ho tro khong hop le: " + str);
+}
+
 SupportTicket::SupportTicket() : Entity("")
 {
     this->contractID = "";
@@ -38,12 +71,14 @@ SupportTicket::SupportTicket() : Entity("")
     this->receivedDate = "";
     this->content = "";
     this->priority = TicketPriority::BINH_THUONG;
+    this->status = TicketStatus::TIEP_NHAN;
     this->resolution = "";
     this->closedDate = "";
 }
 
 SupportTicket::SupportTicket(string id, string contractID, string stbID, string receivedDate,
                              string content, TicketPriority priority,
+                             TicketStatus status,
                              string resolution, string closedDate)
     : Entity(id)
 {
@@ -52,6 +87,7 @@ SupportTicket::SupportTicket(string id, string contractID, string stbID, string 
     setReceivedDate(receivedDate);
     setContent(content);
     setPriority(priority);
+    setStatus(status);
     setResolution(resolution);
     setClosedDate(closedDate);
 }
@@ -93,6 +129,11 @@ void SupportTicket::setContent(const string &content)
 void SupportTicket::setPriority(TicketPriority priority)
 {
     this->priority = priority;
+}
+
+void SupportTicket::setStatus(TicketStatus status)
+{
+    this->status = status;
 }
 
 void SupportTicket::setResolution(const string &resolution)
@@ -139,6 +180,16 @@ string SupportTicket::getPriorityString() const
     return ticketPriorityToString(priority);
 }
 
+TicketStatus SupportTicket::getStatus() const
+{
+    return status;
+}
+
+string SupportTicket::getStatusString() const
+{
+    return ticketStatusToString(status);
+}
+
 string SupportTicket::getResolution() const
 {
     return resolution;
@@ -149,26 +200,12 @@ string SupportTicket::getClosedDate() const
     return closedDate;
 }
 
-TicketStatus SupportTicket::getStatus() const
-{
-    if (!closedDate.empty() || !resolution.empty())
-        return TicketStatus::DA_DONG;
-    return TicketStatus::TIEP_NHAN;
-}
-
-string SupportTicket::getStatusString() const
-{
-    if (getStatus() == TicketStatus::DA_DONG)
-        return "DA_DONG";
-    return "TIEP_NHAN";
-}
-
 string SupportTicket::exportToString() const
 {
-    // Dung dinh dang khong co status:
-    // id|contractid|stbid|receiveddate|content|priority|resolution|closeddate
+    // Dinh dang 9 truong co status:
+    // id|contractid|stbid|receiveddate|content|priority|status|resolution|closeddate
     return id + "|" + contractID + "|" + stbID + "|" + receivedDate + "|" +
-           content + "|" + getPriorityString() + "|" + resolution + "|" + closedDate;
+           content + "|" + getPriorityString() + "|" + getStatusString() + "|" + resolution + "|" + closedDate;
 }
 
 vector<string> SupportTicket::exportToVector() const
@@ -180,6 +217,7 @@ vector<string> SupportTicket::exportToVector() const
         receivedDate,
         content,
         getPriorityString(),
+        getStatusString(),
         resolution,
         closedDate
     };
@@ -188,9 +226,9 @@ vector<string> SupportTicket::exportToVector() const
 void SupportTicket::parseFromString(const string &data)
 {
     vector<string> words = splitString(data);
-    if (words.size() != 8)
+    if (words.size() != 9 && words.size() != 8)
     {
-        throw invalid_argument("[SupportTicket] Dong du lieu phieu ho tro khong hop le (yeu cau dung 8 truong): " + data);
+        throw invalid_argument("[SupportTicket] Dong du lieu phieu ho tro khong hop le (yeu cau 9 truong): " + data);
     }
 
     string ticketID = words[0];
@@ -206,11 +244,28 @@ void SupportTicket::parseFromString(const string &data)
     setContent(words[4]);
     setPriority(stringToTicketPriority(words[5]));
 
-    string res = words[6];
-    setResolution(res);
+    if (words.size() == 9)
+    {
+        setStatus(stringToTicketStatus(words[6]));
+        setResolution(words[7]);
+        string closed = words[8];
+        if (!closed.empty() && closed.back() == '\r')
+            closed.pop_back();
+        setClosedDate(closed);
+    }
+    else
+    {
+        // Tuong thich nguoc du lieu 8 truong (neu co)
+        string res = words[6];
+        setResolution(res);
+        string closed = words[7];
+        if (!closed.empty() && closed.back() == '\r')
+            closed.pop_back();
+        setClosedDate(closed);
 
-    string closed = words[7];
-    if (!closed.empty() && closed.back() == '\r')
-        closed.pop_back();
-    setClosedDate(closed);
+        if (!closed.empty() || !res.empty())
+            setStatus(TicketStatus::DA_DONG);
+        else
+            setStatus(TicketStatus::TIEP_NHAN);
+    }
 }
