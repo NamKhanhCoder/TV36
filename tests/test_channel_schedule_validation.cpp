@@ -1,3 +1,7 @@
+// The group build includes every .cpp. Enable this standalone test explicitly
+// with -DTV36_CHANNEL_SCHEDULE_TEST and compile it without the app's main.cpp.
+#ifdef TV36_CHANNEL_SCHEDULE_TEST
+
 #include "Entities/Channel.h"
 #include "Entities/Schedule.h"
 #include <iostream>
@@ -57,3 +61,5 @@ int main()
         throw std::runtime_error("Valid entity did not round-trip.");
     std::cout << "PASS: direct setter/parser rejection, unchanged state, leap day and round-trip.\n";
 }
+
+#endif
