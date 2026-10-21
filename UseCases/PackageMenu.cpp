@@ -16,6 +16,7 @@
 #include <vector>
 #include <set>
 #include <cctype>
+#include <algorithm>
 
 using namespace std;
 
@@ -320,40 +321,158 @@ void PackageMenu::createPackage()
 
 void PackageMenu::readPackage()
 {
-    SystemHelper::clearScreen();
-    cout << "===== View Packages =====" << endl;
-    cout << "1. View all Packages" << endl;
-    cout << "2. Search Package by ID" << endl;
-
-    vector<int> widths = {8, 20, 15, 16, 25, 20};
-    vector<string> headers = {"ID", "Name", "Monthly Price", "Status", "Channels", "VODs"};
-
-    int choice = InputHelper::getInputInt("Select an option (0 to go back): ");
-    if (choice == 1)
+    while (true)
     {
         SystemHelper::clearScreen();
-        cout << "===== All Packages =====\n";
-        TablePrinter::printTable(widths, headers, repo.exportToVector());
-        LOG("[PackageMenu] Package table printed successfully");
-    }
-    else if (choice == 2)
-    {
-        string inputID = convertToUpper(InputHelper::getInputString("Enter Package ID to search: "));
-        Package *pkg = repo.readByID(inputID);
-        SystemHelper::clearScreen();
-        if (pkg == nullptr)
+        cout << "===== View Packages =====" << endl;
+        cout << "1. View all Packages" << endl;
+        cout << "2. Search Package by ID" << endl;
+        cout << "3. Sort Packages" << endl;
+        cout << "0. Go back" << endl;
+
+        vector<int> widths = {8, 20, 15, 16, 25, 20};
+        vector<string> headers = {"ID", "Name", "Monthly Price", "Status", "Channels", "VODs"};
+
+        int choice = InputHelper::getInputInt("Select an option (0-3): ");
+        if (choice == 0)
         {
-            cout << "[Error] Package not found, ID: " << inputID << endl;
+            break;
+        }
+        else if (choice == 1)
+        {
+            SystemHelper::clearScreen();
+            cout << "===== All Packages =====\n";
+            TablePrinter::printTable(widths, headers, repo.exportToVector());
+            LOG("[PackageMenu] Package table printed successfully");
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (choice == 2)
+        {
+            string inputID = convertToUpper(InputHelper::getInputString("Enter Package ID to search: "));
+            Package *pkg = repo.readByID(inputID);
+            SystemHelper::clearScreen();
+            if (pkg == nullptr)
+            {
+                cout << "[Error] Package not found, ID: " << inputID << endl;
+            }
+            else
+            {
+                cout << "===== Package Detail =====\n";
+                TablePrinter::printSingle(widths, headers, pkg->exportToVector());
+            }
+            LOG("[PackageMenu] Search package completed");
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (choice == 3)
+        {
+            sortPackage();
         }
         else
         {
-            cout << "===== Package Detail =====\n";
-            TablePrinter::printSingle(widths, headers, pkg->exportToVector());
+            cout << "Invalid choice! Please try again.\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
         }
-        LOG("[PackageMenu] Search package completed");
     }
+}
 
-    InputHelper::getInputOptionalString("Press Enter to continue...");
+void PackageMenu::sortPackage()
+{
+    vector<int> widths = {8, 20, 15, 16, 25, 20};
+    vector<string> headers = {"ID", "Name", "Monthly Price", "Status", "Channels", "VODs"};
+
+    while (true)
+    {
+        SystemHelper::clearScreen();
+        cout << "=========================================\n";
+        cout << "              SORT PACKAGES              \n";
+        cout << "=========================================\n";
+        cout << "1. Monthly Price descending (High -> Low / Dat -> Re)\n";
+        cout << "2. Monthly Price ascending (Low -> High / Re -> Dat)\n";
+        cout << "3. Status: DANG_CUNG_CAP first\n";
+        cout << "4. Status: NGUNG_DANG_KY first\n";
+        cout << "0. Go back\n";
+
+        int opt = InputHelper::getInputInt("Select an option (0-4): ");
+        if (opt == 0) break;
+
+        vector<Package> list = repo.readAll();
+        if (list.empty())
+        {
+            cout << "[Notice] Package list is currently empty!\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
+            break;
+        }
+
+        if (opt == 1)
+        {
+            sort(list.begin(), list.end(), [](const Package &a, const Package &b) {
+                return a.getMonthlyPrice() > b.getMonthlyPrice();
+            });
+            LOG("[PackageMenu] Packages sorted by monthly price (High -> Low)");
+            vector<vector<string>> data;
+            for (const auto &p : list) data.push_back(p.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Packages Sorted by Price (High -> Low) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 2)
+        {
+            sort(list.begin(), list.end(), [](const Package &a, const Package &b) {
+                return a.getMonthlyPrice() < b.getMonthlyPrice();
+            });
+            LOG("[PackageMenu] Packages sorted by monthly price (Low -> High)");
+            vector<vector<string>> data;
+            for (const auto &p : list) data.push_back(p.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Packages Sorted by Price (Low -> High) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 3)
+        {
+            sort(list.begin(), list.end(), [](const Package &a, const Package &b) {
+                if (a.getStatus() != b.getStatus())
+                {
+                    return a.getStatus() == PackageStatus::DANG_CUNG_CAP;
+                }
+                return a.getID() < b.getID();
+            });
+            LOG("[PackageMenu] Packages sorted with DANG_CUNG_CAP first");
+            vector<vector<string>> data;
+            for (const auto &p : list) data.push_back(p.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Packages Sorted (DANG_CUNG_CAP First) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 4)
+        {
+            sort(list.begin(), list.end(), [](const Package &a, const Package &b) {
+                if (a.getStatus() != b.getStatus())
+                {
+                    return a.getStatus() == PackageStatus::NGUNG_DANG_KY;
+                }
+                return a.getID() < b.getID();
+            });
+            LOG("[PackageMenu] Packages sorted with NGUNG_DANG_KY first");
+            vector<vector<string>> data;
+            for (const auto &p : list) data.push_back(p.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Packages Sorted (NGUNG_DANG_KY First) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else
+        {
+            cout << "[Error] Invalid option! Please try again.\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
+        }
+    }
 }
 
 void PackageMenu::updatePackage()

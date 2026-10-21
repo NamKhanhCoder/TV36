@@ -16,6 +16,7 @@
 #include <ctime>
 #include <iomanip>
 #include <sstream>
+#include <algorithm>
 
 using namespace std;
 
@@ -221,40 +222,233 @@ void SupportTicketMenu::createTicket()
 
 void SupportTicketMenu::readTicket()
 {
-    SystemHelper::clearScreen();
-    cout << "===== View Support Tickets =====" << endl;
-    cout << "1. View all Support Tickets" << endl;
-    cout << "2. Search Support Ticket by ID" << endl;
-
-    vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
-    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
-
-    int choice = InputHelper::getInputInt("Select an option (0 to go back): ");
-    if (choice == 1)
+    while (true)
     {
         SystemHelper::clearScreen();
-        cout << "===== All Support Tickets =====\n";
-        TablePrinter::printTable(widths, headers, repo.exportToVector());
-        LOG("[SupportTicketMenu] Support Ticket table printed successfully");
-    }
-    else if (choice == 2)
-    {
-        string inputID = convertToUpper(InputHelper::getInputString("Enter Ticket ID to search: "));
-        SupportTicket *ticket = repo.readByID(inputID);
-        SystemHelper::clearScreen();
-        if (ticket == nullptr)
+        cout << "===== View Support Tickets =====" << endl;
+        cout << "1. View all Support Tickets" << endl;
+        cout << "2. Search Support Ticket by ID" << endl;
+        cout << "3. Sort Support Tickets" << endl;
+        cout << "0. Go back" << endl;
+
+        vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
+        vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
+
+        int choice = InputHelper::getInputInt("Select an option (0-3): ");
+        if (choice == 0)
         {
-            cout << "[Error] Ticket not found, ID: " << inputID << endl;
+            break;
+        }
+        else if (choice == 1)
+        {
+            SystemHelper::clearScreen();
+            cout << "===== All Support Tickets =====\n";
+            TablePrinter::printTable(widths, headers, repo.exportToVector());
+            LOG("[SupportTicketMenu] Support Ticket table printed successfully");
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (choice == 2)
+        {
+            string inputID = convertToUpper(InputHelper::getInputString("Enter Ticket ID to search: "));
+            SupportTicket *ticket = repo.readByID(inputID);
+            SystemHelper::clearScreen();
+            if (ticket == nullptr)
+            {
+                cout << "[Error] Ticket not found, ID: " << inputID << endl;
+            }
+            else
+            {
+                cout << "===== Support Ticket Detail =====\n";
+                TablePrinter::printSingle(widths, headers, ticket->exportToVector());
+            }
+            LOG("[SupportTicketMenu] Search ticket completed");
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (choice == 3)
+        {
+            sortTicket();
         }
         else
         {
-            cout << "===== Support Ticket Detail =====\n";
-            TablePrinter::printSingle(widths, headers, ticket->exportToVector());
+            cout << "Invalid choice! Please try again.\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
         }
-        LOG("[SupportTicketMenu] Search ticket completed");
     }
+}
 
-    InputHelper::getInputOptionalString("Press Enter to continue...");
+static int getPriorityRank(TicketPriority p)
+{
+    switch (p)
+    {
+    case TicketPriority::BINH_THUONG: return 1;
+    case TicketPriority::UU_TIEN: return 2;
+    case TicketPriority::KHAN_CAP: return 3;
+    default: return 0;
+    }
+}
+
+static int getStatusRank(TicketStatus s)
+{
+    switch (s)
+    {
+    case TicketStatus::TIEP_NHAN: return 1;
+    case TicketStatus::DANG_XU_LY: return 2;
+    case TicketStatus::DA_DONG: return 3;
+    default: return 0;
+    }
+}
+
+static int extractContractNumber(const string &contractID)
+{
+    int num = 0;
+    for (char c : contractID)
+    {
+        if (isdigit(static_cast<unsigned char>(c)))
+        {
+            num = num * 10 + (c - '0');
+        }
+    }
+    return num;
+}
+
+void SupportTicketMenu::sortTicket()
+{
+    vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
+    vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
+
+    while (true)
+    {
+        SystemHelper::clearScreen();
+        cout << "=========================================\n";
+        cout << "           SORT SUPPORT TICKETS          \n";
+        cout << "=========================================\n";
+        cout << "1. Contract ID descending (High -> Low)\n";
+        cout << "2. Contract ID ascending (Low -> High)\n";
+        cout << "3. Priority: BINH_THUONG -> UU_TIEN -> KHAN_CAP\n";
+        cout << "4. Priority: KHAN_CAP -> UU_TIEN -> BINH_THUONG\n";
+        cout << "5. Status: TIEP_NHAN -> DANG_XU_LY -> DA_DONG\n";
+        cout << "6. Status: DA_DONG -> DANG_XU_LY -> TIEP_NHAN\n";
+        cout << "0. Go back\n";
+
+        int opt = InputHelper::getInputInt("Select an option (0-6): ");
+        if (opt == 0) break;
+
+        vector<SupportTicket> list = repo.readAll();
+        if (list.empty())
+        {
+            cout << "[Notice] Support ticket list is currently empty!\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
+            break;
+        }
+
+        if (opt == 1)
+        {
+            sort(list.begin(), list.end(), [](const SupportTicket &a, const SupportTicket &b) {
+                int numA = extractContractNumber(a.getContractID());
+                int numB = extractContractNumber(b.getContractID());
+                if (numA != numB) return numA > numB;
+                return a.getID() < b.getID();
+            });
+            LOG("[SupportTicketMenu] Tickets sorted by Contract ID descending");
+            vector<vector<string>> data;
+            for (const auto &t : list) data.push_back(t.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Support Tickets Sorted by Contract ID (Descending) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 2)
+        {
+            sort(list.begin(), list.end(), [](const SupportTicket &a, const SupportTicket &b) {
+                int numA = extractContractNumber(a.getContractID());
+                int numB = extractContractNumber(b.getContractID());
+                if (numA != numB) return numA < numB;
+                return a.getID() < b.getID();
+            });
+            LOG("[SupportTicketMenu] Tickets sorted by Contract ID ascending");
+            vector<vector<string>> data;
+            for (const auto &t : list) data.push_back(t.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Support Tickets Sorted by Contract ID (Ascending) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 3)
+        {
+            sort(list.begin(), list.end(), [](const SupportTicket &a, const SupportTicket &b) {
+                int rankA = getPriorityRank(a.getPriority());
+                int rankB = getPriorityRank(b.getPriority());
+                if (rankA != rankB) return rankA < rankB;
+                return a.getID() < b.getID();
+            });
+            LOG("[SupportTicketMenu] Tickets sorted by Priority (BINH_THUONG -> UU_TIEN -> KHAN_CAP)");
+            vector<vector<string>> data;
+            for (const auto &t : list) data.push_back(t.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Support Tickets Sorted by Priority (BINH_THUONG -> UU_TIEN -> KHAN_CAP) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 4)
+        {
+            sort(list.begin(), list.end(), [](const SupportTicket &a, const SupportTicket &b) {
+                int rankA = getPriorityRank(a.getPriority());
+                int rankB = getPriorityRank(b.getPriority());
+                if (rankA != rankB) return rankA > rankB;
+                return a.getID() < b.getID();
+            });
+            LOG("[SupportTicketMenu] Tickets sorted by Priority (KHAN_CAP -> UU_TIEN -> BINH_THUONG)");
+            vector<vector<string>> data;
+            for (const auto &t : list) data.push_back(t.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Support Tickets Sorted by Priority (KHAN_CAP -> UU_TIEN -> BINH_THUONG) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 5)
+        {
+            sort(list.begin(), list.end(), [](const SupportTicket &a, const SupportTicket &b) {
+                int rankA = getStatusRank(a.getStatus());
+                int rankB = getStatusRank(b.getStatus());
+                if (rankA != rankB) return rankA < rankB;
+                return a.getID() < b.getID();
+            });
+            LOG("[SupportTicketMenu] Tickets sorted by Status (TIEP_NHAN -> DANG_XU_LY -> DA_DONG)");
+            vector<vector<string>> data;
+            for (const auto &t : list) data.push_back(t.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Support Tickets Sorted by Status (TIEP_NHAN -> DANG_XU_LY -> DA_DONG) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else if (opt == 6)
+        {
+            sort(list.begin(), list.end(), [](const SupportTicket &a, const SupportTicket &b) {
+                int rankA = getStatusRank(a.getStatus());
+                int rankB = getStatusRank(b.getStatus());
+                if (rankA != rankB) return rankA > rankB;
+                return a.getID() < b.getID();
+            });
+            LOG("[SupportTicketMenu] Tickets sorted by Status (DA_DONG -> DANG_XU_LY -> TIEP_NHAN)");
+            vector<vector<string>> data;
+            for (const auto &t : list) data.push_back(t.exportToVector());
+
+            SystemHelper::clearScreen();
+            cout << "===== Support Tickets Sorted by Status (DA_DONG -> DANG_XU_LY -> TIEP_NHAN) =====\n";
+            TablePrinter::printTable(widths, headers, data);
+            InputHelper::getInputOptionalString("\nPress Enter to continue...");
+        }
+        else
+        {
+            cout << "[Error] Invalid option! Please try again.\n";
+            InputHelper::getInputOptionalString("Press Enter to continue...");
+        }
+    }
 }
 
 void SupportTicketMenu::updateTicket()

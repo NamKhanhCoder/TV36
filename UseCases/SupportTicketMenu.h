@@ -19,6 +19,7 @@ private:
 
     void createTicket();
     void readTicket();
+    void sortTicket();
     void updateTicket();
     void deleteTicket();
 
