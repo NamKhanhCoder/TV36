@@ -42,10 +42,7 @@ void NoiDungVODMenu::xemDanhSach()
 // Chuc nang them noi dung moi: nhap thong tin, validate du lieu, check trung URL va ghi file
 void NoiDungVODMenu::themNoiDung()
 {
-    string id = repo.generateNextID();
     NoiDungVOD noiDungMoi;
-    noiDungMoi.setID(id);
-
     while (true)
     {
         string tenNoiDung = InputHelper::getInputString("Enter content name: ");
@@ -182,6 +179,8 @@ void NoiDungVODMenu::themNoiDung()
         }
         break;
     }
+    string id = repo.generateNextID();
+    noiDungMoi.setID(id);
     repo.create(noiDungMoi); // gọi hàm trong repository đêu phải thông qua repo
     repo.writeToFile();
     cout << "VOD content created successfully!" << endl;
@@ -364,73 +363,57 @@ void NoiDungVODMenu::sapXep()
     case 1:
     {
         sort(danhSach.begin(), danhSach.end());  // tự động gọi toán tử operator <, ko cần thêm tiêu chí so sánh
-        ofstream tenFile("Data/noidungvod.txt"); // goi hàm ofstream là mặc định sẽ xoá nội dung trong file
         cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 2:
     {
         sort(danhSach.begin(), danhSach.end(), greater<NoiDungVOD>()); // tự động gọi toán tử operator >, ko cần thêm tiêu chí so sánh
-        ofstream tenFile("Data/noidungvod.txt");                       // goi hàm ofstream là mặc định sẽ xoá nội dung trong file
         cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 3:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNamPhatHanhGiamDan);
-        ofstream tenFile("Data/noidungvod.txt");
         cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 4:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhNamPhatHanhTangDan);
-        ofstream tenFile("Data/noidungvod.txt");
         cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repo.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     default:
@@ -605,7 +588,7 @@ void NoiDungVODMenu::capNhat()
 }
 // Chuc nang xoa noi dung: tim theo ma VOD, xac nhan Y/N truoc khi xoa va luu file
 void NoiDungVODMenu::xoaNoiDung()
-{   
+{
     repo.loadFromFile();
     string id = InputHelper::getInputString("Enter VOD ID to delete: ");
     id = convertToUpper(id);

@@ -47,10 +47,11 @@ public:
     {   
         return repoCustomer.readByID(maKhachHang) != nullptr;
     }
-        */ // ham nay hien tai chu dung den nen de tam trong comment
+         // ham nay hien tai chu dung den nen de tam trong comment
     // Kiem tra ton tai ma hop dong tu repoContract (TV2)
     bool kiemTraHopDongTonTai(string maHopDong)
     {
         return repoContract.readByID(maHopDong) != nullptr;
     }
+    */
 };

@@ -53,13 +53,15 @@ void HoaDonMenu::themHoaDon()
 {
     HoaDon hoaDonMoi;
     string maHopDong;
+    Contract *pcontract = nullptr;
     while (true)
     {
         maHopDong = InputHelper::getInputString("Enter contract ID: ");
         maHopDong = convertToUpper(maHopDong);
+        pcontract = repoContract.readByID(maHopDong);
         try
         {
-            if (!kiemTraHopDongTonTai(maHopDong))
+            if (pcontract == nullptr)
             {
                 cout << "[Error] Contract ID not found or invalid, try again!" << endl;
                 continue;
@@ -76,7 +78,6 @@ void HoaDonMenu::themHoaDon()
             LOG("[INVOICEMenu] Invalid contract id input during creation: " + string(e.what()));
         }
     }
-    Contract *pcontract = repoContract.readByID(maHopDong);
     string maKhachHang = pcontract->get_customerID();
     hoaDonMoi.setMaKhachHang(maKhachHang);
     cout << "Customer representative: " << maKhachHang << endl;
@@ -413,137 +414,105 @@ void HoaDonMenu::sapXep()
     case 1:
     {
         sort(danhSach.begin(), danhSach.end());
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 2:
     {
         sort(danhSach.begin(), danhSach.end(), greater<HoaDon>());
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 3:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayLapGiamDan);
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 4:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayLapTangDan);
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 5:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoHanTraTienGiamDan);
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 6:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoHanTraTienTangDan);
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 7:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayTraTienGiamDan);
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     case 8:
     {
         sort(danhSach.begin(), danhSach.end(), soSanhTheoNgayTraTienTangDan);
-        ofstream tenFile("Data/hoadon.txt");
         cout << "Invoice list after sorting: " << endl;
         vector<vector<string>> data;
         for (int i = 0; i < s; i++)
         {
             data.push_back(danhSach[i].exportToVector());
-            tenFile << danhSach[i].exportToString() << endl;
         }
-        tenFile.close();
-        repoHoaDon.loadFromFile();
         TablePrinter::printTable(widths, headers, data);
-        cout << "Sort order saved to file successfully!" << endl;
+        cout << "Sort order successfully!" << endl;
         break;
     }
     default:
