@@ -10,8 +10,27 @@
 #include "Utils/Validator.h"
 #include <sstream>
 #include <stdexcept>
+#include <set>
+#include <cctype>
 
 using namespace std;
+
+namespace {
+    string trimStr(const string &s)
+    {
+        size_t start = 0;
+        while (start < s.size() && isspace(static_cast<unsigned char>(s[start])))
+        {
+            start++;
+        }
+        size_t end = s.size();
+        while (end > start && isspace(static_cast<unsigned char>(s[end - 1])))
+        {
+            end--;
+        }
+        return s.substr(start, end - start);
+    }
+}
 
 string packageStatusToString(PackageStatus status)
 {
@@ -28,9 +47,10 @@ string packageStatusToString(PackageStatus status)
 
 PackageStatus stringToPackageStatus(const string &str)
 {
-    if (str == "NGUNG_DANG_KY")
+    string s = trimStr(str);
+    if (s == "NGUNG_DANG_KY")
         return PackageStatus::NGUNG_DANG_KY;
-    if (str == "DANG_CUNG_CAP")
+    if (s == "DANG_CUNG_CAP")
         return PackageStatus::DANG_CUNG_CAP;
     throw invalid_argument("[Package] Trang thai goi khong hop le (phai la DANG_CUNG_CAP hoac NGUNG_DANG_KY): " + str);
 }
@@ -79,10 +99,15 @@ void Package::setChannelIDs(const vector<string> &channelIDs)
 {
     if (channelIDs.size() <= 1)
         throw invalid_argument("[Package] Goi phai co nhieu hon 1 kenh truyen hinh (> 1 channel)!");
+    
+    set<string> seen;
     for (const string &cid : channelIDs)
     {
         if (cid.empty() || cid.find_first_of("|\r\n") != string::npos)
             throw invalid_argument("[Package] Ma kenh khong hop le: " + cid);
+        if (seen.find(cid) != seen.end())
+            throw invalid_argument("[Package] Danh sach kenh khong duoc chua cac ma trung lap: " + cid);
+        seen.insert(cid);
     }
     this->channelIDs = channelIDs;
 }
@@ -91,10 +116,15 @@ void Package::setVodIDs(const vector<string> &vodIDs)
 {
     if (vodIDs.size() <= 1)
         throw invalid_argument("[Package] Goi phai co nhieu hon 1 noi dung VOD (> 1 VOD)!");
+    
+    set<string> seen;
     for (const string &vid : vodIDs)
     {
         if (vid.empty() || vid.find_first_of("|\r\n") != string::npos)
             throw invalid_argument("[Package] Ma VOD khong hop le: " + vid);
+        if (seen.find(vid) != seen.end())
+            throw invalid_argument("[Package] Danh sach VOD khong duoc chua cac ma trung lap: " + vid);
+        seen.insert(vid);
     }
     this->vodIDs = vodIDs;
 }
@@ -179,20 +209,34 @@ void Package::parseFromString(const string &data)
         throw invalid_argument("[Package] Dong du lieu goi khong hop le (yeu cau 6 truong): " + data);
     }
 
-    string packageID = words[0];
-    if (!Validator::isValidID(packageID, "GOI", static_cast<short>(packageID.length())))
+    string packageID = trimStr(words[0]);
+    // Chan bare-prefix (phai bat dau bang GOI va co it nhat 3 chu so, length >= 6)
+    if (packageID.length() < 6 || !Validator::isValidID(packageID, "GOI", static_cast<short>(packageID.length())))
     {
-        throw invalid_argument("[Package] Ma goi khong hop le: " + packageID);
+        throw invalid_argument("[Package] Ma goi khong hop le (phai bat dau bang GOI kem it nhat 3 chu so): " + packageID);
     }
     id = packageID;
 
     setName(words[1]);
 
+    // Chan gia co hau to chu (vd: 120000vnd)
+    string priceStr = trimStr(words[2]);
+    if (priceStr.empty())
+    {
+        throw invalid_argument("[Package] Gia cuoc thang khong duoc de trong!");
+    }
+    for (char c : priceStr)
+    {
+        if (!isdigit(static_cast<unsigned char>(c)))
+        {
+            throw invalid_argument("[Package] Gia cuoc thang chua ky tu khong hop le: " + priceStr);
+        }
+    }
     long long price = 0;
     try {
-        price = stoll(words[2]);
+        price = stoll(priceStr);
     } catch (...) {
-        throw invalid_argument("[Package] Dinh dang gia cuoc thang khong hop le: " + words[2]);
+        throw invalid_argument("[Package] Dinh dang gia cuoc thang khong hop le: " + priceStr);
     }
     setMonthlyPrice(price);
 
@@ -203,7 +247,8 @@ void Package::parseFromString(const string &data)
         throw invalid_argument("[Package] Danh sach kenh khong duoc de trong: " + data);
     }
     vector<string> channels = splitString(words[4], ',');
-    setChannelIDs(channels);
+    for (auto &c : channels) c = trimStr(c);
+    setChannelIDs(channels); // setChannelIDs se kiem tra > 1 va khong trung lap
 
     if (words[5].empty())
     {
@@ -213,5 +258,23 @@ void Package::parseFromString(const string &data)
     if (!vodStr.empty() && vodStr.back() == '\r')
         vodStr.pop_back();
     vector<string> vods = splitString(vodStr, ',');
-    setVodIDs(vods);
+    for (auto &v : vods) v = trimStr(v);
+    setVodIDs(vods); // setVodIDs se kiem tra > 1 va khong trung lap
+}
+
+bool Package::operator<(const Package &other) const
+{
+    if (this->monthlyPrice != other.monthlyPrice)
+        return this->monthlyPrice < other.monthlyPrice;
+    return this->id < other.id;
+}
+
+bool Package::operator>(const Package &other) const
+{
+    return other < *this;
+}
+
+bool Package::operator==(const Package &other) const
+{
+    return this->id == other.id;
 }

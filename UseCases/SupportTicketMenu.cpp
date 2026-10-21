@@ -107,9 +107,9 @@ void SupportTicketMenu::createTicket()
     while (true)
     {
         string contractID = convertToUpper(InputHelper::getInputString("Contract ID: "));
-        if (!Validator::isValidID(contractID, "HD", static_cast<short>(contractID.length())))
+        if (contractID.length() < 5 || !Validator::isValidID(contractID, "HD", static_cast<short>(contractID.length())))
         {
-            cout << "[Error] Invalid Contract ID format! (Must start with 'HD' followed by digits)\n";
+            cout << "[Error] Invalid Contract ID format! (Must start with 'HD' followed by at least 3 digits)\n";
             continue;
         }
 
@@ -208,9 +208,17 @@ void SupportTicketMenu::createTicket()
                             temp.getContent(), temp.getPriority(), TicketStatus::TIEP_NHAN, "", "");
     if (repo.create(newTicket))
     {
-        repo.writeToFile();
-        LOG("[SupportTicketMenu] Ticket created successfully, ID: " + newTicket.getID());
-        cout << "Support Ticket created successfully! ID: " << newTicket.getID() << endl;
+        try
+        {
+            repo.writeToFile();
+            LOG("[SupportTicketMenu] Ticket created successfully, ID: " + newTicket.getID());
+            cout << "Support Ticket created successfully! ID: " << newTicket.getID() << endl;
+        }
+        catch (const exception &e)
+        {
+            repo.loadFromFile(); // Rollback if save fails
+            cout << "[File Error] Failed to save ticket to disk: " << e.what() << endl;
+        }
     }
     else
     {
@@ -456,8 +464,7 @@ void SupportTicketMenu::updateTicket()
     SystemHelper::clearScreen();
     cout << "===== Update Support Ticket =====" << endl;
     cout << "[Update Rules] Allowed fields: Content, Priority, Status, Solution.\n";
-    cout << "[Note] Solution can only be modified when Status is set to 'DA_DONG'.\n";
-    cout << "       Closed Date will be automatically set to current time upon closing.\n\n";
+    cout << "[Note] Tickets with status 'DA_DONG' cannot be modified (locked for audit history).\n\n";
 
     vector<int> widths = {8, 10, 10, 17, 25, 13, 12, 25, 17};
     vector<string> headers = {"ID", "Contract", "STB ID", "Received Date", "Content", "Priority", "Status", "Resolution", "Closed Date"};
@@ -472,6 +479,21 @@ void SupportTicketMenu::updateTicket()
         InputHelper::getInputOptionalString("Press Enter to continue...");
         return;
     }
+
+    // Rang buoc dac biet: Ticket da o trang thai DA_DONG thi khoa hoan toan, khong cho phep sua
+    if (ticket->getStatus() == TicketStatus::DA_DONG)
+    {
+        SystemHelper::clearScreen();
+        cout << "===== Ticket Locked =====" << endl;
+        TablePrinter::printSingle(widths, headers, ticket->exportToVector());
+        cout << "\n[Update Rejected] Support Ticket " << inputID << " is already closed (DA_DONG)!\n";
+        cout << "[Rule] Closed tickets cannot be modified to preserve audit trail integrity.\n";
+        InputHelper::getInputOptionalString("\nPress Enter to return...");
+        return;
+    }
+
+    // F08: Luu ban sao backup de ho tro rollback neu qua trinh sua hoac ghi file bi loi
+    SupportTicket backup = *ticket;
 
     SystemHelper::clearScreen();
     cout << "===== Current Ticket Information =====" << endl;
@@ -508,10 +530,12 @@ void SupportTicketMenu::updateTicket()
     }
 
     // 3. Status with setter try-catch
-    TicketStatus newStatus = inputTicketStatus(true, ticket->getStatus());
+    TicketStatus oldStatus = ticket->getStatus();
+    TicketStatus newStatus = inputTicketStatus(true, oldStatus);
     ticket->setStatus(newStatus);
 
-    // 4. Solution (Resolution): Only modified right after setting status to DA_DONG
+    // 4. Solution (Resolution) & Closed Date:
+    // F05: Chi cap nhat thoi diem dong closedDate khi vua chuyen tu trang thai khac sang DA_DONG
     if (newStatus == TicketStatus::DA_DONG)
     {
         cout << "\n[Status: DA_DONG] Solution is mandatory when closing ticket.\n";
@@ -525,7 +549,6 @@ void SupportTicketMenu::updateTicket()
             {
                 if (!currentRes.empty())
                 {
-                    // Giu nguyen resolution cu neu da co
                     break;
                 }
                 else
@@ -546,26 +569,41 @@ void SupportTicketMenu::updateTicket()
             }
         }
 
-        // Closed Date se tu dong co ngay khi set trang thai DA_DONG
-        string closedDT = getCurrentDateTimeString();
-        ticket->setClosedDate(closedDT);
-        cout << "[Auto Closed Date] Closed Date automatically set to: " << closedDT << endl;
+        // F05 fix: Chi tu dong gan ClosedDate neu truoc do chua dong
+        if (oldStatus != TicketStatus::DA_DONG)
+        {
+            string closedDT = getCurrentDateTimeString();
+            ticket->setClosedDate(closedDT);
+            cout << "[Auto Closed Date] Closed Date automatically set to: " << closedDT << endl;
+        }
     }
     else
     {
         cout << "\n[Note] Ticket status is " << ticketStatusToString(newStatus) 
-             << ". Solution and Closed Date remain empty or unchanged.\n";
+             << ". Solution and Closed Date remain empty.\n";
     }
 
-    if (repo.update(*ticket))
+    try
     {
-        repo.writeToFile();
-        LOG("[SupportTicketMenu] Ticket updated successfully, ID: " + ticket->getID());
-        cout << "\nSupport Ticket updated successfully!\n";
+        if (repo.update(*ticket))
+        {
+            repo.writeToFile();
+            LOG("[SupportTicketMenu] Ticket updated successfully, ID: " + ticket->getID());
+            cout << "\nSupport Ticket updated successfully!\n";
+        }
+        else
+        {
+            *ticket = backup; // Rollback
+            cout << "\n[Error] Update failed!\n";
+        }
     }
-    else
+    catch (const exception &e)
     {
-        cout << "\n[Error] Update failed!\n";
+        // F08: Rollback state in RAM on write failure
+        *ticket = backup;
+        repo.loadFromFile();
+        LOG("[SupportTicketMenu] File error while updating ticket: " + string(e.what()));
+        cout << "\n[File Error] " << e.what() << "\nChanges discarded, ticket state rolled back.\n";
     }
 
     InputHelper::getInputOptionalString("Press Enter to continue...");
@@ -608,9 +646,17 @@ void SupportTicketMenu::deleteTicket()
     {
         if (repo.remove(targetID))
         {
-            repo.writeToFile();
-            LOG("[SupportTicketMenu] Ticket deleted successfully, ID: " + targetID);
-            cout << "\nSupport Ticket " << targetID << " deleted successfully!\n";
+            try
+            {
+                repo.writeToFile();
+                LOG("[SupportTicketMenu] Ticket deleted successfully, ID: " + targetID);
+                cout << "\nSupport Ticket " << targetID << " deleted successfully!\n";
+            }
+            catch (const exception &e)
+            {
+                repo.loadFromFile(); // Rollback
+                cout << "\n[File Error] Failed to update file after deletion: " << e.what() << endl;
+            }
         }
         else
         {

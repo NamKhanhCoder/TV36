@@ -54,7 +54,9 @@ bool PackageMenu::isPackageInActiveContract(const string &packageID)
     repoContract.loadFromFile();
     for (const auto &c : repoContract.readAll())
     {
-        if (c.get_packageID() == packageID && c.get_status() == ContractStatus::ACTIVE)
+        // F12 fix: Dong bo ca ACTIVE va SUSPENDED vi hop dong tam ngung van con rang buoc goi
+        if (c.get_packageID() == packageID && 
+            (c.get_status() == ContractStatus::ACTIVE || c.get_status() == ContractStatus::SUSPENDED))
         {
             return true;
         }
@@ -112,9 +114,9 @@ vector<string> PackageMenu::inputChannelIDs(bool isOptional, const vector<string
             string upperID = convertToUpper(trimString(id));
             if (upperID.empty()) continue;
 
-            if (!Validator::isValidID(upperID, "KENH", static_cast<short>(upperID.length())))
+            if (upperID.length() < 7 || !Validator::isValidID(upperID, "KENH", static_cast<short>(upperID.length())))
             {
-                cout << "[Error] ID '" << upperID << "' has invalid format! (Must start with 'KENH' followed by numbers)\n";
+                cout << "[Error] ID '" << upperID << "' has invalid format! (Must start with 'KENH' followed by at least 3 digits)\n";
                 allValid = false;
                 break;
             }
@@ -145,7 +147,7 @@ vector<string> PackageMenu::inputChannelIDs(bool isOptional, const vector<string
 
         if (validList.size() <= 1)
         {
-            cout << "[Error] Package must contain more than 1 channel (> 1 channel)!\n\n";
+            cout << "[Error] Package must contain more than 1 distinct channel (> 1 channel)!\n\n";
             continue;
         }
 
@@ -179,9 +181,9 @@ vector<string> PackageMenu::inputVodIDs(bool isOptional, const vector<string> &c
             string upperID = convertToUpper(trimString(id));
             if (upperID.empty()) continue;
 
-            if (!Validator::isValidID(upperID, "VOD", static_cast<short>(upperID.length())))
+            if (upperID.length() < 6 || !Validator::isValidID(upperID, "VOD", static_cast<short>(upperID.length())))
             {
-                cout << "[Error] ID '" << upperID << "' has invalid format! (Must start with 'VOD' followed by numbers)\n";
+                cout << "[Error] ID '" << upperID << "' has invalid format! (Must start with 'VOD' followed by at least 3 digits)\n";
                 allValid = false;
                 break;
             }
@@ -212,7 +214,7 @@ vector<string> PackageMenu::inputVodIDs(bool isOptional, const vector<string> &c
 
         if (validList.size() <= 1)
         {
-            cout << "[Error] Package must contain more than 1 VOD (> 1 VOD)!\n\n";
+            cout << "[Error] Package must contain more than 1 distinct VOD (> 1 VOD)!\n\n";
             continue;
         }
 
@@ -246,9 +248,24 @@ void PackageMenu::createPackage()
     // 2. Monthly Price with setter try-catch
     while (true)
     {
-        long long monthlyPrice = static_cast<long long>(InputHelper::getInputDouble("Monthly Price (VND > 0): "));
+        string priceInput = InputHelper::getInputString("Monthly Price (VND > 0): ");
+        bool pureDigits = true;
+        for (char c : priceInput)
+        {
+            if (!isdigit(static_cast<unsigned char>(c)))
+            {
+                pureDigits = false;
+                break;
+            }
+        }
+        if (!pureDigits || priceInput.empty())
+        {
+            cout << "[Validation Error] Monthly price must contain digits only without suffix!\n";
+            continue;
+        }
         try
         {
+            long long monthlyPrice = stoll(priceInput);
             temp.setMonthlyPrice(monthlyPrice);
             break;
         }
@@ -259,25 +276,18 @@ void PackageMenu::createPackage()
         }
     }
 
-    // 3. Status with setter try-catch
+    // 3. Status
     PackageStatus status = inputPackageStatus(false);
-    try
-    {
-        temp.setStatus(status);
-    }
-    catch (const exception &e)
-    {
-        cout << "[Validation Error] " << e.what() << endl;
-    }
+    temp.setStatus(status);
 
-    // 4. Channels configuration with setter try-catch
-    cout << "\nChannels configuration (Must have > 1 channel and all must exist):\n";
+    // 4. Channel IDs with setter try-catch
     while (true)
     {
-        vector<string> channelIDs = inputChannelIDs(false);
+        cout << "\n--- Select Channels for Package (> 1 channel required) ---" << endl;
+        vector<string> channels = inputChannelIDs(false);
         try
         {
-            temp.setChannelIDs(channelIDs);
+            temp.setChannelIDs(channels);
             break;
         }
         catch (const exception &e)
@@ -287,14 +297,14 @@ void PackageMenu::createPackage()
         }
     }
 
-    // 5. VODs configuration with setter try-catch
-    cout << "\nVODs configuration (Must have > 1 VOD and all must exist):\n";
+    // 5. VOD IDs with setter try-catch
     while (true)
     {
-        vector<string> vodIDs = inputVodIDs(false);
+        cout << "\n--- Select VOD Contents for Package (> 1 VOD required) ---" << endl;
+        vector<string> vods = inputVodIDs(false);
         try
         {
-            temp.setVodIDs(vodIDs);
+            temp.setVodIDs(vods);
             break;
         }
         catch (const exception &e)
@@ -307,9 +317,17 @@ void PackageMenu::createPackage()
     Package newPkg(repo.generateNextID(), temp.getName(), temp.getMonthlyPrice(), temp.getStatus(), temp.getChannelIDs(), temp.getVodIDs());
     if (repo.create(newPkg))
     {
-        repo.writeToFile();
-        LOG("[PackageMenu] Package created successfully, ID: " + newPkg.getID());
-        cout << "Package created successfully! ID: " << newPkg.getID() << endl;
+        try
+        {
+            repo.writeToFile();
+            LOG("[PackageMenu] Package created successfully, ID: " + newPkg.getID());
+            cout << "Package created successfully! ID: " << newPkg.getID() << endl;
+        }
+        catch (const exception &e)
+        {
+            repo.loadFromFile(); // Rollback if writing file fails
+            cout << "[File Error] Failed to save package to disk: " << e.what() << endl;
+        }
     }
     else
     {
@@ -493,6 +511,9 @@ void PackageMenu::updatePackage()
         return;
     }
 
+    // F08: Luu ban sao backup de ho tro rollback neu qua trinh sua hoac ghi file bi loi
+    Package backup = *pkg;
+
     SystemHelper::clearScreen();
     cout << "===== Current Package Information =====" << endl;
     TablePrinter::printSingle(widths, headers, pkg->exportToVector());
@@ -500,18 +521,11 @@ void PackageMenu::updatePackage()
     bool inActiveContract = isPackageInActiveContract(pkg->getID());
     if (inActiveContract)
     {
-        cout << "\n[Notice] This package is currently in an ACTIVE contract.\n";
+        cout << "\n[Notice] This package is currently in an ACTIVE or SUSPENDED contract.\n";
         cout << "[Rule] You can ONLY change its Status.\n\n";
 
         PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
-        try
-        {
-            pkg->setStatus(newStatus);
-        }
-        catch (const exception &e)
-        {
-            cout << "[Validation Error] " << e.what() << endl;
-        }
+        pkg->setStatus(newStatus);
     }
     else
     {
@@ -538,6 +552,20 @@ void PackageMenu::updatePackage()
             string newPriceStr = InputHelper::getInputOptionalString("New Monthly Price [" + to_string(pkg->getMonthlyPrice()) + "]: ");
             if (newPriceStr.empty())
                 break;
+            bool pureDigits = true;
+            for (char c : newPriceStr)
+            {
+                if (!isdigit(static_cast<unsigned char>(c)))
+                {
+                    pureDigits = false;
+                    break;
+                }
+            }
+            if (!pureDigits)
+            {
+                cout << "[Validation Error] Monthly price must contain digits only without suffix!\n";
+                continue;
+            }
             try
             {
                 long long newPrice = stoll(newPriceStr);
@@ -551,14 +579,7 @@ void PackageMenu::updatePackage()
         }
 
         PackageStatus newStatus = inputPackageStatus(true, pkg->getStatus());
-        try
-        {
-            pkg->setStatus(newStatus);
-        }
-        catch (const exception &e)
-        {
-            cout << "[Validation Error] " << e.what() << endl;
-        }
+        pkg->setStatus(newStatus);
 
         cout << "\nNew Channels [" << pkg->getChannelIDsString() << "]:\n";
         while (true)
@@ -591,15 +612,27 @@ void PackageMenu::updatePackage()
         }
     }
 
-    if (repo.update(*pkg))
+    try
     {
-        repo.writeToFile();
-        LOG("[PackageMenu] Package updated successfully, ID: " + pkg->getID());
-        cout << "Package updated successfully!\n";
+        if (repo.update(*pkg))
+        {
+            repo.writeToFile();
+            LOG("[PackageMenu] Package updated successfully, ID: " + pkg->getID());
+            cout << "\nPackage updated successfully!\n";
+        }
+        else
+        {
+            *pkg = backup; // Rollback
+            cout << "\n[Error] Update failed!\n";
+        }
     }
-    else
+    catch (const exception &e)
     {
-        cout << "[Error] Update failed!\n";
+        // F08: Rollback state in RAM on write failure
+        *pkg = backup;
+        repo.loadFromFile();
+        LOG("[PackageMenu] File error while updating package: " + string(e.what()));
+        cout << "\n[File Error] " << e.what() << "\nChanges discarded, package state rolled back.\n";
     }
 
     InputHelper::getInputOptionalString("Press Enter to continue...");
@@ -627,11 +660,11 @@ void PackageMenu::deletePackage()
     cout << "You are about to delete Package:" << endl;
     TablePrinter::printSingle(widths, headers, pkg->exportToVector());
 
-    // Check Removal dependency: Must not be in any active contract
+    // Check Removal dependency: Must not be in any active or suspended contract (F12)
     if (isPackageInActiveContract(targetID))
     {
-        cout << "\n[Error] Cannot delete Package " << targetID << " because it is currently assigned to an ACTIVE contract!\n";
-        cout << "Please update or terminate the active contract before deleting this package.\n";
+        cout << "\n[Error] Cannot delete Package " << targetID << " because it is currently assigned to an ACTIVE or SUSPENDED contract!\n";
+        cout << "Please update or terminate the contract before deleting this package.\n";
         InputHelper::getInputOptionalString("Press Enter to continue...");
         return;
     }
@@ -641,13 +674,21 @@ void PackageMenu::deletePackage()
     {
         if (repo.remove(targetID))
         {
-            repo.writeToFile();
-            LOG("[PackageMenu] Package deleted successfully, ID: " + targetID);
-            cout << "Package deleted successfully!\n";
+            try
+            {
+                repo.writeToFile();
+                LOG("[PackageMenu] Package deleted successfully, ID: " + targetID);
+                cout << "Package deleted successfully!\n";
+            }
+            catch (const exception &e)
+            {
+                repo.loadFromFile(); // Rollback
+                cout << "[File Error] Failed to update file after deletion: " << e.what() << endl;
+            }
         }
         else
         {
-            cout << "[Error] Failed to delete Package!\n";
+            cout << "[Error] Delete failed!\n";
         }
     }
     else
