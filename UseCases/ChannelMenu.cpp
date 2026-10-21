@@ -17,6 +17,37 @@ namespace
     const vector<int> widths = {10, 20, 10, 8, 10, 38, 14};
     const vector<string> headers = {"ID", "Name", "Category", "Number", "Resolution", "Stream URL", "Status"};
 
+    // Nguyen Hong Anh: quy tac nhap dac thu kenh, khong dat trong InputHelper chung.
+    string inputChannelStatus(const string& message, bool optional = false)
+    {
+        while (true)
+        {
+            string prompt = message + " (0: NGUNG_PHAT, 1: DANG_PHAT";
+            if (optional) prompt += ", Enter: keep current";
+            prompt += "): ";
+            string value = optional ? InputHelper::getInputOptionalString(prompt)
+                                    : InputHelper::getInputString(prompt);
+            if (optional && value.find_first_not_of(" \t\v\f") == string::npos) return "";
+            if (value == "0") return "NGUNG_PHAT";
+            if (value == "1") return "DANG_PHAT";
+            cout << "[Error] Chi nhap 0 hoac 1. Please try again.\n";
+        }
+    }
+
+    string inputChannelResolution(bool optional)
+    {
+        while (true)
+        {
+            const string prompt = "Resolution (SD/HD/FHD/UHD): ";
+            string value = optional ? InputHelper::getInputOptionalString(prompt)
+                                    : InputHelper::getInputString(prompt);
+            if (optional && value.find_first_not_of(" \t\v\f") == string::npos) return "";
+            value = convertToUpper(value);
+            if (value == "SD" || value == "HD" || value == "FHD" || value == "UHD") return value;
+            cout << "[Error] Do phan giai chi nhan SD, HD, FHD, UHD. Please try again.\n";
+        }
+    }
+
     void printDetail(const vector<string>& values)
     {
         TablePrinter::printSingle(widths, headers, values);
@@ -77,8 +108,15 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
     cout << "\n";
     while (true)
     {
-        string name = InputHelper::getInputText("Name (0 to cancel): ", editing);
+        string name = editing ? InputHelper::getInputOptionalString("Name (0 to cancel): ")
+                              : InputHelper::getInputString("Name (0 to cancel): ");
         if (name == "0") return false;
+        if (name.find_first_not_of(" \t\v\f") == string::npos)
+        {
+            if (editing) break;
+            cout << "[Error] Text must not be empty. Please try again.\n";
+            continue;
+        }
         try
         {
             if (!name.empty()) item.setName(name);
@@ -114,8 +152,28 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
 
     while (true)
     {
-        int number = InputHelper::getInputPositiveInt("Channel number (> 0): ", editing);
-        if (number == 0) number = item.getChannelNumber();
+        int number;
+        if (editing)
+        {
+            // OptionalInt tra -1 cho ca bo trong va nhap -1: doc chuoi de phan biet.
+            string value = InputHelper::getInputOptionalString("Channel number (> 0, Enter: keep): ");
+            if (value.find_first_not_of(" \t\v\f") == string::npos) number = item.getChannelNumber();
+            else
+            {
+                if (!Validator::isValidInt(value))
+                {
+                    cout << "[Error] So kenh phai la so nguyen lon hon 0. Please try again.\n";
+                    continue;
+                }
+                number = stoi(value);
+            }
+        }
+        else number = InputHelper::getInputInt("Channel number (> 0): ");
+        if (number <= 0)
+        {
+            cout << "[Error] So kenh phai la so nguyen lon hon 0. Please try again.\n";
+            continue;
+        }
         if (!isNumberUsed(number, item.getID()))
         {
             try
@@ -133,7 +191,7 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
     }
     while (true)
     {
-        string resolution = InputHelper::getInputChannelResolution("Resolution (SD/HD/FHD/UHD): ", editing);
+        string resolution = inputChannelResolution(editing);
         try
         {
             if (!resolution.empty()) item.setResolution(resolution);
@@ -146,7 +204,14 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
     }
     while (true)
     {
-        string streamURL = InputHelper::getInputText("Stream URL: ", editing);
+        string streamURL = editing ? InputHelper::getInputOptionalString("Stream URL: ")
+                                   : InputHelper::getInputString("Stream URL: ");
+        if (streamURL.find_first_not_of(" \t\v\f") == string::npos)
+        {
+            if (editing) break;
+            cout << "[Error] Stream URL must not be empty. Please try again.\n";
+            continue;
+        }
         try
         {
             if (!streamURL.empty()) item.setStreamURL(streamURL);
@@ -159,7 +224,7 @@ bool ChannelMenu::inputFields(Channel& item, bool editing)
     }
     while (true)
     {
-        string status = InputHelper::getInputChannelStatus("Trang thai kenh", editing);
+        string status = inputChannelStatus("Trang thai kenh", editing);
         try
         {
             if (!status.empty()) item.setStatus(status);
@@ -205,9 +270,9 @@ void ChannelMenu::readChannel()
     }
     if (choice < 1 || choice > 5) { cout << "Invalid option.\n"; return; }
     string query;
-    if (choice == 3) query = convertToUpper(InputHelper::getInputText("Name contains: "));
+    if (choice == 3) query = convertToUpper(InputHelper::getInputString("Name contains: "));
     if (choice == 4) query = InputHelper::getInputID("Category ID: ", "TL");
-    if (choice == 5) query = InputHelper::getInputChannelStatus("Trang thai kenh");
+    if (choice == 5) query = inputChannelStatus("Trang thai kenh");
     vector<vector<string>> rows;
     for (const Channel& item : repo.readAll())
         if (choice == 1 ||
@@ -264,7 +329,14 @@ void ChannelMenu::deleteChannel()
     const Channel* item = repo.readByID(id);
     if (!item) { cout << "Channel not found: " << id << "\n"; return; }
     printDetail(item->exportToVector());
-    if (!InputHelper::getInputConfirmation("Confirm deletion? (y/n): "))
+    string confirmation;
+    while (true)
+    {
+        confirmation = convertToUpper(InputHelper::getInputString("Confirm deletion? (y/n): "));
+        if (confirmation == "Y" || confirmation == "N") break;
+        cout << "[Error] Please enter y or n.\n";
+    }
+    if (confirmation == "N")
     {
         cout << "Deletion cancelled.\n";
         return;

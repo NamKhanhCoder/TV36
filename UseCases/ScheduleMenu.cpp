@@ -16,6 +16,30 @@ namespace
     const vector<int> widths = {10, 10, 22, 18, 18, 28};
     const vector<string> headers = {"ID", "Channel", "Program", "Start", "End", "Description"};
 
+    // Nguyen Hong Anh: nhap ngay gio ISO la nghiep vu lich, dung Validator chung.
+    string inputScheduleDateTime(const string& prompt, bool optional)
+    {
+        while (true)
+        {
+            string value = optional ? InputHelper::getInputOptionalString(prompt)
+                                    : InputHelper::getInputString(prompt);
+            if (optional && value.find_first_not_of(" \t\v\f") == string::npos) return "";
+            bool valid = value.size() == 16 && value[4] == '-' && value[7] == '-' &&
+                         value[10] == ' ' && value[13] == ':';
+            if (valid)
+            {
+                for (size_t i = 0; i < value.size(); ++i)
+                {
+                    if (i == 4 || i == 7 || i == 10 || i == 13) continue;
+                    if (value[i] < '0' || value[i] > '9') valid = false;
+                }
+            }
+            if (valid && Validator::isValidDate(value.substr(0, 10)) &&
+                         Validator::isValidTime(value.substr(11, 5))) return value;
+            cout << "[Error] Invalid date/time. Use yyyy-mm-dd HH:mm. Please enter again.\n";
+        }
+    }
+
     void printDetail(const vector<string>& values)
     {
         TablePrinter::printSingle(widths, headers, values);
@@ -91,8 +115,15 @@ bool ScheduleMenu::inputFields(Schedule& item, bool editing)
     }
     while (true)
     {
-        string program = InputHelper::getInputText("Program name (0 to cancel): ", editing);
+        string program = editing ? InputHelper::getInputOptionalString("Program name (0 to cancel): ")
+                                 : InputHelper::getInputString("Program name (0 to cancel): ");
         if (program == "0") return false;
+        if (program.find_first_not_of(" \t\v\f") == string::npos)
+        {
+            if (editing) break;
+            cout << "[Error] Text must not be empty. Please try again.\n";
+            continue;
+        }
         try
         {
             if (!program.empty()) item.setProgramName(program);
@@ -107,13 +138,18 @@ bool ScheduleMenu::inputFields(Schedule& item, bool editing)
     string start, end;
     while (true)
     {
-        start = InputHelper::getInputDateTime("Start (yyyy-mm-dd HH:mm): ", editing);
+        start = inputScheduleDateTime("Start (yyyy-mm-dd HH:mm): ", editing);
         if (start.empty()) start = oldStart;
         // Cho nhap lai moc ket thuc, khong mat moc bat dau da nhap dung.
         while (true)
         {
-            end = InputHelper::getInputDateTime("End   (yyyy-mm-dd HH:mm): ", editing);
+            end = inputScheduleDateTime("End   (yyyy-mm-dd HH:mm): ", editing);
             if (end.empty()) end = oldEnd;
+            if (end <= start)
+            {
+                cout << "[Error] End time must be after start time. Enter the end time again.\n";
+                continue;
+            }
             try
             {
                 item.setTimeRange(start, end);
@@ -131,8 +167,9 @@ bool ScheduleMenu::inputFields(Schedule& item, bool editing)
     }
     while (true)
     {
-        string description = InputHelper::getInputText(
-            editing ? "Description (Enter: keep, '-': clear): " : "Description (optional): ", true);
+        string description = InputHelper::getInputOptionalString(
+            editing ? "Description (Enter: keep, '-': clear): " : "Description (optional): ");
+        if (description.find_first_not_of(" \t\v\f") == string::npos) description.clear();
         try
         {
             if (!editing || !description.empty())
@@ -238,7 +275,14 @@ void ScheduleMenu::deleteSchedule()
     const Schedule* item = repo.readByID(id);
     if (!item) { cout << "Schedule not found: " << id << "\n"; return; }
     printDetail(item->exportToVector());
-    if (!InputHelper::getInputConfirmation("Confirm deletion? (y/n): "))
+    string confirmation;
+    while (true)
+    {
+        confirmation = convertToUpper(InputHelper::getInputString("Confirm deletion? (y/n): "));
+        if (confirmation == "Y" || confirmation == "N") break;
+        cout << "[Error] Please enter y or n.\n";
+    }
+    if (confirmation == "N")
     {
         cout << "Deletion cancelled.\n";
         return;
