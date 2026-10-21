@@ -51,12 +51,6 @@ private:
     void updateContract();
     void deleteContract();
 
-    void updatePackage(Contract *contract);
-    void updateSetTopBox(Contract *contract);
-    void extendContract(Contract *contract);
-    void updateAddress(Contract *contract);
-    void updateStatus(Contract *contract);
-
 protected:
     void printMenu() override;
     void handleChoice(int choice) override;

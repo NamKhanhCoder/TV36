@@ -212,82 +212,15 @@ void ChannelCategoryMenu::sortCategoriesByName()
     InputHelper::getInputOptionalString("Press Enter to go back...");
 }
 
-// MODULAR UPDATE SUB-FUNCTIONS =====================================================================
-void ChannelCategoryMenu::updateName(ChannelCategory *category)
-{
-    cout << "\n--- Update Category Name ---\n";
-    cout << "Current Name: " << category->getName() << "\n";
-
-    while (true)
-    {
-        string newName = InputHelper::getInputOptionalString("Enter new name (or leave empty to cancel): ");
-        if (newName.empty())
-        {
-            cout << "[Notice] Name update cancelled.\n";
-            return;
-        }
-
-        // Neu nhap trung voi chinh ten hien tai
-        if (convertToUpper(newName) == convertToUpper(category->getName()))
-        {
-            cout << "[Notice] Name is unchanged.\n";
-            return;
-        }
-
-        // Kiem tra trung voi cac the loai khac
-        if (isNameExisted(newName, category->getID()))
-        {
-            cout << "[Error] Category name already exists: \"" << newName << "\". Please try another name.\n";
-            continue;
-        }
-
-        try
-        {
-            category->setName(newName);
-            cout << "[Success] Category name updated successfully to: \"" << newName << "\"!\n";
-            break;
-        }
-        catch (const exception &e)
-        {
-            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
-        }
-    }
-}
-
-void ChannelCategoryMenu::updateDescription(ChannelCategory *category)
-{
-    cout << "\n--- Update Category Description ---\n";
-    cout << "Current Description: " << category->getDescription() << "\n";
-
-    while (true)
-    {
-        string newDesc = InputHelper::getInputOptionalString("Enter new description (or leave empty to keep current): ");
-        if (newDesc.empty())
-        {
-            cout << "[Notice] Description unchanged.\n";
-            return;
-        }
-
-        try
-        {
-            category->setDescription(newDesc);
-            cout << "[Success] Description updated successfully!\n";
-            break;
-        }
-        catch (const exception &e)
-        {
-            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
-        }
-    }
-}
-
 void ChannelCategoryMenu::updateChannelCategory()
 {
     SystemHelper::clearScreen();
     cout << "===== Update Channel Category =====\n";
     printCategoryTable(repo.exportToVector());
 
-    string inputID = convertToUpper(InputHelper::getInputString("Enter Category ID to edit: "));
+    string inputID = convertToUpper(InputHelper::getInputString("Enter Category ID to edit (or 0 to cancel): "));
+    if (inputID == "0") return;
+
     ChannelCategory *category = repo.readByID(inputID);
 
     if (category == nullptr)
@@ -300,42 +233,74 @@ void ChannelCategoryMenu::updateChannelCategory()
     vector<int> widths = {6, 20, 45};
     vector<string> headers = {"ID", "Category Name", "Description"};
 
+    SystemHelper::clearScreen();
+    cout << "===== Current Information for Category: " << category->getID() << " =====\n";
+    TablePrinter::printSingle(widths, headers, category->exportToVector());
+
+    cout << "\n(Leave field empty / Press Enter to keep current value)\n";
+
+    // 1. Update Name
     while (true)
     {
-        SystemHelper::clearScreen();
-        cout << "===== Current Information for Category: " << category->getID() << " =====\n";
-        TablePrinter::printSingle(widths, headers, category->exportToVector());
-
-        cout << "\nWhat would you like to update?\n";
-        cout << "1. Update Name\n";
-        cout << "2. Update Description\n";
-        cout << "0. Save & Exit\n";
-
-        int choice = InputHelper::getInputInt("Select an option (0-2): ");
-        if (choice == 0)
+        string newName = InputHelper::getInputOptionalString("New Name [" + category->getName() + "]: ");
+        if (newName.empty() || convertToUpper(newName) == convertToUpper(category->getName()))
         {
-            repo.writeToFile();
-            cout << "\n[Success] Category changes saved successfully to file!\n";
-            LOG("[ChannelCategoryMenu] Category " + category->getID() + " updated and saved");
-            InputHelper::getInputOptionalString("Press Enter to go back...");
-            break;
+            break; // Keep current value
         }
 
-        switch (choice)
+        if (isNameExisted(newName, category->getID()))
         {
-        case 1:
-            updateName(category);
-            break;
-        case 2:
-            updateDescription(category);
-            break;
-        default:
-            cout << "[Error] Invalid option! Please select 0, 1, or 2.\n";
-            break;
+            cout << "[Error] Category name already exists: \"" << newName << "\". Please try another name.\n";
+            continue;
         }
 
-        InputHelper::getInputOptionalString("Press Enter to continue...");
+        try
+        {
+            category->setName(newName);
+            cout << "[Notice] Name updated to: \"" << newName << "\"\n";
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
     }
+
+    // 2. Update Description
+    while (true)
+    {
+        string newDesc = InputHelper::getInputOptionalString("New Description [" + category->getDescription() + "]: ");
+        if (newDesc.empty())
+        {
+            break; // Keep current value
+        }
+
+        try
+        {
+            category->setDescription(newDesc);
+            cout << "[Notice] Description updated.\n";
+            break;
+        }
+        catch (const exception &e)
+        {
+            cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+        }
+    }
+
+    // Save immediately to file
+    if (repo.update(*category))
+    {
+        repo.writeToFile();
+        LOG("[ChannelCategoryMenu] Category " + category->getID() + " updated and saved");
+        cout << "\n[Success] Category updated and saved successfully!\n";
+    }
+    else
+    {
+        LOG("[ChannelCategoryMenu] Failed to update category " + category->getID());
+        cout << "\n[Error] Failed to update category!\n";
+    }
+
+    InputHelper::getInputOptionalString("Press Enter to go back...");
 }
 
 void ChannelCategoryMenu::deleteChannelCategory()

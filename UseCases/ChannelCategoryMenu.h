@@ -33,9 +33,6 @@ private:
     void updateChannelCategory();
     void deleteChannelCategory();
 
-    void updateName(ChannelCategory *category);
-    void updateDescription(ChannelCategory *category);
-
 protected:
     void printMenu() override;
     void handleChoice(int choice) override;
