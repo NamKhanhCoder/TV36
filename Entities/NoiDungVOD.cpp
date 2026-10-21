@@ -100,7 +100,7 @@ void NoiDungVOD::setMoTa(string moTa)
 }
 void NoiDungVOD::setNamPhatHanh(int namPhatHanh)
 {
-    if (namPhatHanh >= 1950 && namPhatHanh <= 2026)
+    if (namPhatHanh >= 1950 && namPhatHanh <= Date::getCurrentDate().getYear())
     {
         this->namPhatHanh = namPhatHanh;
     }
