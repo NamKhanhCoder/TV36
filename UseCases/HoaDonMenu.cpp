@@ -717,7 +717,8 @@ void HoaDonMenu::handleChoice(int choice)
 }
 // Hien thi giao dien menu quan ly hoa don
 void HoaDonMenu::printMenu()
-{
+{   
+    SystemHelper::clearScreen();
     cout << "=====Invoice Management=====" << endl;
     cout << "1. Add new invoice" << endl;
     cout << "2. View all invoices" << endl;
