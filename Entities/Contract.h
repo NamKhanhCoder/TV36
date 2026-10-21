@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 7: Quan ly Hop dong (Contract)
+// ===============================================================
 #pragma once
 #include "Entity.h"
 #include "Utils/Date.h"
@@ -57,4 +64,6 @@ public:
     vector<string> exportToVector() const override;
 
     void parseFromString(const string &data) override;
+
+    bool operator<(const Contract &other) const;
 };

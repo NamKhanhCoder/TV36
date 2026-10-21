@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 3: Quan ly The loai kenh (Channel Category)
+// ===============================================================
 #include "ChannelCategory.h"
 #include "Utils/StringHelper.h"
 #include "Utils/Validator.h"
@@ -13,11 +20,15 @@ void ChannelCategory::setName(const string &name)
 {
     if (name.empty())
         throw invalid_argument("[ChannelCategory] Category name can not be empty!");
+    if (name.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[ChannelCategory] Category name cannot contain '|' or newline characters!");
     this->name = name;
 }
 
 void ChannelCategory::setDescription(const string &description)
 {
+    if (description.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[ChannelCategory] Category description cannot contain '|' or newline characters!");
     this->description = description;
 }
 
@@ -63,4 +74,9 @@ vector<string> ChannelCategory::exportToVector() const
 {
     vector<string> result = {id, name, description};
     return result;
+}
+
+bool ChannelCategory::operator<(const ChannelCategory &other) const
+{
+    return this->name < other.name;
 }

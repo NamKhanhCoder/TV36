@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 7: Quan ly Hop dong (Contract)
+// ===============================================================
 #include "Contract.h"
 #include "Utils/StringHelper.h"
 #include "Utils/Validator.h"
@@ -49,18 +56,24 @@ void Contract::set_customerID(const string &customerID)
 {
     if (customerID.empty())
         throw invalid_argument("[Contract] Customer ID can not be empty!");
+    if (customerID.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Contract] Customer ID cannot contain '|' or newline characters!");
     this->customerID = customerID;
 }
 void Contract::set_packageID(const string &packageID)
 {
     if (packageID.empty())
         throw invalid_argument("[Contract] Package ID can not be empty!");
+    if (packageID.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Contract] Package ID cannot contain '|' or newline characters!");
     this->packageID = packageID;
 }
 void Contract::set_stbID(const string &stbID)
 {
     if (stbID.empty())
         throw invalid_argument("[Contract] Set-Top Box ID can not be empty!");
+    if (stbID.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Contract] Set-Top Box ID cannot contain '|' or newline characters!");
     this->stbID = stbID;
 }
 void Contract::set_signDate(const Date &signDate)
@@ -79,12 +92,16 @@ void Contract::set_installationAddress(const string &installationAddress)
 {
     if (installationAddress.empty())
         throw invalid_argument("[Contract] Installation address can not be empty!");
+    if (installationAddress.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Contract] Installation address cannot contain '|' or newline characters!");
     this->installationAddress = installationAddress;
 }
 void Contract::set_monthlyFee(const string &monthlyFee)
 {
     if (monthlyFee.empty())
         throw invalid_argument("[Contract] Monthly fee can not be empty!");
+    if (monthlyFee.find_first_of("|\r\n") != string::npos)
+        throw invalid_argument("[Contract] Monthly fee cannot contain '|' or newline characters!");
     this->monthlyFee = monthlyFee;
 }
 void Contract::set_status(ContractStatus status)
@@ -223,4 +240,11 @@ void Contract::parseFromString(const string &data)
     this->installationAddress = words[7];
     this->monthlyFee = words[8];
     this->status = parsedStatus;
+}
+
+bool Contract::operator<(const Contract &other) const
+{
+    if (this->startDate != other.startDate)
+        return this->startDate < other.startDate;
+    return this->id < other.id;
 }

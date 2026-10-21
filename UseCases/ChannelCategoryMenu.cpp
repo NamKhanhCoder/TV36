@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 3: Quan ly The loai kenh (Channel Category Menu)
+// ===============================================================
 #include "ChannelCategoryMenu.h"
 #include "Entities/ChannelCategory.h"
 #include "Utils/SystemHelper.h"
@@ -5,6 +12,7 @@
 #include "Utils/TablePrinter.h"
 #include "Utils/InputHelper.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -134,6 +142,7 @@ void ChannelCategoryMenu::readChannelCategory()
         cout << "===== View Channel Categories =====\n";
         cout << "1. View all categories\n";
         cout << "2. Search category by ID\n";
+        cout << "3. Sort categories by Name (A - Z)\n";
         cout << "0. Go back\n";
 
         int choice = InputHelper::getInputInt("Select an option: ");
@@ -165,12 +174,42 @@ void ChannelCategoryMenu::readChannelCategory()
             LOG("[ChannelCategoryMenu] Category search completed");
             InputHelper::getInputOptionalString("Press Enter to go back...");
         }
+        else if (choice == 3)
+        {
+            sortCategoriesByName();
+        }
         else
         {
             cout << "[Error] Invalid option! Please choose again.\n";
             InputHelper::getInputOptionalString("Press Enter to go back...");
         }
     }
+}
+
+void ChannelCategoryMenu::sortCategoriesByName()
+{
+    SystemHelper::clearScreen();
+    cout << "===== Categories Sorted by Name (A - Z) =====\n";
+    vector<ChannelCategory> list = repo.readAll();
+    if (list.empty())
+    {
+        cout << "[Notice] No categories available to display.\n";
+        InputHelper::getInputOptionalString("Press Enter to go back...");
+        return;
+    }
+
+    sort(list.begin(), list.end()); // Su dung operator< da duoc overload theo name (A - Z)
+
+    vector<vector<string>> data;
+    for (const auto &item : list)
+    {
+        data.push_back(item.exportToVector());
+    }
+
+    printCategoryTable(data);
+    cout << "Total: " << list.size() << " category(ies)\n";
+    LOG("[ChannelCategoryMenu] Categories sorted by name printed");
+    InputHelper::getInputOptionalString("Press Enter to go back...");
 }
 
 // MODULAR UPDATE SUB-FUNCTIONS =====================================================================

@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 7: Quan ly Hop dong (Contract Menu)
+// ===============================================================
 #pragma once
 #include "UseCases/BaseMenu.h"
 #include "Repositories/Repository.h"
@@ -40,6 +47,7 @@ private:
 
     void createContract();
     void readContract();
+    void sortContracts();
     void updateContract();
     void deleteContract();
 

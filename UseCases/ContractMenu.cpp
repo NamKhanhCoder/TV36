@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 7: Quan ly Hop dong (Contract Menu)
+// ===============================================================
 #include "ContractMenu.h"
 #include "Entities/Contract.h"
 #include "Utils/SystemHelper.h"
@@ -5,6 +12,7 @@
 #include "Utils/TablePrinter.h"
 #include "Utils/InputHelper.h"
 #include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -323,6 +331,7 @@ void ContractMenu::readContract()
         cout << "===== View Contracts =====\n";
         cout << "1. View all contracts\n";
         cout << "2. Search contract by ID\n";
+        cout << "3. Sort contracts\n";
         cout << "0. Go back\n";
 
         int choice = InputHelper::getInputInt("Select an option: ");
@@ -354,11 +363,75 @@ void ContractMenu::readContract()
             LOG("[ContractMenu] Search contract completed");
             InputHelper::getInputOptionalString("Press Enter to go back...");
         }
+        else if (choice == 3)
+        {
+            sortContracts();
+        }
         else
         {
             cout << "[Error] Invalid option! Please choose again.\n";
             InputHelper::getInputOptionalString("Press Enter to go back...");
         }
+    }
+}
+
+void ContractMenu::sortContracts()
+{
+    while (true)
+    {
+        SystemHelper::clearScreen();
+        cout << "===== Sort Contracts =====\n";
+        cout << "1. Sort by Start Date (Newest -> Oldest)\n";
+        cout << "2. Sort by Monthly Fee (Highest -> Lowest)\n";
+        cout << "0. Go back\n";
+
+        int choice = InputHelper::getInputInt("Select an option (0-2): ");
+        if (choice == 0) return;
+
+        vector<Contract> list = repo.readAll();
+        if (list.empty())
+        {
+            cout << "[Notice] No contracts available to display.\n";
+            InputHelper::getInputOptionalString("Press Enter to go back...");
+            return;
+        }
+
+        SystemHelper::clearScreen();
+        if (choice == 1)
+        {
+            cout << "===== Contracts Sorted by Start Date (Newest -> Oldest) =====\n";
+            sort(list.begin(), list.end(), [](const Contract &a, const Contract &b) {
+                return b.get_startDate() < a.get_startDate();
+            });
+            LOG("[ContractMenu] Contracts sorted by start date (Newest -> Oldest)");
+        }
+        else if (choice == 2)
+        {
+            cout << "===== Contracts Sorted by Monthly Fee (Highest -> Lowest) =====\n";
+            sort(list.begin(), list.end(), [](const Contract &a, const Contract &b) {
+                long long feeA = 0, feeB = 0;
+                try { feeA = stoll(a.get_monthlyFee()); } catch (...) {}
+                try { feeB = stoll(b.get_monthlyFee()); } catch (...) {}
+                return feeA > feeB;
+            });
+            LOG("[ContractMenu] Contracts sorted by monthly fee (Highest -> Lowest)");
+        }
+        else
+        {
+            cout << "[Error] Invalid option! Please choose again.\n";
+            InputHelper::getInputOptionalString("Press Enter to go back...");
+            continue;
+        }
+
+        vector<vector<string>> data;
+        for (const auto &c : list)
+        {
+            data.push_back(c.exportToVector());
+        }
+
+        printContractTable(data);
+        cout << "Total: " << list.size() << " record(s)\n";
+        InputHelper::getInputOptionalString("Press Enter to continue...");
     }
 }
 

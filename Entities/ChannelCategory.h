@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Pham Quoc Trung (B24DCVT361)
+// Use Case 3: Quan ly The loai kenh (Channel Category)
+// ===============================================================
 #pragma once
 #include "Entity.h"
 #include <string>
@@ -23,4 +30,6 @@ public:
 
     string exportToString() const override;
     vector<string> exportToVector() const override;
+
+    bool operator<(const ChannelCategory &other) const;
 };
