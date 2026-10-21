@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Nguyen Hong Anh (NotaSpookyGhost)
+// Use Case 4: Cai dat CRUD kenh va cac rang buoc phu thuoc
+// ===============================================================
 #include "ChannelMenu.h"
 #include "Utils/StringHelper.h"
 #include "Utils/TablePrinter.h"

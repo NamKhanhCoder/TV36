@@ -1,3 +1,5 @@
+// Tac gia: Nguyen Hong Anh (NotaSpookyGhost)
+// Kiem thu setter va parser cua Channel/Schedule, chay rieng voi macro ben duoi.
 // The group build includes every .cpp. Enable this standalone test explicitly
 // with -DTV36_CHANNEL_SCHEDULE_TEST and compile it without the app's main.cpp.
 #ifdef TV36_CHANNEL_SCHEDULE_TEST

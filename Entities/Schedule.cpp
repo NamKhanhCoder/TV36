@@ -1,3 +1,10 @@
+// ===============================================================
+// Hoc vien Cong nghe Buu chinh Vien thong
+// Hoc phan: Ky thuat lap trinh
+// De tai 7: Quan ly dich vu truyen hinh so IPTV
+// Tac gia: Nguyen Hong Anh (NotaSpookyGhost)
+// Use Case 5: Cai dat du lieu va kiem tra hop le cua Schedule
+// ===============================================================
 #include "Schedule.h"
 #include "Utils/StringHelper.h"
 #include <algorithm>
