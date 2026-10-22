@@ -9,6 +9,7 @@
 #include "Utils/StringHelper.h"
 #include "Utils/Validator.h"
 #include <stdexcept>
+#include <cctype>
 
 // ETC --------------------------------------------------
 string ContractStatus_toString(ContractStatus status)
@@ -58,36 +59,90 @@ void Contract::set_customerID(const string &customerID)
         throw invalid_argument("[Contract] Customer ID can not be empty!");
     if (customerID.find_first_of("|\r\n") != string::npos)
         throw invalid_argument("[Contract] Customer ID cannot contain '|' or newline characters!");
+    
+    bool ok = (customerID.rfind("KH", 0) == 0 && customerID.length() >= 5);
+    if (ok)
+    {
+        for (size_t i = 2; i < customerID.length(); ++i)
+        {
+            if (!isdigit(static_cast<unsigned char>(customerID[i])))
+            {
+                ok = false;
+                break;
+            }
+        }
+    }
+    if (!ok)
+        throw invalid_argument("[Contract] Invalid Customer ID format: " + customerID);
+
     this->customerID = customerID;
 }
+
 void Contract::set_packageID(const string &packageID)
 {
     if (packageID.empty())
         throw invalid_argument("[Contract] Package ID can not be empty!");
     if (packageID.find_first_of("|\r\n") != string::npos)
         throw invalid_argument("[Contract] Package ID cannot contain '|' or newline characters!");
+
+    bool ok = (packageID.rfind("GOI", 0) == 0 && packageID.length() >= 6);
+    if (ok)
+    {
+        for (size_t i = 3; i < packageID.length(); ++i)
+        {
+            if (!isdigit(static_cast<unsigned char>(packageID[i])))
+            {
+                ok = false;
+                break;
+            }
+        }
+    }
+    if (!ok)
+        throw invalid_argument("[Contract] Invalid Package ID format: " + packageID);
+
     this->packageID = packageID;
 }
+
 void Contract::set_stbID(const string &stbID)
 {
     if (stbID.empty())
         throw invalid_argument("[Contract] Set-Top Box ID can not be empty!");
     if (stbID.find_first_of("|\r\n") != string::npos)
         throw invalid_argument("[Contract] Set-Top Box ID cannot contain '|' or newline characters!");
+
+    bool ok = (stbID.rfind("STB", 0) == 0 && stbID.length() >= 6);
+    if (ok)
+    {
+        for (size_t i = 3; i < stbID.length(); ++i)
+        {
+            if (!isdigit(static_cast<unsigned char>(stbID[i])))
+            {
+                ok = false;
+                break;
+            }
+        }
+    }
+    if (!ok)
+        throw invalid_argument("[Contract] Invalid Set-Top Box ID format: " + stbID);
+
     this->stbID = stbID;
 }
+
 void Contract::set_signDate(const Date &signDate)
 {
     this->signDate = signDate;
 }
+
 void Contract::set_startDate(const Date &startDate)
 {
     this->startDate = startDate;
 }
+
 void Contract::set_endDate(const Date &endDate)
 {
     this->endDate = endDate;
 }
+
 void Contract::set_installationAddress(const string &installationAddress)
 {
     if (installationAddress.empty())
@@ -96,16 +151,45 @@ void Contract::set_installationAddress(const string &installationAddress)
         throw invalid_argument("[Contract] Installation address cannot contain '|' or newline characters!");
     this->installationAddress = installationAddress;
 }
+
 void Contract::set_monthlyFee(const string &monthlyFee)
 {
     if (monthlyFee.empty())
         throw invalid_argument("[Contract] Monthly fee can not be empty!");
     if (monthlyFee.find_first_of("|\r\n") != string::npos)
         throw invalid_argument("[Contract] Monthly fee cannot contain '|' or newline characters!");
+
+    for (char c : monthlyFee)
+    {
+        if (!isdigit(static_cast<unsigned char>(c)))
+            throw invalid_argument("[Contract] Monthly fee must contain only digits: " + monthlyFee);
+    }
+    if (monthlyFee.length() > 1 && monthlyFee[0] == '0')
+        throw invalid_argument("[Contract] Monthly fee cannot have leading zero: " + monthlyFee);
+
+    long long feeVal = 0;
+    try
+    {
+        feeVal = stoll(monthlyFee);
+    }
+    catch (...)
+    {
+        throw invalid_argument("[Contract] Monthly fee value out of range: " + monthlyFee);
+    }
+
+    if (feeVal <= 0)
+        throw invalid_argument("[Contract] Monthly fee must be greater than 0: " + monthlyFee);
+
     this->monthlyFee = monthlyFee;
 }
+
 void Contract::set_status(ContractStatus status)
 {
+    if (status != ContractStatus::ACTIVE && status != ContractStatus::SUSPENDED &&
+        status != ContractStatus::CANCELED && status != ContractStatus::EXPIRED)
+    {
+        throw invalid_argument("[Contract] Invalid contract status value!");
+    }
     this->status = status;
 }
 
@@ -147,13 +231,14 @@ ContractStatus Contract::get_status() const
     return status;
 }
 
-//OPS
+// OPS
 string Contract::exportToString() const
 {
     return id + "|" + customerID + "|" + packageID + "|" + stbID + "|" 
          + signDate.toString() + "|" + startDate.toString() + "|" + endDate.toString() + "|" 
          + installationAddress + "|" + monthlyFee + "|" + ContractStatus_toString(status);
 }
+
 vector<string> Contract::exportToVector() const
 {
     vector<string> result = 
@@ -171,6 +256,7 @@ vector<string> Contract::exportToVector() const
     };
     return result;
 }
+
 void Contract::parseFromString(const string &data)
 {
     vector<string> words = splitString(data);
@@ -180,25 +266,27 @@ void Contract::parseFromString(const string &data)
         throw invalid_argument("[Contract] Invalid field count in line: " + data);
     }
 
-    if (!Validator::isValidID(words[0], "HD", 5))
+    bool validID = (words[0].rfind("HD", 0) == 0 && words[0].length() >= 5);
+    if (validID)
+    {
+        for (size_t i = 2; i < words[0].length(); ++i)
+        {
+            if (!isdigit(static_cast<unsigned char>(words[0][i])))
+            {
+                validID = false;
+                break;
+            }
+        }
+    }
+    if (!validID)
     {
         throw invalid_argument("[Contract] Invalid Contract ID: " + words[0]);
     }
 
-    if (!Validator::isValidID(words[1], "KH", 5))
-    {
-        throw invalid_argument("[Contract] Invalid Customer ID: " + words[1]);
-    }
-
-    if (!Validator::isValidID(words[2], "GOI", 6))
-    {
-        throw invalid_argument("[Contract] Invalid Package ID: " + words[2]);
-    }
-
-    if (!Validator::isValidID(words[3], "STB", 6))
-    {
-        throw invalid_argument("[Contract] Invalid Set-Top Box ID: " + words[3]);
-    }
+    // Kiem tra hop le cua cac khoa ngoai
+    set_customerID(words[1]);
+    set_packageID(words[2]);
+    set_stbID(words[3]);
 
     Date parsedSignDate(words[4]);
     Date parsedStartDate(words[5]);
@@ -214,32 +302,25 @@ void Contract::parseFromString(const string &data)
         throw invalid_argument("[Contract] End date must be after start date: " + words[6] + " <= " + words[5]);
     }
 
-    if (words[7].empty())
+    if (parsedEndDate.getYear() > 2100)
     {
-        throw invalid_argument("[Contract] Installation address cannot be empty");
+        throw invalid_argument("[Contract] End date year exceeds 2100: " + words[6]);
     }
 
-    if (!Validator::isValidInt(words[8]) || stoll(words[8]) <= 0)
-    {
-        throw invalid_argument("[Contract] Invalid monthly fee: " + words[8]);
-    }
+    set_installationAddress(words[7]);
+    set_monthlyFee(words[8]);
 
     string stStr = words[9];
     if (!stStr.empty() && stStr.back() == '\r')
         stStr.pop_back();
 
     ContractStatus parsedStatus = stringToStatus(stStr);
+    set_status(parsedStatus);
 
     this->id = words[0];
-    this->customerID = words[1];
-    this->packageID = words[2];
-    this->stbID = words[3];
     this->signDate = parsedSignDate;
     this->startDate = parsedStartDate;
     this->endDate = parsedEndDate;
-    this->installationAddress = words[7];
-    this->monthlyFee = words[8];
-    this->status = parsedStatus;
 }
 
 bool Contract::operator<(const Contract &other) const

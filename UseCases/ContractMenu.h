@@ -45,6 +45,7 @@ private:
     ContractStatus inputStatus();
     ContractStatus inputOptionalStatus(ContractStatus currentStatus);
 
+    // Cac chuc nang CRUD co kiem soat toan ven du lieu
     void createContract();
     void readContract();
     void sortContracts();
@@ -52,9 +53,11 @@ private:
     void deleteContract();
 
 protected:
+    // Hien thi menu va xu ly lua chon dieu huong
     void printMenu() override;
     void handleChoice(int choice) override;
 
 public:
+    // Khoi tao menu hop dong va nap du lieu tu cac kho luu tru
     ContractMenu();
 };

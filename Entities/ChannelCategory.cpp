@@ -9,6 +9,7 @@
 #include "Utils/StringHelper.h"
 #include "Utils/Validator.h"
 #include <stdexcept>
+#include <cctype>
 
 ChannelCategory::ChannelCategory(const string &id, const string &name, const string &description) : Entity(id)
 {
@@ -22,6 +23,8 @@ void ChannelCategory::setName(const string &name)
         throw invalid_argument("[ChannelCategory] Category name can not be empty!");
     if (name.find_first_of("|\r\n") != string::npos)
         throw invalid_argument("[ChannelCategory] Category name cannot contain '|' or newline characters!");
+    if (name.length() > 100)
+        throw invalid_argument("[ChannelCategory] Category name cannot exceed 100 characters!");
     this->name = name;
 }
 
@@ -29,6 +32,8 @@ void ChannelCategory::setDescription(const string &description)
 {
     if (description.find_first_of("|\r\n") != string::npos)
         throw invalid_argument("[ChannelCategory] Category description cannot contain '|' or newline characters!");
+    if (description.length() > 500)
+        throw invalid_argument("[ChannelCategory] Category description cannot exceed 500 characters!");
     this->description = description;
 }
 
@@ -51,7 +56,19 @@ void ChannelCategory::parseFromString(const string &data)
         throw invalid_argument("[ChannelCategory] Invalid field count in line: " + data);
     }
 
-    if (!Validator::isValidID(words[0], "TL", 5))
+    bool validID = (words[0].rfind("TL", 0) == 0 && words[0].length() >= 5);
+    if (validID)
+    {
+        for (size_t i = 2; i < words[0].length(); ++i)
+        {
+            if (!isdigit(static_cast<unsigned char>(words[0][i])))
+            {
+                validID = false;
+                break;
+            }
+        }
+    }
+    if (!validID)
     {
         throw invalid_argument("[ChannelCategory] Invalid Category ID: " + words[0]);
     }

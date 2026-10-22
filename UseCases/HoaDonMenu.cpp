@@ -79,6 +79,7 @@ void HoaDonMenu::themHoaDon()
         }
     }
     string maKhachHang = pcontract->get_customerID();
+    // Lay thong tin hop dong tu repoContract de tu dong trich xuat ma khach hang, dam bao rang buoc toan ven khoa ngoai
     hoaDonMoi.setMaKhachHang(maKhachHang);
     cout << "Customer representative: " << maKhachHang << endl;
     Date ngayLap = Date::getCurrentDate();
@@ -87,7 +88,6 @@ void HoaDonMenu::themHoaDon()
         cout << "The date of issuance cannot be later than the end date of contract, please try again!" << endl;
         return;
     }
-    // Lay thong tin hop dong tu repoContract de tu dong trich xuat ma khach hang, dam bao rang buoc toan ven khoa ngoai
     else
         hoaDonMoi.setNgayLap(ngayLap);
     while (true)
@@ -156,6 +156,7 @@ void HoaDonMenu::themHoaDon()
         {
             cout << "[Error] Failed to save invoice to file: " << e.what() << endl;
             LOG("[INVOICEMenu] File write failed: " + string(e.what()));
+            repoHoaDon.loadFromFile();
         }
     }
     else
@@ -694,7 +695,7 @@ void HoaDonMenu::xoaHoaDon()
                 cout << "Invoice deleted successfully!" << endl;
                 LOG("[INVOICEMenu] Invoice deleted successfully, ID: " + id);
             }
-            catch(const exception &e)
+            catch (const exception &e)
             {
                 cout << "[Error] Failed to save deletion to file: " << e.what() << endl;
                 repoHoaDon.loadFromFile();

@@ -121,9 +121,18 @@ void ChannelCategoryMenu::createChannelCategory()
     ChannelCategory newCategory(repo.generateNextID(), temp.getName(), temp.getDescription());
     if (repo.create(newCategory))
     {
-        repo.writeToFile();
-        LOG("[ChannelCategoryMenu] Category created successfully, ID: " + newCategory.getID());
-        cout << "\n[Success] Channel category created successfully! ID: " << newCategory.getID() << "\n";
+        try
+        {
+            repo.writeToFile();
+            LOG("[ChannelCategoryMenu] Category created successfully, ID: " + newCategory.getID());
+            cout << "\n[Success] Channel category created successfully! ID: " << newCategory.getID() << "\n";
+        }
+        catch (const exception &e)
+        {
+            repo.loadFromFile();
+            LOG("[ChannelCategoryMenu] Write failed on create, rolling back: " + string(e.what()));
+            cout << "\n[Error] Failed to write new category to file! RAM rolled back.\n";
+        }
     }
     else
     {
@@ -239,16 +248,18 @@ void ChannelCategoryMenu::updateChannelCategory()
 
     cout << "\n(Leave field empty / Press Enter to keep current value)\n";
 
+    ChannelCategory candidate = *category;
+
     // 1. Update Name
     while (true)
     {
-        string newName = InputHelper::getInputOptionalString("New Name [" + category->getName() + "]: ");
-        if (newName.empty() || convertToUpper(newName) == convertToUpper(category->getName()))
+        string newName = InputHelper::getInputOptionalString("New Name [" + candidate.getName() + "]: ");
+        if (newName.empty() || convertToUpper(newName) == convertToUpper(candidate.getName()))
         {
             break; // Keep current value
         }
 
-        if (isNameExisted(newName, category->getID()))
+        if (isNameExisted(newName, candidate.getID()))
         {
             cout << "[Error] Category name already exists: \"" << newName << "\". Please try another name.\n";
             continue;
@@ -256,7 +267,7 @@ void ChannelCategoryMenu::updateChannelCategory()
 
         try
         {
-            category->setName(newName);
+            candidate.setName(newName);
             cout << "[Notice] Name updated to: \"" << newName << "\"\n";
             break;
         }
@@ -269,7 +280,7 @@ void ChannelCategoryMenu::updateChannelCategory()
     // 2. Update Description
     while (true)
     {
-        string newDesc = InputHelper::getInputOptionalString("New Description [" + category->getDescription() + "]: ");
+        string newDesc = InputHelper::getInputOptionalString("New Description [" + candidate.getDescription() + "]: ");
         if (newDesc.empty())
         {
             break; // Keep current value
@@ -277,7 +288,7 @@ void ChannelCategoryMenu::updateChannelCategory()
 
         try
         {
-            category->setDescription(newDesc);
+            candidate.setDescription(newDesc);
             cout << "[Notice] Description updated.\n";
             break;
         }
@@ -287,16 +298,25 @@ void ChannelCategoryMenu::updateChannelCategory()
         }
     }
 
-    // Save immediately to file
-    if (repo.update(*category))
+    // Save immediately to file with candidate clone and rollback protection
+    if (repo.update(candidate))
     {
-        repo.writeToFile();
-        LOG("[ChannelCategoryMenu] Category " + category->getID() + " updated and saved");
-        cout << "\n[Success] Category updated and saved successfully!\n";
+        try
+        {
+            repo.writeToFile();
+            LOG("[ChannelCategoryMenu] Category " + candidate.getID() + " updated and saved");
+            cout << "\n[Success] Category updated and saved successfully!\n";
+        }
+        catch (const exception &e)
+        {
+            repo.loadFromFile();
+            LOG("[ChannelCategoryMenu] Write failed on update, rolling back: " + string(e.what()));
+            cout << "\n[Error] Failed to save changes to file! RAM rolled back.\n";
+        }
     }
     else
     {
-        LOG("[ChannelCategoryMenu] Failed to update category " + category->getID());
+        LOG("[ChannelCategoryMenu] Failed to update category " + candidate.getID());
         cout << "\n[Error] Failed to update category!\n";
     }
 
@@ -338,9 +358,18 @@ void ChannelCategoryMenu::deleteChannelCategory()
     {
         if (repo.remove(targetID))
         {
-            repo.writeToFile();
-            cout << "[Success] Category deleted successfully, ID: " << targetID << "\n";
-            LOG("[ChannelCategoryMenu] Category deleted successfully, ID: " + targetID);
+            try
+            {
+                repo.writeToFile();
+                cout << "[Success] Category deleted successfully, ID: " << targetID << "\n";
+                LOG("[ChannelCategoryMenu] Category deleted successfully, ID: " + targetID);
+            }
+            catch (const exception &e)
+            {
+                repo.loadFromFile();
+                LOG("[ChannelCategoryMenu] Write failed on delete, rolling back: " + string(e.what()));
+                cout << "\n[Error] Failed to save deletion to file! RAM rolled back.\n";
+            }
         }
         else
         {

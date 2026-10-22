@@ -26,7 +26,7 @@ private:
     bool isNameExisted(const string &name, const string &excludeID = "");
     bool hasChannelsInCategory(const string &categoryID);
 
-    // CRUD
+    // Cac chuc nang CRUD co kiem soat toan ven du lieu
     void createChannelCategory();
     void readChannelCategory();
     void sortCategoriesByName();
@@ -34,9 +34,11 @@ private:
     void deleteChannelCategory();
 
 protected:
+    // Hien thi menu va xu ly lua chon dieu huong
     void printMenu() override;
     void handleChoice(int choice) override;
 
 public:
+    // Khoi tao menu the loai va nap du lieu tu file
     ChannelCategoryMenu();
 };
