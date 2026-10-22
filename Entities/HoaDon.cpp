@@ -7,6 +7,7 @@
 // ===============================================================
 #include "HoaDon.h"
 #include <iostream>
+#include <cmath>
 #include "Utils/Validator.h"
 #include "Utils/StringHelper.h"
 using namespace std;
@@ -78,12 +79,26 @@ void HoaDon::setMaKhachHang(string maKhachHang)
 }
 void HoaDon::setSoTien(double soTien)
 {
-    if (soTien > 0.0)
+    // chong so vo han ( inf / -inf ) hoac ko phai so (NaN)
+    if (!std::isfinite(soTien))
     {
-        this->soTien = soTien;
+        throw invalid_argument("[INVOICE] Amount must be a finite number: " + to_string(soTien));
     }
-    else
+    if (soTien <= 0.0)
+    {
         throw invalid_argument("[INVOICE] the amount of the data is not valid: " + to_string(soTien));
+    }
+    // tien te VND la dong nguyen , ko chap nhan phan le thap phan ( chong mat tien 0.5)
+    if (std::floor(soTien) != soTien)
+    {
+        throw invalid_argument("[INVOICE] Amount cannot contain decimal fractions (VND must be integer): " + to_string(soTien));
+    }
+    // gioi han can tren la 10 ty VND
+    if (soTien > 10000000000.0)
+    {
+        throw invalid_argument("[INVOICE] Amount exceeds maximum allowed limit: " + to_string(soTien));
+    }
+    this->soTien = soTien;
 }
 void HoaDon::setNgayLap(Date ngayLap)
 {
@@ -137,7 +152,16 @@ void HoaDon::parseFromString(const string &data)
     setMaKhachHang(words[2]);
     try
     {
-        setSoTien(stod(words[3]));
+        size_t idx = 0;
+        // &idx là con tro nhan dia chi cua idx
+        // nhiem vu cua idx: sau khi stod chay xong , no se ghi vao idx so luon ki tu ma no thuc su doc (vi du nhap 1000junk thi stod chi doc duoc 1000, nen idx se la 4)
+        double soTien = stod(words[3], &idx);
+        // neu chuoi co ki tu la (1000junk) -> nem loi ngay
+        if (idx != words[3].length())
+        {
+            throw invalid_argument("[INVOICE] Invalid characters in amount: " + words[3]);
+        }
+        setSoTien(soTien);
     }
     catch (const exception &)
     {
@@ -145,30 +169,49 @@ void HoaDon::parseFromString(const string &data)
     }
     try
     {
-        setNgayLap(words[4]);
-        setHanTraTien(words[5]);
+        Date ngayLap = words[4];
+        Date hanTraTien = words[5];
+        if (ngayLap > hanTraTien)
+        {
+            throw invalid_argument("[INVOICE] Due date cannot be earlier than issuance date in: " + data);
+        }
+        setNgayLap(ngayLap);
+        setHanTraTien(hanTraTien);
     }
     catch (const exception &)
     {
         throw invalid_argument("[INVOICE] Date of issuance or due date is not a valid date in: " + data);
     }
+    Date ngayTraTien;
     if (words[6] == "NONE")
     {
-        setNgayTraTien(Date());
+        ngayTraTien = Date();
     }
     else
     {
-        try
+        ngayTraTien = Date(words[6]);
+    }
+    string trangThai = words[7];
+    if (trangThai == "Paid")
+    {
+        if (ngayTraTien.isEmpty())
         {
-            setNgayTraTien(words[6]);
+            throw invalid_argument("[INVOICE] Paid invoice must have a payment date (cannot be NONE) in: " + data);
         }
-        catch (const exception &)
+        if (ngayTraTien < ngayLap)
         {
-            throw invalid_argument("[INVOICE] Payment date is not a valid date in: " + data);
+            throw invalid_argument("[INVOICE] Payment date cannot be earlier than issuance date in: " + data);
         }
     }
-
-    setTrangThai(words[7]);
+    else if (trangThai == "Unpaid")
+    {
+        if (!ngayTraTien.isEmpty())
+        {
+            throw invalid_argument("[INVOICE] Unpaid invoice must have NONE payment date in: " + data);
+        }
+    }
+    setNgayTraTien(ngayTraTien);
+    setTrangThai(trangThai);
 }
 // Xuat cac thuoc tinh thanh vector string phuc vu in bang can cot TablePrinter
 vector<string> HoaDon::exportToVector() const

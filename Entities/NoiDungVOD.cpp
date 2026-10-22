@@ -20,7 +20,7 @@ NoiDungVOD::NoiDungVOD()
     moTa = "";
     namPhatHanh = 0;
     url = "";
-    trangThai = "";
+    trangThai = "INACTIVE";
 }
 // Cac ham getter lay gia tri thuoc tinh
 string NoiDungVOD::getTenNoiDung() const
@@ -107,8 +107,15 @@ void NoiDungVOD::setNamPhatHanh(int namPhatHanh)
         throw invalid_argument("[VOD] the release year of the data is not valid: " + to_string(namPhatHanh));
 }
 void NoiDungVOD::setUrl(string url)
-{
+{   
+    if(!url.empty() && url.find('|') == string :: npos)
+    {
         this->url = url;
+    }
+    else 
+    {
+        throw invalid_argument("[VOD] The URL of the data is not valid: " + url);
+    }
 }
 void NoiDungVOD::setTrangThai(string trangThai)
 {
@@ -138,12 +145,24 @@ void NoiDungVOD::parseFromString(const string &data)
 
     try
     {
-        setThoiLuong(stoi(words[3]));
-        setNamPhatHanh(stoi(words[5]));
+        size_t idx3 = 0;
+        size_t idx5 = 0;
+        int thoiLuong = stoi(words[3], &idx3);
+        int namPhatHanh = stoi(words[5], &idx5);
+        if (idx3 != words[3].length())
+        {
+            throw invalid_argument("[VOD] Invalid characters in duration(minutes): " + words[3]);
+        }
+        setThoiLuong(thoiLuong);
+        if (idx5 != words[5].length())
+        {
+            throw invalid_argument("[VOD] Invalid characters in release year: " + words[5]);
+        }
+        setNamPhatHanh(namPhatHanh);
     }
-    catch(const exception &)
+    catch (const exception &e)
     {
-        throw invalid_argument("[VOD] Duration or Release Year is not a valid number in: " + data);
+        throw invalid_argument(string("[VOD] ") + e.what() + " in: " + data);
     }
     setMoTa(words[4]);
     setUrl(words[6]);
