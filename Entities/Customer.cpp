@@ -29,14 +29,14 @@ void Customer::setName(const string &name)
         throw invalid_argument("[Customer] Customer name must not contain '|' or line breaks!");
     this->name = name;
 }
-
+//==================================================Show on slide 8
 void Customer::setPhone(const string &phone)
 {
     if (!Validator::isValidPhone(phone))
         throw invalid_argument("[Customer] Invalid phone number (must be 10 digits and start with 0)!");
     this->phone = phone;
 }
-
+//==================================================
 void Customer::setEmail(const string &email)
 {
     if (!Validator::isValidEmail(email))

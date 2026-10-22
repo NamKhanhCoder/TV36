@@ -339,7 +339,7 @@ Date InputHelper::getInputDate(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (dd/mm/yyyy): " << endl;
+        cout << message <<endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 
@@ -385,7 +385,7 @@ Date InputHelper::getInputOptionalDate(const string &message)
     string input;
     while (true)
     {
-        cout << message << " (dd/mm/yyyy): " << endl;
+        cout << message << endl;
         getline(cin, input);
         input = trim_end_spaces(input);
 

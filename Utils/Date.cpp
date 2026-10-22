@@ -200,11 +200,12 @@ Date Date::getCurrentDate()
 }
 
 //operators 
+//==================================================Show on slide 8
 bool Date::operator==(const Date& other) const
 {
     return year == other.year && month == other.month && day == other.day;
 }
-
+//==================================================Show on slide 8
 bool Date::operator!=(const Date& other) const
 {
     return !(*this == other);

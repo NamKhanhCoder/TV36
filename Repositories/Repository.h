@@ -104,6 +104,7 @@ protected:
     int id_count;
 
 public:
+    //==================================================Show on slide 9
     string generateNextID()
     {
         this->id_count++;
@@ -115,6 +116,7 @@ public:
         }
         return id_prefix + padding(id_count, 3); // KH001, KH002...
     }
+    //==================================================
     // 1. Constructor
     Repository(const string &path, const string &counter_path, const string &id_prefix) // initialize with directory
     {

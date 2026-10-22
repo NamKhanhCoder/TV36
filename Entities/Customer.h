@@ -36,7 +36,6 @@ public:
 
     string exportToString() const override;
     vector<string> exportToVector() const override;
-
     void parseFromString(const string &data) override;
     
     bool operator<(const Customer &other) const;

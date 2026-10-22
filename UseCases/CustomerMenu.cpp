@@ -59,6 +59,7 @@ void CustomerMenu::createCustomer()
     }
 
     // 2. Phone Number
+    //==================================================Show on slide 8
     while (true)
     {
         string phone = InputHelper::getInputPhone("Enter phone number (10 digits, starts with 0): ");
@@ -73,6 +74,7 @@ void CustomerMenu::createCustomer()
             LOG("[CustomerMenu] Invalid Phone input during creation: " + string(e.what()));
         }
     }
+    //==================================================
 
     // 3. Email
     while (true)
