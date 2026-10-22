@@ -6,6 +6,7 @@
 // Chuong trinh chinh (Main Application & Tich hop he thong)
 // ===============================================================
 #include <iostream>
+#include <stdexcept>
 #include "UseCases/CustomerMenu.h"
 #include "UseCases/SetTopBoxMenu.h"
 #include "UseCases/ChannelCategoryMenu.h"
@@ -27,97 +28,115 @@ int main()
     {
         SystemHelper::clearScreen();
         cout << "========================================================\n";
-        cout << "           HE THONG QUAN LY TRUYEN HINH IPTV            \n";
+        cout << "              IPTV MANAGEMENT SYSTEM                    \n";
         cout << "========================================================\n\n";
-        cout << " 1. Quan ly Khach hang (Customer Menu)\n";
-        cout << " 2. Quan ly Thiet bi Set-top Box (STB Menu)\n";
-        cout << " 3. Quan ly The loai kenh (Channel Category Menu)\n";
-        cout << " 4. Quan ly Kenh truyen hinh (Channel Menu)\n";
-        cout << " 5. Quan ly Lich phat song (Broadcast Schedule Menu)\n";
-        cout << " 6. Quan ly Goi kenh (Package Menu)\n";
-        cout << " 7. Quan ly Hop dong (Contract Menu)\n";
-        cout << " 8. Quan ly Hoa don (Invoice Menu)\n";
-        cout << " 9. Quan ly Noi dung VOD (VOD Content Menu)\n";
-        cout << "10. Quan ly Phieu ho tro ky thuat (Support Ticket Menu)\n";
+        cout << " 1. Customer Management (Customer Menu)\n";
+        cout << " 2. Set-top Box Device Management (STB Menu)\n";
+        cout << " 3. Channel Category Management (Category Menu)\n";
+        cout << " 4. TV Channel Management (Channel Menu)\n";
+        cout << " 5. Broadcast Schedule Management (Schedule Menu)\n";
+        cout << " 6. Channel Package Management (Package Menu)\n";
+        cout << " 7. Contract Management (Contract Menu)\n";
+        cout << " 8. Invoice Management (Invoice Menu)\n";
+        cout << " 9. VOD Content Management (VOD Menu)\n";
+        cout << "10. Support Ticket Management (Support Ticket Menu)\n";
         cout << "--------------------------------------------------------\n";
-        cout << " 0. Thoat chuong trinh\n";
+        cout << " 0. Exit Application\n";
         cout << "========================================================\n";
 
-        int choice = InputHelper::getInputInt("Nhap lua chon cua ban: ");
+        int choice = InputHelper::getInputInt("Enter your choice: ");
 
-        switch (choice)
+        try
         {
-            case 1:
+            switch (choice)
             {
-                CustomerMenu customerMenu;
-                customerMenu.run();
-                break;
+                case 1:
+                {
+                    CustomerMenu customerMenu;
+                    customerMenu.run();
+                    break;
+                }
+                case 2:
+                {
+                    SetTopBoxMenu stbMenu;
+                    stbMenu.run();
+                    break;
+                }
+                case 3:
+                {
+                    ChannelCategoryMenu categoryMenu;
+                    categoryMenu.run();
+                    break;
+                }
+                case 4:
+                {
+                    ChannelMenu channelMenu;
+                    channelMenu.run();
+                    break;
+                }
+                case 5:
+                {
+                    ScheduleMenu scheduleMenu;
+                    scheduleMenu.run();
+                    break;
+                }
+                case 6:
+                {
+                    PackageMenu pkgMenu;
+                    pkgMenu.run();
+                    break;
+                }
+                case 7:
+                {
+                    ContractMenu contractMenu;
+                    contractMenu.run();
+                    break;
+                }
+                case 8:
+                {
+                    HoaDonMenu hoaDonMenu;
+                    hoaDonMenu.run();
+                    break;
+                }
+                case 9:
+                {
+                    NoiDungVODMenu vodMenu;
+                    vodMenu.run();
+                    break;
+                }
+                case 10:
+                {
+                    SupportTicketMenu ticketMenu;
+                    ticketMenu.run();
+                    break;
+                }
+                case 0:
+                {
+                    cout << "\nThank you for using the system! Goodbye.\n";
+                    return 0;
+                }
+                default:
+                {
+                    cout << "\n[Error] Invalid choice! Please enter a number from 0 to 10.\n";
+                    InputHelper::getInputOptionalString("Press Enter to continue...");
+                    break;
+                }
             }
-            case 2:
-            {
-                SetTopBoxMenu stbMenu;
-                stbMenu.run();
-                break;
-            }
-            case 3:
-            {
-                ChannelCategoryMenu categoryMenu;
-                categoryMenu.run();
-                break;
-            }
-            case 4:
-            {
-                ChannelMenu channelMenu;
-                channelMenu.run();
-                break;
-            }
-            case 5:
-            {
-                ScheduleMenu scheduleMenu;
-                scheduleMenu.run();
-                break;
-            }
-            case 6:
-            {
-                PackageMenu pkgMenu;
-                pkgMenu.run();
-                break;
-            }
-            case 7:
-            {
-                ContractMenu contractMenu;
-                contractMenu.run();
-                break;
-            }
-            case 8:
-            {
-                HoaDonMenu hoaDonMenu;
-                hoaDonMenu.run();
-                break;
-            }
-            case 9:
-            {
-                NoiDungVODMenu vodMenu;
-                vodMenu.run();
-                break;
-            }
-            case 10:
-            {
-                SupportTicketMenu ticketMenu;
-                ticketMenu.run();
-                break;
-            }
-            case 0:
-            {
-                cout << "\nCam on ban da su dung he thong! Hen gap lai.\n";
-                return 0;
-            }
-            default:
-            {
-                cout << "\n[Loi] Lua chon khong hop le! Vui long nhap tu 0 den 10.\n";
-                InputHelper::getInputOptionalString("Nhan Enter de tiep tuc...");
-                break;
-            }
+        }
+        catch (const std::exception &ex)
+        {
+            cout << "\n========================================================\n";
+            cout << "[SYSTEM ERROR] Failed to initialize or execute menu!\n";
+            cout << "Details: " << ex.what() << "\n";
+            cout << "========================================================\n";
+            InputHelper::getInputOptionalString("Press Enter to return to main menu...");
+        }
+        catch (...)
+        {
+            cout << "\n========================================================\n";
+            cout << "[SYSTEM ERROR] An unknown critical error occurred!\n";
+            cout << "========================================================\n";
+            InputHelper::getInputOptionalString("Press Enter to return to main menu...");
         }
     }
 
