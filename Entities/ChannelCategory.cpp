@@ -97,5 +97,3 @@ bool ChannelCategory::operator<(const ChannelCategory &other) const
 {
     return this->name < other.name;
 }
-
-}
