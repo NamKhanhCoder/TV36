@@ -142,12 +142,28 @@ void HoaDonMenu::themHoaDon()
     }
     hoaDonMoi.setNgayTraTien(ngayTraTien);
     hoaDonMoi.setTrangThai(trangThai);
-
     string id = repoHoaDon.generateNextID();
     hoaDonMoi.setID(id);
-    repoHoaDon.create(hoaDonMoi);
-    cout << "Invoice created successfully!" << endl;
-    repoHoaDon.writeToFile();
+    if (repoHoaDon.create(hoaDonMoi))
+    {
+        try
+        {
+            repoHoaDon.writeToFile();
+            cout << "Invoice created successfully!" << endl;
+            LOG("[INVOICEMenu] Invoice created successfully, ID: " + id);
+        }
+        catch (const exception &e)
+        {
+            cout << "[Error] Failed to save invoice to file: " << e.what() << endl;
+            LOG("[INVOICEMenu] File write failed: " + string(e.what()));
+        }
+    }
+    else
+    {
+        cout << "[Error] Failed to create invoice ( Duplicate ID or counter error)" << endl;
+        LOG("[INVOICEMenu] Failed to create invoice, duplicate ID: " + id);
+    }
+
     InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
@@ -558,21 +574,28 @@ void HoaDonMenu::capNhat()
         }
         cout << "Status: " << p->getTrangThai() << endl;
 
-        while (true)
+        if (p->getTrangThai() == "Paid")
         {
-            double soTien = InputHelper::getInputOptionalDouble("Enter amount: ");
-            if (soTien == -1.0)
-                break;
-            try
+            cout << "[Notice] Invoice is already Paid, amount cannot be modified!" << endl;
+        }
+        else
+        {
+            while (true)
             {
-                p->setSoTien(soTien);
-                cout << "Amount updated successfully" << endl;
-                break;
-            }
-            catch (const exception &e)
-            {
-                cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
-                LOG("[INVOICEMenu] Invalid amount input during update: " + string(e.what()));
+                double soTien = InputHelper::getInputOptionalDouble("Enter amount: ");
+                if (soTien == -1.0)
+                    break;
+                try
+                {
+                    p->setSoTien(soTien);
+                    cout << "Amount updated successfully" << endl;
+                    break;
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[INVOICEMenu] Invalid amount input during update: " + string(e.what()));
+                }
             }
         }
         while (true)
@@ -629,14 +652,25 @@ void HoaDonMenu::capNhat()
             cout << "[Notice] Invoice is already Paid, payment date and status cannot be modified!" << endl;
         }
     }
-    repoHoaDon.writeToFile();
-    cout << "Invoice updated successfully" << endl;
+    try
+    {
+        repoHoaDon.writeToFile();
+        cout << "Invoice updated successfully" << endl;
+        LOG("[INVOICEMenu] Invoice updated successfully, ID: " + id);
+    }
+    catch (const exception &e)
+    {
+        cout << "[Error] Failed to save invoice to file: " << e.what() << endl;
+        LOG("[INVOICEMenu] File write failed during update: " + string(e.what()));
+        repoHoaDon.loadFromFile();
+        cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
+    }
     InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
 // Chuc nang xoa hoa don: tim theo ma HDN, xac nhan Y/N truoc khi xoa va luu lai file
 void HoaDonMenu::xoaHoaDon()
-{   
+{
     repoHoaDon.loadFromFile();
     string id = InputHelper::getInputString("Enter invoice ID: ");
     id = convertToUpper(id);
@@ -654,8 +688,17 @@ void HoaDonMenu::xoaHoaDon()
         if (xacNhan == "Y" || xacNhan == "y" || xacNhan == "YES" || xacNhan == "yes" || xacNhan == "Yes")
         {
             repoHoaDon.remove(id);
-            repoHoaDon.writeToFile();
-            cout << "Invoice deleted successfully!" << endl;
+            try
+            {
+                repoHoaDon.writeToFile();
+                cout << "Invoice deleted successfully!" << endl;
+                LOG("[INVOICEMenu] Invoice deleted successfully, ID: " + id);
+            }
+            catch(const exception &e)
+            {
+                cout << "[Error] Failed to save deletion to file: " << e.what() << endl;
+                repoHoaDon.loadFromFile();
+            }
         }
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
         {
@@ -706,5 +749,4 @@ void HoaDonMenu::printMenu()
     cout << "4. Sort invoice list" << endl;
     cout << "5. Update invoice" << endl;
     cout << "6. Delete invoice" << endl;
-    // phan xoa hoa don ko duoc thuc hien do quy dinh cua phap luat
 }

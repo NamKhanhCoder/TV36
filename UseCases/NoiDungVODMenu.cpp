@@ -181,9 +181,25 @@ void NoiDungVODMenu::themNoiDung()
     }
     string id = repo.generateNextID();
     noiDungMoi.setID(id);
-    repo.create(noiDungMoi); // gọi hàm trong repository đêu phải thông qua repo
-    repo.writeToFile();
-    cout << "VOD content created successfully!" << endl;
+    if (repo.create(noiDungMoi)) // gọi hàm trong repository đêu phải thông qua repo
+    {
+        try
+        {
+            repo.writeToFile();
+            cout << "VOD content created successfully!" << endl;
+            LOG("[VODMenu] VOD content created successfully, ID: " + id);
+        }
+        catch (const exception &e)
+        {
+            cout << "[Error] Failed to save vod content to file: " << e.what() << endl;
+            LOG("[VODMenu] File write failed: " + string(e.what()));
+        }
+    }
+    else
+    {
+        cout << "[Error] Failed to create vod content (Duplicate ID or counter error)!" << endl;
+        LOG("[VODMenu] Failed to create vod content, duplicate ID: " + id);
+    }
     InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
@@ -199,7 +215,7 @@ void NoiDungVODMenu::timKiem()
     cout << "Enter any other option to go back." << endl;
     int luaChon = InputHelper::getInputInt("Enter your choice: ");
     repo.loadFromFile();
-    const vector<NoiDungVOD> &danhSach = repo.readAll(); // ta chỉ đọc để tìm kiếm chứ không sửa đổi hay hoán đổi vị trí các phần tử như bên sapXep, nên  có thể dùng tham chiếu const &
+    const vector<NoiDungVOD> &danhSach = repo.readAll(); // ta chỉ đọc để tìm kiếm  nên  có thể dùng tham chiếu const &
     int s = danhSach.size();
     switch (luaChon)
     {
@@ -362,7 +378,7 @@ void NoiDungVODMenu::sapXep()
     {
     case 1:
     {
-        sort(danhSach.begin(), danhSach.end());  // tự động gọi toán tử operator <, ko cần thêm tiêu chí so sánh
+        sort(danhSach.begin(), danhSach.end()); // tự động gọi toán tử operator <, ko cần thêm tiêu chí so sánh
         cout << "VOD content list after sorting: " << endl;
         vector<vector<string>> data;
         int s = danhSach.size();
@@ -550,6 +566,81 @@ void NoiDungVODMenu::capNhat()
                 }
             }
         }
+        vector<NoiDungVOD> danhSach = repo.readAll();
+        int s = danhSach.size();
+        while (true)
+        {
+            int choice = InputHelper::getInputOptionalInt("Choose URL format (1. Netflix / 2. TV360): ");
+            if (choice == -1)
+                break;
+            else
+            {
+                try
+                {
+                    if (choice == 1)
+                    {
+                        int num = InputHelper::getInputInt("Enter content ID: ");
+                        string url = "https://www.netflix.com/vn/phim" + to_string(num);
+                        if (url != p->getUrl())
+                        {
+                            bool isDuplicate = false;
+                            for (int i = 0; i < s; i++)
+                            {
+                                if (danhSach[i].getID() != p->getID() && url == danhSach[i].getUrl())
+                                {
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+                            if (isDuplicate)
+                            {
+                                cout << "[Error] URL already exists, please try another URL!" << endl;
+                                continue;
+                            }
+                        }
+                        p->setUrl(url);
+                        cout << "URL updated successfully!" << endl;
+                        break;
+                    }
+                    else if (choice == 2)
+                    {
+
+                        int num = InputHelper::getInputInt("Enter content ID: ");
+                        string url = "https://www.tv360.com/vn/phim" + to_string(num);
+                        if (url != p->getUrl())
+                        {
+                            bool isDuplicate = false;
+                            for (int i = 0; i < s; i++)
+                            {
+                                if (danhSach[i].getID() != p->getID() && url == danhSach[i].getUrl())
+                                {
+                                    isDuplicate = true;
+                                    break;
+                                }
+                            }
+                            if (isDuplicate)
+                            {
+                                cout << "[Error] URL already exists, please try another URL!" << endl;
+                                continue;
+                            }
+                        }
+                        p->setUrl(url);
+                        cout << "URL updated successfully!" << endl;
+                        break;
+                    }
+                    else
+                    {
+                        cout << "[Error] Invalid option, try again!" << endl;
+                        continue;
+                    }
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid URL input during update: " + string(e.what()));
+                }
+            }
+        }
         while (true)
         {
             int choice = InputHelper::getInputOptionalInt("Update status (1. ACTIVE / 2. INACTIVE): ");
@@ -581,8 +672,19 @@ void NoiDungVODMenu::capNhat()
             }
         }
     }
-    repo.writeToFile();
-    cout << "VOD content updated successfully!" << endl;
+    try
+    {
+        repo.writeToFile();
+        cout << "VOD content updated successfully!" << endl;
+        LOG("[VODMenu] VOD content updated successfully, ID: " + id);
+    }
+    catch (const exception &e)
+    {
+        cout << "[Error] Failed to save VOD content to file: " << e.what() << endl;
+        LOG("[VODMenu] File write failed during update: " + string(e.what()));
+        repo.loadFromFile();
+        cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
+    }
     InputHelper::getInputOptionalString("Press any key to go back: ");
     SystemHelper::clearScreen();
 }
@@ -639,8 +741,16 @@ void NoiDungVODMenu::xoaNoiDung()
         if (xacNhan == "Y" || xacNhan == "y" || xacNhan == "YES" || xacNhan == "yes" || xacNhan == "Yes")
         {
             repo.remove(id);
-            repo.writeToFile();
-            cout << "VOD content deleted successfully!" << endl;
+            try
+            {
+                repo.writeToFile();
+                cout << "VOD content deleted successfully!" << endl;
+            }
+            catch(const exception &e)
+            {
+                cout << "[Error] Failed to save deletion to file: " << e.what() << endl;
+                repo.loadFromFile(); //Khoi phuc lai ban ghi tren RAM
+            }
         }
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
         {
