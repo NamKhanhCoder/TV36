@@ -492,7 +492,7 @@ void SupportTicketMenu::updateTicket()
         return;
     }
 
-    // F08: Luu ban sao backup de ho tro rollback neu qua trinh sua hoac ghi file bi loi
+    // Luu ban sao backup de ho tro rollback neu qua trinh sua hoac ghi file bi loi
     SupportTicket backup = *ticket;
 
     SystemHelper::clearScreen();
@@ -535,7 +535,7 @@ void SupportTicketMenu::updateTicket()
     ticket->setStatus(newStatus);
 
     // 4. Solution (Resolution) & Closed Date:
-    // F05: Chi cap nhat thoi diem dong closedDate khi vua chuyen tu trang thai khac sang DA_DONG
+    // Chi cap nhat thoi diem dong closedDate khi vua chuyen tu trang thai khac sang DA_DONG
     if (newStatus == TicketStatus::DA_DONG)
     {
         cout << "\n[Status: DA_DONG] Solution is mandatory when closing ticket.\n";
@@ -569,7 +569,7 @@ void SupportTicketMenu::updateTicket()
             }
         }
 
-        // F05 fix: Chi tu dong gan ClosedDate neu truoc do chua dong
+        // Chi tu dong gan ClosedDate neu truoc do chua dong
         if (oldStatus != TicketStatus::DA_DONG)
         {
             string closedDT = getCurrentDateTimeString();
@@ -599,7 +599,7 @@ void SupportTicketMenu::updateTicket()
     }
     catch (const exception &e)
     {
-        // F08: Rollback state in RAM on write failure
+        // Rollback lai du lieu trong RAM neu ghi file loi
         *ticket = backup;
         repo.loadFromFile();
         LOG("[SupportTicketMenu] File error while updating ticket: " + string(e.what()));

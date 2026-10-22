@@ -54,7 +54,7 @@ bool PackageMenu::isPackageInActiveContract(const string &packageID)
     repoContract.loadFromFile();
     for (const auto &c : repoContract.readAll())
     {
-        // F12 fix: Dong bo ca ACTIVE va SUSPENDED vi hop dong tam ngung van con rang buoc goi
+        // Dong bo ca ACTIVE va SUSPENDED vi hop dong tam ngung van con rang buoc goi
         if (c.get_packageID() == packageID && 
             (c.get_status() == ContractStatus::ACTIVE || c.get_status() == ContractStatus::SUSPENDED))
         {
@@ -511,7 +511,7 @@ void PackageMenu::updatePackage()
         return;
     }
 
-    // F08: Luu ban sao backup de ho tro rollback neu qua trinh sua hoac ghi file bi loi
+    // Luu ban sao backup de ho tro rollback neu qua trinh sua hoac ghi file bi loi
     Package backup = *pkg;
 
     SystemHelper::clearScreen();
@@ -628,7 +628,7 @@ void PackageMenu::updatePackage()
     }
     catch (const exception &e)
     {
-        // F08: Rollback state in RAM on write failure
+        // Rollback lai du lieu trong RAM neu ghi file loi
         *pkg = backup;
         repo.loadFromFile();
         LOG("[PackageMenu] File error while updating package: " + string(e.what()));
@@ -660,7 +660,7 @@ void PackageMenu::deletePackage()
     cout << "You are about to delete Package:" << endl;
     TablePrinter::printSingle(widths, headers, pkg->exportToVector());
 
-    // Check Removal dependency: Must not be in any active or suspended contract (F12)
+    // Kiem tra rang buoc: Goi khong duoc nam trong hop dong dang hoat dong hoac tam ngung
     if (isPackageInActiveContract(targetID))
     {
         cout << "\n[Error] Cannot delete Package " << targetID << " because it is currently assigned to an ACTIVE or SUSPENDED contract!\n";
