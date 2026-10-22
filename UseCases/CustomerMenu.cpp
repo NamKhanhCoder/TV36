@@ -441,6 +441,7 @@ void CustomerMenu::updateCustomer()
         }
         else
         {
+            repoCustomer.loadFromFile();
             LOG("[CustomerMenu] Failed to update customer: " + inputID);
             cout << "\n[Error] Failed to update customer record!\n";
         }

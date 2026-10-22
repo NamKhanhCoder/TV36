@@ -58,10 +58,11 @@ string InputHelper::getInputID(const string &message, const string &prefix, bool
         input = trim_end_spaces(input);
         if (optional && input.empty())
             return "";
+
         transform(input.begin(), input.end(), input.begin(),
                   [](unsigned char c)
                   { return static_cast<char>(toupper(c)); });
-        // Repository padding toi thieu 3 chu so; chap nhan ca TL1000, KENH1000.
+        //
         if (input.size() >= prefix.size() + 3 &&
             input.size() <= static_cast<size_t>(numeric_limits<short>::max()) &&
             Validator::isValidID(input, prefix, static_cast<short>(input.size())))
