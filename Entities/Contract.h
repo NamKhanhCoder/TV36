@@ -8,10 +8,11 @@
 #pragma once
 #include "Entity.h"
 #include "Utils/Date.h"
-#include <string.h>
+#include <string>
 
 using namespace std;
 
+// Enum bieu dien 4 trang thai nghiep vu cua hop dong
 enum class ContractStatus
 {
     ACTIVE,
@@ -20,9 +21,11 @@ enum class ContractStatus
     EXPIRED
 };
 
+// Chuyen doi enum trang thai hop dong sang chuoi
 string ContractStatus_toString(ContractStatus status);
-ContractStatus stringToStatus(const string &s);
 
+// Chuyen doi chuoi sang enum trang thai hop dong
+ContractStatus stringToStatus(const string &s);
 
 class Contract : public Entity
 {
@@ -38,8 +41,13 @@ private:
     ContractStatus status;
 
 public:
+    // Ham khoi tao mac dinh
     Contract() : Entity() {}
+
+    // Ham khoi tao co tham so day du cho Hop dong
     Contract(string id, string customerID, string packageID, string stbID, Date signDate, Date startDate, Date endDate, string installationAddress, string monthlyFee, ContractStatus status);
+
+    // Cac phuong thuc setter kiem tra rang buoc nghiep vu va dinh dang du lieu
     void set_customerID(const string &customerID);
     void set_packageID(const string &packageID);
     void set_stbID(const string &stbID);
@@ -50,6 +58,7 @@ public:
     void set_monthlyFee(const string &monthlyFee);
     void set_status(ContractStatus status);
 
+    // Cac phuong thuc getter
     string get_customerID() const;
     string get_packageID() const;
     string get_stbID() const;
@@ -60,10 +69,13 @@ public:
     string get_monthlyFee() const;
     ContractStatus get_status() const;
 
+    // Ghi de phuong thuc tu Entity phuc vu xuat chuoi ghi file va xuat vector in bang
     string exportToString() const override;
     vector<string> exportToVector() const override;
 
+    // Phan tich cu phap mot dong du lieu tu file contracts.txt vao doi tuong
     void parseFromString(const string &data) override;
 
+    // Nap chong toan tu < so sanh theo ngay bat dau startDate phuc vu sap xep
     bool operator<(const Contract &other) const;
 };

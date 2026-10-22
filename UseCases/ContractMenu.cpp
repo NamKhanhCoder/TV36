@@ -178,6 +178,12 @@ Date ContractMenu::calculateEndDate(const Date &startDate)
 
         Date endDate = startDate;
         endDate.addMonths(durationMonths);
+        if (endDate.getYear() > 2100)
+        {
+            cout << "[Error] Duration too long: End date year cannot exceed 2100 (Calculated: " << endDate.getYear() << "). Please choose a smaller duration.\n";
+            continue;
+        }
+
         cout << "[Info] Calculated End Date (" << durationMonths << " months): " << endDate.toString() << "\n";
         return endDate;
     }
@@ -261,10 +267,20 @@ void ContractMenu::createContract()
         return;
     }
 
-    // signDate <= startDate < endDate
+    // signDate <= startDate < endDate, signDate <= Today
     SystemHelper::clearScreen();
     cout << "===== Contract Period & Installation =====\n";
-    Date signDate = InputHelper::getInputDate("Sign Date (dd/mm/yyyy): ");
+    Date signDate;
+    while (true)
+    {
+        signDate = InputHelper::getInputDate("Sign Date (dd/mm/yyyy): ");
+        if (Date::getCurrentDate() < signDate)
+        {
+            cout << "[Error] Sign date cannot be in the future (Today is " << Date::getCurrentDate().toString() << "). Please try again.\n";
+            continue;
+        }
+        break;
+    }
     Date startDate = inputValidStartDate(signDate);
     Date endDate = calculateEndDate(startDate);
 
@@ -294,11 +310,11 @@ void ContractMenu::createContract()
     if (!customFee.empty())
     {
         try {
-            long long fee = stoll(customFee);
-            if (fee > 0) monthlyFee = customFee;
-            else cout << "[Warning] Invalid fee. Standard fee will be applied.\n";
-        } catch (...) {
-            cout << "[Warning] Invalid fee format. Standard fee will be applied.\n";
+            Contract dummy;
+            dummy.set_monthlyFee(customFee);
+            monthlyFee = customFee;
+        } catch (const exception &e) {
+            cout << "[Warning] " << e.what() << "\nStandard fee will be applied instead.\n";
         }
     }
 
@@ -311,9 +327,18 @@ void ContractMenu::createContract()
 
     if (repo.create(newContract))
     {
-        repo.writeToFile();
-        LOG("[ContractMenu] Contract created successfully, ID: " + newContract.getID());
-        cout << "\n[Success] Contract created successfully! Assigned ID: " << newContract.getID() << "\n";
+        try
+        {
+            repo.writeToFile();
+            LOG("[ContractMenu] Contract created successfully, ID: " + newContract.getID());
+            cout << "\n[Success] Contract created successfully! Assigned ID: " << newContract.getID() << "\n";
+        }
+        catch (const exception &e)
+        {
+            repo.loadFromFile();
+            LOG("[ContractMenu] Write failed on create, rolling back: " + string(e.what()));
+            cout << "\n[Error] Failed to save contract to file! RAM rolled back.\n";
+        }
     }
     else
     {
@@ -465,11 +490,13 @@ void ContractMenu::updateContract()
 
     cout << "\n(Leave field empty / Press Enter to keep current value)\n";
 
+    Contract candidate = *contract;
+
     // 1. Update Package ID
     while (true)
     {
-        string newPkgID = convertToUpper(InputHelper::getInputOptionalString("New Package ID [" + contract->get_packageID() + "] (type '?' to list, or press Enter to keep): "));
-        if (newPkgID.empty() || newPkgID == contract->get_packageID())
+        string newPkgID = convertToUpper(InputHelper::getInputOptionalString("New Package ID [" + candidate.get_packageID() + "] (type '?' to list, or press Enter to keep): "));
+        if (newPkgID.empty() || newPkgID == candidate.get_packageID())
         {
             break; // Keep current
         }
@@ -489,24 +516,22 @@ void ContractMenu::updateContract()
 
         try
         {
-            contract->set_packageID(newPkgID);
+            candidate.set_packageID(newPkgID);
             cout << "[Notice] Package updated to: " << newPkgID << "\n";
 
             // Prompt for monthly fee
             string defaultFee = to_string(pkg->getMonthlyPrice());
             cout << "Standard monthly fee for package " << newPkgID << ": " << defaultFee << " VND\n";
-            string customFee = InputHelper::getInputOptionalString("Agreed Monthly Fee [Current: " + contract->get_monthlyFee() + ", Standard: " + defaultFee + "] (press Enter to keep current fee): ");
+            string customFee = InputHelper::getInputOptionalString("Agreed Monthly Fee [Current: " + candidate.get_monthlyFee() + ", Standard: " + defaultFee + "] (press Enter to keep current fee): ");
             if (!customFee.empty())
             {
                 try {
-                    long long fee = stoll(customFee);
-                    if (fee > 0) {
-                        contract->set_monthlyFee(customFee);
-                        cout << "[Notice] Monthly fee set to: " << customFee << " VND\n";
-                    }
-                    else cout << "[Warning] Invalid fee. Current fee kept.\n";
-                } catch (...) {
-                    cout << "[Warning] Invalid fee format. Current fee kept.\n";
+                    Contract dummy;
+                    dummy.set_monthlyFee(customFee);
+                    candidate.set_monthlyFee(customFee);
+                    cout << "[Notice] Monthly fee set to: " << customFee << " VND\n";
+                } catch (const exception &e) {
+                    cout << "[Warning] " << e.what() << "\nCurrent fee kept.\n";
                 }
             }
             break;
@@ -520,8 +545,8 @@ void ContractMenu::updateContract()
     // 2. Update Set-Top Box ID
     while (true)
     {
-        string newStbID = convertToUpper(InputHelper::getInputOptionalString("New Set-Top Box ID [" + contract->get_stbID() + "] (type '?' to list, or press Enter to keep): "));
-        if (newStbID.empty() || newStbID == contract->get_stbID())
+        string newStbID = convertToUpper(InputHelper::getInputOptionalString("New Set-Top Box ID [" + candidate.get_stbID() + "] (type '?' to list, or press Enter to keep): "));
+        if (newStbID.empty() || newStbID == candidate.get_stbID())
         {
             break; // Keep current
         }
@@ -546,7 +571,7 @@ void ContractMenu::updateContract()
             continue;
         }
 
-        if (isSetTopBoxInUse(newStbID, contract->getID()))
+        if (isSetTopBoxInUse(newStbID, candidate.getID()))
         {
             cout << "[Error] Set-Top Box " << newStbID << " is currently used by another active contract!\n";
             continue;
@@ -554,7 +579,7 @@ void ContractMenu::updateContract()
 
         try
         {
-            contract->set_stbID(newStbID);
+            candidate.set_stbID(newStbID);
             cout << "[Notice] Set-Top Box updated to: " << newStbID << "\n";
             break;
         }
@@ -567,7 +592,7 @@ void ContractMenu::updateContract()
     // 3. Extend Duration Months
     while (true)
     {
-        string extendStr = InputHelper::getInputOptionalString("Extend duration in months [Current End Date: " + contract->get_endDate().toString() + "] (press Enter or 0 to keep): ");
+        string extendStr = InputHelper::getInputOptionalString("Extend duration in months [Current End Date: " + candidate.get_endDate().toString() + "] (press Enter or 0 to keep): ");
         if (extendStr.empty() || extendStr == "0")
         {
             break; // Keep current
@@ -576,22 +601,35 @@ void ContractMenu::updateContract()
         try
         {
             int addMonths = stoi(extendStr);
-            if (addMonths < 0)
+            if (addMonths <= 0)
             {
                 cout << "[Error] Number of months must be greater than 0!\n";
                 continue;
             }
 
-            Date updatedEndDate = contract->get_endDate();
+            Date updatedEndDate = candidate.get_endDate();
             updatedEndDate.addMonths(addMonths);
-            contract->set_endDate(updatedEndDate);
+            if (updatedEndDate.getYear() > 2100)
+            {
+                cout << "[Error] Duration too long: End year cannot exceed 2100 (Calculated: " << updatedEndDate.getYear() << ").\n";
+                continue;
+            }
 
-            if (contract->get_status() == ContractStatus::EXPIRED)
+            candidate.set_endDate(updatedEndDate);
+
+            if (candidate.get_status() == ContractStatus::EXPIRED)
             {
                 string reactivate = InputHelper::getInputString("Contract was EXPIRED. Reactivate to ACTIVE? (y/n): ");
                 if (reactivate == "y" || reactivate == "Y")
                 {
-                    contract->set_status(ContractStatus::ACTIVE);
+                    if (isSetTopBoxInUse(candidate.get_stbID(), candidate.getID()))
+                    {
+                        cout << "[Error] Cannot reactivate to ACTIVE: Set-Top Box " << candidate.get_stbID() << " is in use by another active contract!\n";
+                    }
+                    else
+                    {
+                        candidate.set_status(ContractStatus::ACTIVE);
+                    }
                 }
             }
 
@@ -607,15 +645,15 @@ void ContractMenu::updateContract()
     // 4. Update Installation Address
     while (true)
     {
-        string newAddress = InputHelper::getInputOptionalString("New Installation Address [" + contract->get_installationAddress() + "]: ");
-        if (newAddress.empty() || newAddress == contract->get_installationAddress())
+        string newAddress = InputHelper::getInputOptionalString("New Installation Address [" + candidate.get_installationAddress() + "]: ");
+        if (newAddress.empty() || newAddress == candidate.get_installationAddress())
         {
             break; // Keep current
         }
 
         try
         {
-            contract->set_installationAddress(newAddress);
+            candidate.set_installationAddress(newAddress);
             cout << "[Notice] Installation address updated.\n";
             break;
         }
@@ -626,28 +664,82 @@ void ContractMenu::updateContract()
     }
 
     // 5. Update Status
-    cout << "\nChange Status [Current: " << ContractStatus_toString(contract->get_status()) << "]:\n";
+    cout << "\nChange Status [Current: " << ContractStatus_toString(candidate.get_status()) << "]:\n";
     cout << "1. ACTIVE\n2. SUSPENDED\n3. EXPIRED\n4. CANCELED\n0. Keep current status\n";
     string statusChoice = InputHelper::getInputOptionalString("Select status (0-4, or press Enter to keep): ");
     if (!statusChoice.empty() && statusChoice != "0")
     {
-        if (statusChoice == "1") contract->set_status(ContractStatus::ACTIVE);
-        else if (statusChoice == "2") contract->set_status(ContractStatus::SUSPENDED);
-        else if (statusChoice == "3") contract->set_status(ContractStatus::EXPIRED);
-        else if (statusChoice == "4") contract->set_status(ContractStatus::CANCELED);
-        else cout << "[Notice] Invalid choice. Current status kept.\n";
+        if (statusChoice == "1")
+        {
+            if (isSetTopBoxInUse(candidate.get_stbID(), candidate.getID()))
+            {
+                cout << "[Error] Cannot set status to ACTIVE: Set-Top Box " << candidate.get_stbID()
+                     << " is currently in use by another active contract!\n";
+            }
+            else
+            {
+                candidate.set_status(ContractStatus::ACTIVE);
+                cout << "[Notice] Contract status updated to ACTIVE.\n";
+            }
+        }
+        else if (statusChoice == "2")
+        {
+            candidate.set_status(ContractStatus::SUSPENDED);
+            cout << "[Notice] Contract status updated to SUSPENDED.\n";
+        }
+        else if (statusChoice == "3")
+        {
+            candidate.set_status(ContractStatus::EXPIRED);
+            cout << "[Notice] Contract status updated to EXPIRED.\n";
+        }
+        else if (statusChoice == "4")
+        {
+            repoHoaDon.loadFromFile();
+            bool hasUnpaid = false;
+            for (const auto &hd : repoHoaDon.readAll())
+            {
+                if (hd.getMaHopDong() == candidate.getID() && hd.getTrangThai() != "Paid")
+                {
+                    hasUnpaid = true;
+                    break;
+                }
+            }
+            if (hasUnpaid)
+            {
+                cout << "[Error] Cannot cancel contract " << candidate.getID()
+                     << ": Contract has unpaid invoice(s)! Please resolve invoices before cancelling.\n";
+            }
+            else
+            {
+                candidate.set_status(ContractStatus::CANCELED);
+                cout << "[Notice] Contract status updated to CANCELED.\n";
+            }
+        }
+        else
+        {
+            cout << "[Notice] Invalid choice. Current status kept.\n";
+        }
     }
 
-    // Save immediately to file
-    if (repo.update(*contract))
+    // Save immediately to file with candidate clone and rollback protection
+    if (repo.update(candidate))
     {
-        repo.writeToFile();
-        LOG("[ContractMenu] Contract " + contract->getID() + " updated and saved");
-        cout << "\n[Success] Contract updated and saved successfully!\n";
+        try
+        {
+            repo.writeToFile();
+            LOG("[ContractMenu] Contract " + candidate.getID() + " updated and saved");
+            cout << "\n[Success] Contract updated and saved successfully!\n";
+        }
+        catch (const exception &e)
+        {
+            repo.loadFromFile();
+            LOG("[ContractMenu] Write failed on update, rolling back: " + string(e.what()));
+            cout << "\n[Error] Failed to save changes to file! RAM rolled back.\n";
+        }
     }
     else
     {
-        LOG("[ContractMenu] Failed to update contract " + contract->getID());
+        LOG("[ContractMenu] Failed to update contract " + candidate.getID());
         cout << "\n[Error] Failed to update contract!\n";
     }
 
@@ -716,9 +808,18 @@ void ContractMenu::deleteContract()
     {
         if (repo.remove(targetID))
         {
-            repo.writeToFile();
-            cout << "[Success] Contract deleted successfully, ID: " << targetID << "\n";
-            LOG("[ContractMenu] Contract deleted successfully, ID: " + targetID);
+            try
+            {
+                repo.writeToFile();
+                cout << "[Success] Contract deleted successfully, ID: " << targetID << "\n";
+                LOG("[ContractMenu] Contract deleted successfully, ID: " + targetID);
+            }
+            catch (const exception &e)
+            {
+                repo.loadFromFile();
+                LOG("[ContractMenu] Write failed on delete, rolling back: " + string(e.what()));
+                cout << "\n[Error] Failed to save deletion to file! RAM rolled back.\n";
+            }
         }
         else
         {
