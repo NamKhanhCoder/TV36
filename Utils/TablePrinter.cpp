@@ -7,22 +7,23 @@
 // ===============================================================
 #include "TablePrinter.h"
 #include <iostream>
+#include <iomanip>
+#include <algorithm>
 #include "Utils/Debugger.h"
+
 using namespace std;
+
 void TablePrinter::printSeparator(const vector<int> &widths) // print +----+----+
 {
-    // beside the widths, we pad 2 spaces on the 2 side of the data, so a width is actually +2
+    // Beside the widths, we pad 2 spaces on the 2 sides of the data, so a width is actually +2
     cout << "+";
-    for (int i = 0; i < widths.size(); i++)
+    for (size_t i = 0; i < widths.size(); i++)
     {
-        for (int j = 0; j < widths[i]+2; j++)
-        {
-            cout << "-";
-        }
-        cout << "+";
+        cout << setfill('-') << setw(widths[i] + 2) << "" << "+";
     }
-    cout << endl;
+    cout << setfill(' ') << "\n";
 }
+
 void TablePrinter::printRow(const vector<int> &widths, const vector<string> &row)
 {
     if (row.size() != widths.size())
@@ -31,31 +32,29 @@ void TablePrinter::printRow(const vector<int> &widths, const vector<string> &row
         return;
     }
     cout << "|";
-    for (int i = 0; i < row.size(); i++)
+    for (size_t i = 0; i < row.size(); i++)
     {
-        cout << " " << formatCell(row[i], widths[i]) << " |";
+        string cell = formatCell(row[i], widths[i]);
+        cout << " " << left << setw(widths[i]) << cell << " |";
     }
-    cout << endl;
+    cout << "\n";
 }
+
 string TablePrinter::formatCell(const string &data, int width)
 {
-    string result = "";
-    if (data.length() > width) // case overflow
+    if (static_cast<int>(data.length()) > width) // case overflow
     {
         if (width <= 3)
         {
-            result = string(width,'#');
+            return string(width, '#');
         }
         else
         {
-            result = data.substr(0, width - 3) + "..."; // truncate data with ...
+            return data.substr(0, width - 3) + "..."; // truncate data with ...
         }
     }
-    else
-    {
-        result = data + string(width - data.length(), ' ');
-    }
-    return result;
+    // Can le va dem khoang trang tu dong bang std::setw va std::left trong iomanip
+    return data;
 }
 
 void TablePrinter::printTable(const vector<int> &widths, const vector<string> &headers, const vector<vector<string>> &data)
@@ -65,18 +64,30 @@ void TablePrinter::printTable(const vector<int> &widths, const vector<string> &h
         LOG("[TablePrinter] The data for table print is empty");
         return;
     }
-    printSeparator(widths);
-    printRow(widths, headers);
-    printSeparator(widths);
 
-    for (int i = 0; i < data.size(); i++)
+    // Dam bao do rong cot toi thieu bang do dai tieu de (header)
+    vector<int> actualWidths = widths;
+    for (size_t i = 0; i < actualWidths.size() && i < headers.size(); i++)
     {
-        printRow(widths, data[i]);
+        if (static_cast<int>(headers[i].length()) > actualWidths[i])
+        {
+            actualWidths[i] = static_cast<int>(headers[i].length());
+        }
     }
-    printSeparator(widths);
+
+    printSeparator(actualWidths);
+    printRow(actualWidths, headers);
+    printSeparator(actualWidths);
+
+    for (size_t i = 0; i < data.size(); i++)
+    {
+        printRow(actualWidths, data[i]);
+    }
+    printSeparator(actualWidths);
 
     cout << "Total: " << data.size() << " record(s)\n";
 }
+
 void TablePrinter::printSingle(const vector<int> &widths, const vector<string> &headers, const vector<string> &data)
 {
     if (data.empty())
@@ -84,11 +95,24 @@ void TablePrinter::printSingle(const vector<int> &widths, const vector<string> &
         LOG("[TablePrinter] The data for single print is empty");
         return;
     }
-    printSeparator(widths);
-    printRow(widths, headers);
-    printSeparator(widths);
-    printRow(widths, data);
-    printSeparator(widths);
+
+    // Man hinh chi tiet (printSingle): tu dong mo rong do rong cot theo du lieu thuc te
+    // giup hien thi day du thong tin (dia chi, mo ta...) ma khong bi cat boi "..."
+    vector<int> actualWidths = widths;
+    for (size_t i = 0; i < actualWidths.size() && i < headers.size() && i < data.size(); i++)
+    {
+        int required = max(static_cast<int>(headers[i].length()), static_cast<int>(data[i].length()));
+        if (required > actualWidths[i])
+        {
+            actualWidths[i] = required;
+        }
+    }
+
+    printSeparator(actualWidths);
+    printRow(actualWidths, headers);
+    printSeparator(actualWidths);
+    printRow(actualWidths, data);
+    printSeparator(actualWidths);
 
     cout << "Total 1 record(s)\n";
 }

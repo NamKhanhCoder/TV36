@@ -19,7 +19,7 @@ using namespace std;
 
 namespace
 {
-    const vector<int> tableWidths = {8, 22, 12, 25, 22};
+    const vector<int> tableWidths = {8, 22, 12, 25, 35};
     const vector<string> tableHeaders = {"ID", "Name", "Phone", "Email", "Address"};
 }
 

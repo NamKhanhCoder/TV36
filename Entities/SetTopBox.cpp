@@ -122,7 +122,8 @@ TechnicalStatus SetTopBox::parseTechnicalStatus(const string &statusStr)
         return BAO_TRI;
     if (s == "NGUNG_SU_DUNG")
         return NGUNG_SU_DUNG;
-    return TOT; // default
+
+    throw invalid_argument("[Set top box] The technical status is not valid: "+statusStr);
 }
 
 string SetTopBox::exportToString() const
@@ -158,6 +159,7 @@ void SetTopBox::parseFromString(const string &data)
     setManufacturer(words[2]);
     setModel(words[3]);
     setImportDate(Date(words[4]));
+    
     setTechnicalStatus(parseTechnicalStatus(words[5]));
 }
 
