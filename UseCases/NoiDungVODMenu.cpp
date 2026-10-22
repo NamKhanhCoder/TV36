@@ -193,6 +193,7 @@ void NoiDungVODMenu::themNoiDung()
         {
             cout << "[Error] Failed to save vod content to file: " << e.what() << endl;
             LOG("[VODMenu] File write failed: " + string(e.what()));
+            repo.loadFromFile();
         }
     }
     else

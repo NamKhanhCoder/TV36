@@ -156,6 +156,7 @@ void HoaDonMenu::themHoaDon()
         {
             cout << "[Error] Failed to save invoice to file: " << e.what() << endl;
             LOG("[INVOICEMenu] File write failed: " + string(e.what()));
+            repoHoaDon.loadFromFile();
         }
     }
     else
