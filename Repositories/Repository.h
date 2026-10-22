@@ -30,15 +30,22 @@ private:
     }
     void ensureFileExists(const string &path, const string &default_content = "")
     {
+        std::error_code ec;
+        if (std::filesystem::is_directory(path, ec))
+        {
+            LOG("[Repository] Cannot create file: path is a directory: " + path);
+            throw std::runtime_error("[Repository] Path is a directory: " + path);
+        }
+
         ifstream check(path);
         if (!check.is_open())
         {
             try
             {
                 std::filesystem::path p(path);
-                if (p.has_parent_path() && !std::filesystem::exists(p.parent_path()))
+                if (p.has_parent_path() && !std::filesystem::exists(p.parent_path(), ec))
                 {
-                    std::filesystem::create_directories(p.parent_path());
+                    std::filesystem::create_directories(p.parent_path(), ec);
                 }
             }
             catch (...)
@@ -58,11 +65,19 @@ private:
             else
             {
                 LOG("[Repository] Failed to create file: " + path);
+                throw std::runtime_error("[Repository] Failed to create file: " + path);
             }
         }
     }
     void loadIDCount()
     {
+        std::error_code ec;
+        if (std::filesystem::is_directory(counter_path, ec))
+        {
+            LOG("[Repository] Counter path is a directory: " + counter_path);
+            throw std::runtime_error("[Repository] Counter path is a directory: " + counter_path);
+        }
+
         ifstream file(counter_path);
         int counter = 0;
         if (file.is_open())
@@ -113,14 +128,37 @@ public:
     void loadFromFile() // overwrite the entire vector with data from file
     {
         LOG("[Repository] Attempt loading from " + file_path);
-        ifstream file(file_path);
+        std::error_code ec;
 
-        if (file.is_open() == false) // cant open case -> file chua ton tai
+        // 1. Chặn trường hợp đường dẫn là thư mục (F15)
+        if (std::filesystem::is_directory(file_path, ec))
+        {
+            LOG("[Repository] Path is a directory, not a file: " + file_path);
+            throw std::runtime_error("[Repository] Path is a directory, cannot load: " + file_path);
+        }
+
+        // 2. Chỉ tự tạo file mới khi file thực sự chưa tồn tại
+        if (!std::filesystem::exists(file_path, ec))
         {
             LOG("[Repository] File not found: " + file_path + ", creating new empty file...");
             ensureFileExists(file_path);
             items.clear();
             return;
+        }
+
+        // 3. Nếu đường dẫn tồn tại nhưng không phải file thông thường (regular file)
+        if (!std::filesystem::is_regular_file(file_path, ec))
+        {
+            LOG("[Repository] Path is not a regular file: " + file_path);
+            throw std::runtime_error("[Repository] Path is not a regular file: " + file_path);
+        }
+
+        ifstream file(file_path);
+
+        if (file.is_open() == false) // Lỗi quyền truy cập hoặc lỗi I/O
+        {
+            LOG("[Repository] Failed to open file for reading: " + file_path);
+            throw std::runtime_error("[Repository] Cannot access file for reading: " + file_path);
         }
 
         items.clear();
@@ -150,6 +188,13 @@ public:
     void writeToFile() // convert and save to file
     {
         LOG("[Repository] Attempt saving to " + file_path);
+        std::error_code ec;
+        if (std::filesystem::is_directory(file_path, ec))
+        {
+            LOG("[Repository] Path is a directory, not a file: " + file_path);
+            throw std::runtime_error("[Repository] Path is a directory, cannot write: " + file_path);
+        }
+
         ensureFileExists(file_path);
         ofstream file(file_path);
 
@@ -157,12 +202,17 @@ public:
         {
             LOG("[Repository] Failed to open file for writing: " + file_path);
             throw std::runtime_error("[Repository] Cannot access file for writing: " + file_path);
-            return;
         }
 
         for (const T &item : items)
         {
             file << item.exportToString() << endl;
+        }
+        if (file.fail())
+        {
+            file.close();
+            LOG("[Repository] Stream failure while writing to file: " + file_path);
+            throw std::runtime_error("[Repository] Stream failure while writing to file: " + file_path);
         }
         file.close();
         LOG("[Repository] Successfully saved to file: " + file_path);
