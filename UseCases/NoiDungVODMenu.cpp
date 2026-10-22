@@ -194,6 +194,7 @@ void NoiDungVODMenu::themNoiDung()
             cout << "[Error] Failed to save vod content to file: " << e.what() << endl;
             LOG("[VODMenu] File write failed: " + string(e.what()));
             repo.loadFromFile();
+            cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
         }
     }
     else
@@ -750,7 +751,9 @@ void NoiDungVODMenu::xoaNoiDung()
             catch(const exception &e)
             {
                 cout << "[Error] Failed to save deletion to file: " << e.what() << endl;
+                LOG("[VODMenu] File write failed during delete: " + string(e.what()));
                 repo.loadFromFile(); //Khoi phuc lai ban ghi tren RAM
+                cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
             }
         }
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")

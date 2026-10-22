@@ -157,6 +157,7 @@ void HoaDonMenu::themHoaDon()
             cout << "[Error] Failed to save invoice to file: " << e.what() << endl;
             LOG("[INVOICEMenu] File write failed: " + string(e.what()));
             repoHoaDon.loadFromFile();
+            cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
         }
     }
     else
@@ -698,7 +699,9 @@ void HoaDonMenu::xoaHoaDon()
             catch (const exception &e)
             {
                 cout << "[Error] Failed to save deletion to file: " << e.what() << endl;
+                LOG("[INVOICEMenu] File write failed during delete: " + string(e.what()));
                 repoHoaDon.loadFromFile();
+                cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
             }
         }
         else if (xacNhan == "N" || xacNhan == "n" || xacNhan == "no" || xacNhan == "NO" || xacNhan == "No")
