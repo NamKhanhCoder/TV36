@@ -37,4 +37,4 @@ Checkout: `TV36-hong-anh-vod-schedule`, nhánh `hong-anh/vod-schedule`, nền `e
 
 Chưa thêm phát video thật hoặc tính cước. Không đổi cơ chế loader dùng chung của nhóm: dòng dữ liệu hỏng vẫn bị cảnh báo/bỏ qua; bộ kiểm thử không chứng minh mọi lỗi của các module khác đã được sửa. Kiểm thử I/O được tái hiện bằng file chỉ đọc trên Windows; chưa giả lập mất điện hoặc mọi dạng lỗi phần cứng.
 
-Mã nguồn bàn giao trên nhánh `hong-anh/vod-schedule`. Báo cáo công việc riêng: `BAO_CAO_CONG_VIEC_HONG_ANH_2026-10-24.md`.
+Mã nguồn bàn giao trên nhánh `hong-anh/vod-schedule`.
