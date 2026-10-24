@@ -16,8 +16,8 @@
 using namespace std;
 namespace
 {
-    const vector<int> widths = {8, 34, 10, 18, 42, 14, 38, 15};
-    const vector<string> headers = {"VOD ID", "Content Name", "Genre", "Duration (min)", "Description", "Release Year", "Video URL", "Status"};
+    const vector<int> widths = {8, 34, 11, 16, 43, 14, 38, 12, 14};
+    const vector<string> headers = {"VOD ID", "Content Name", "Genre", "Duration (min)", "Description", "Release Year", "Video URL", "Status", "Access type"};
 }
 // Ham khoi tao: khoi tao 2 repository (NoiDungVOD va Package) va nap du lieu tu file
 NoiDungVODMenu::NoiDungVODMenu() : repo("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD"),
@@ -179,6 +179,27 @@ void NoiDungVODMenu::themNoiDung()
         }
         break;
     }
+    while (true)
+    {
+        int choice = InputHelper::getInputInt("Choose content access type (1. HOURLY / 2. NON_HOURLY): ");
+        switch (choice)
+        {
+        case 1:
+        {
+            noiDungMoi.setHinhThucXem("HOURLY");
+            break;
+        }
+        case 2:
+        {
+            noiDungMoi.setHinhThucXem("NON_HOURLY");
+            break;
+        }
+        default:
+            cout << "[Error] Invalid option, try again!" << endl;
+            continue;
+        }
+        break;
+    }
     string id = repo.generateNextID();
     noiDungMoi.setID(id);
     if (repo.create(noiDungMoi)) // gọi hàm trong repository đêu phải thông qua repo
@@ -214,6 +235,7 @@ void NoiDungVODMenu::timKiem()
     cout << "3. Search by genre" << endl;
     cout << "4. Search by release year" << endl;
     cout << "5. Search by status" << endl;
+    cout << "6. Search by access type" << endl;
     cout << "Enter any other option to go back." << endl;
     int luaChon = InputHelper::getInputInt("Enter your choice: ");
     repo.loadFromFile();
@@ -348,6 +370,55 @@ void NoiDungVODMenu::timKiem()
         }
         break;
     }
+    case 6:
+    {
+        int choice = InputHelper::getInputInt("Choose access type (1. HOURLY / 2. NON_HOURLY): ");
+        switch (choice)
+        {
+        case 1:
+        {
+            vector<vector<string>> data;
+            for (int i = 0; i < s; i++)
+            {
+                if (danhSach[i].getHinhThucXem() == "HOURLY")
+                    data.push_back(danhSach[i].exportToVector());
+            }
+            if (data.empty())
+            {
+                cout << "[Error] No content found with access type: HOURLY" << endl;
+                cout << "Try again!" << endl;
+                break;
+            }
+            else
+                TablePrinter::printTable(widths, headers, data);
+            break;
+        }
+        case 2:
+        {
+            vector<vector<string>> data;
+            for (int i = 0; i < s; i++)
+            {
+                if (danhSach[i].getHinhThucXem() == "NON_HOURLY")
+                    data.push_back(danhSach[i].exportToVector());
+            }
+            if (data.empty())
+            {
+                cout << "[Error] No content found with access type: NON_HOURLY" << endl;
+                cout << "Try again!" << endl;
+                break;
+            }
+            else
+                TablePrinter::printTable(widths, headers, data);
+            break;
+        }
+        default:
+        {
+            cout << "[Error] Invalid option, try again!" << endl;
+            break;
+        }
+        }
+        break;
+    }
     default:
         SystemHelper::clearScreen();
         break;
@@ -465,6 +536,7 @@ void NoiDungVODMenu::capNhat()
         cout << "Release year: " << p->getNamPhatHanh() << endl;
         cout << "URL: " << p->getUrl() << endl;
         cout << "Status: " << p->getTrangThai() << endl;
+        cout << "Access type: " << p->getHinhThucXem() << endl;
         cout << "(Press Enter to keep current value)" << endl;
         while (true)
         {
@@ -673,6 +745,36 @@ void NoiDungVODMenu::capNhat()
                 }
             }
         }
+        while (true)
+        {
+            int choice = InputHelper::getInputOptionalInt("Update access type (1. HOURLY / 2. NON_HOURLY): ");
+            if (choice == -1)
+                break;
+            else
+            {
+                try
+                {
+                    if (choice == 1)
+                    {
+                        p->setHinhThucXem("HOURLY");
+                        cout << "Access type updated successfully!" << endl;
+                        break;
+                    }
+                    else if (choice == 2)
+                    {
+                        p->setHinhThucXem("NON_HOURLY");
+                        cout << "Access type updated successfully!" << endl;
+                        break;
+                    }
+                    cout << "[Error] Invalid option, please enter 1 or 2!\n";
+                }
+                catch (const exception &e)
+                {
+                    cout << "[Validation Error] " << e.what() << "\nPlease try again.\n";
+                    LOG("[VODMenu] Invalid access type input during update: " + string(e.what()));
+                }
+            }
+        }
     }
     try
     {
@@ -748,11 +850,11 @@ void NoiDungVODMenu::xoaNoiDung()
                 repo.writeToFile();
                 cout << "VOD content deleted successfully!" << endl;
             }
-            catch(const exception &e)
+            catch (const exception &e)
             {
                 cout << "[Error] Failed to save deletion to file: " << e.what() << endl;
                 LOG("[VODMenu] File write failed during delete: " + string(e.what()));
-                repo.loadFromFile(); //Khoi phuc lai ban ghi tren RAM
+                repo.loadFromFile(); // Khoi phuc lai ban ghi tren RAM
                 cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
             }
         }
