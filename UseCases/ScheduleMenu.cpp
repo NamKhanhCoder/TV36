@@ -1,57 +1,66 @@
-// ===============================================================
-// Hoc vien Cong nghe Buu chinh Vien thong
-// Hoc phan: Ky thuat lap trinh
-// De tai 7: Quan ly dich vu truyen hinh so IPTV
-// Tac gia: Nguyen Hong Anh (NotaSpookyGhost)
-// Use Case 5: Cai dat CRUD lich va kiem tra trung gio
-// ===============================================================
+// Nguyen Hong Anh - Quan ly lich thuong va lich VOD (HOURLY).
 #include "ScheduleMenu.h"
 #include "Utils/StringHelper.h"
 #include "Utils/TablePrinter.h"
+#include "Utils/LinkedDataWriter.h"
 #include <algorithm>
 #include <stdexcept>
 
 namespace
 {
-    const vector<int> widths = {10, 10, 22, 18, 18, 28};
-    const vector<string> headers = {"ID", "Channel", "Program", "Start", "End", "Description"};
+    const vector<int> widths = {10, 10, 10, 10, 24, 18, 18, 28};
+    const vector<string> headers = {"ID", "Type", "VOD ID", "Channel", "Program", "Start", "End", "Description"};
 
-    // Nguyen Hong Anh: nhap ngay gio ISO la nghiep vu lich, dung Validator chung.
-    string inputScheduleDateTime(const string& prompt, bool optional)
+    vector<string> row(const Schedule& item)
+    {
+        return {item.getID(), item.getVodID().empty() ? "TV" : "VOD",
+                item.getVodID(), item.getChannelID(), item.getProgramName(),
+                item.getStartTime(), item.getEndTime(), item.getDescription()};
+    }
+
+    void printDetail(const Schedule& item)
+    {
+        vector<string> values = row(item);
+        TablePrinter::printSingle(widths, headers, values);
+        for (size_t i = 0; i < headers.size(); ++i)
+            cout << headers[i] << ": " << values[i] << '\n';
+    }
+
+    void printSchedules(const vector<Schedule>& items)
+    {
+        vector<vector<string>> rows;
+        for (const auto& item : items) rows.push_back(row(item));
+        if (rows.empty()) cout << "No schedules found.\n";
+        else TablePrinter::printTable(widths, headers, rows);
+    }
+
+    string inputDateTime(const string& prompt, bool optional)
     {
         while (true)
         {
-            string value = optional ? InputHelper::getInputOptionalString(prompt)
-                                    : InputHelper::getInputString(prompt);
-            if (optional && value.find_first_not_of(" \t\v\f") == string::npos) return "";
-            bool valid = value.size() == 16 && value[4] == '-' && value[7] == '-' &&
-                         value[10] == ' ' && value[13] == ':';
-            if (valid)
-            {
-                for (size_t i = 0; i < value.size(); ++i)
-                {
-                    if (i == 4 || i == 7 || i == 10 || i == 13) continue;
-                    if (value[i] < '0' || value[i] > '9') valid = false;
-                }
-            }
-            if (valid && Validator::isValidDate(value.substr(0, 10)) &&
-                         Validator::isValidTime(value.substr(11, 5))) return value;
-            cout << "[Error] Invalid date/time. Use yyyy-mm-dd HH:mm. Please enter again.\n";
+            string value = InputHelper::getInputOptionalString(prompt + " (0 to cancel): ");
+            if (value == "0" || (optional && value.empty())) return value;
+            try { return Schedule::normalizeDateTime(value); }
+            catch (const invalid_argument& error) { cout << "[Error] " << error.what() << '\n'; }
         }
     }
 
-    void printDetail(const vector<string>& values)
+    bool eligible(const NoiDungVOD& vod)
     {
-        TablePrinter::printSingle(widths, headers, values);
-        for (size_t i = 0; i < headers.size(); ++i)
-            cout << headers[i] << ": " << values[i] << "\n";
+        return vod.getTrangThai() == "ACTIVE" && vod.getHinhThucXem() == "HOURLY";
     }
 
+    bool byStart(const Schedule& a, const Schedule& b)
+    {
+        return a.getStartTime() != b.getStartTime() ? a.getStartTime() < b.getStartTime()
+                                                   : a.getID() < b.getID();
+    }
 }
 
 ScheduleMenu::ScheduleMenu()
     : repo("Data/schedules.txt", "Data/schedules_counter.txt", "LPS"),
-      repoChannel("Data/channels.txt", "Data/channels_counter.txt", "KENH")
+      repoChannel("Data/channels.txt", "Data/channels_counter.txt", "KENH"),
+      repoVod("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD")
 {
     loadSchedules();
 }
@@ -59,19 +68,19 @@ ScheduleMenu::ScheduleMenu()
 void ScheduleMenu::loadSchedules()
 {
     repo.loadFromFile();
-    const vector<Schedule>& list = repo.readAll();
+    const auto& list = repo.readAll();
     for (size_t i = 0; i < list.size(); ++i)
         for (size_t j = i + 1; j < list.size(); ++j)
             if (list[i].getChannelID() == list[j].getChannelID() &&
                 list[i].getStartTime() < list[j].getEndTime() &&
                 list[j].getStartTime() < list[i].getEndTime())
-                cout << "[Warning] Overlapping schedules in Data/schedules.txt: "
-                     << list[i].getID() << " and " << list[j].getID() << "\n";
+                cout << "[Warning] Overlapping schedules: " << list[i].getID()
+                     << " and " << list[j].getID() << '\n';
 }
 
 string ScheduleMenu::findConflict(const Schedule& item)
 {
-    for (const Schedule& other : repo.readAll())
+    for (const auto& other : repo.readAll())
         if (other.getID() != item.getID() && other.getChannelID() == item.getChannelID() &&
             item.getStartTime() < other.getEndTime() && other.getStartTime() < item.getEndTime())
             return other.getID();
@@ -81,222 +90,250 @@ string ScheduleMenu::findConflict(const Schedule& item)
 bool ScheduleMenu::inputFields(Schedule& item, bool editing)
 {
     repoChannel.loadFromFile();
+    repoVod.loadFromFile();
+    const Schedule old = item;
     if (repoChannel.readAll().empty())
     {
         cout << "No channels available. Create a channel first.\n";
         return false;
     }
-    const string oldChannel = item.getChannelID();
-    const string oldStart = item.getStartTime(), oldEnd = item.getEndTime();
-    cout << "===== Available Channels =====\n";
-    vector<vector<string>> channels;
-    for (const Channel& channel : repoChannel.readAll())
-        channels.push_back({channel.getID(), channel.getName(), channel.getStatus()});
-    TablePrinter::printTable({10, 22, 14}, {"ID", "Channel", "Status"}, channels);
-    if (editing) cout << "Leave fields empty to keep their current values.\n";
+    if (editing) cout << "Leave fields empty to keep current values.\n";
+    bool isVod = !item.getVodID().empty();
     while (true)
     {
-        string id = InputHelper::getInputID("Channel ID (e.g. KENH001): ", "KENH", editing);
-        if (id.empty()) id = oldChannel;
-        const Channel* channel = repoChannel.readByID(id);
-        if (!channel) cout << "[Error] Channel not found: " << id << ". Choose an existing channel.\n";
-        else
-        {
-            try
-            {
-                item.setChannelID(id);
-                break;
-            }
-            catch (const invalid_argument& error)
-            {
-                cout << "[Validation Error] " << error.what() << " Please try again.\n";
-            }
-        }
+        string value = InputHelper::getInputOptionalString(
+            "Schedule type (1. TV / 2. VOD; 0 to cancel): ");
+        if (value == "0") return false;
+        if (editing && value.empty()) break;
+        if (value == "1" || value == "2") { isVod = value == "2"; break; }
+        cout << "[Error] Choose 1 or 2.\n";
     }
+
+    vector<vector<string>> channels;
+    for (const auto& channel : repoChannel.readAll())
+        channels.push_back({channel.getID(), channel.getName(), channel.getStatus()});
+    TablePrinter::printTable({10, 24, 14}, {"ID", "Channel", "Status"}, channels);
     while (true)
     {
-        string program = editing ? InputHelper::getInputOptionalString("Program name (0 to cancel): ")
-                                 : InputHelper::getInputString("Program name (0 to cancel): ");
-        if (program == "0") return false;
-        if (program.find_first_not_of(" \t\v\f") == string::npos)
+        string id = convertToUpper(InputHelper::getInputOptionalString("Channel ID (0 to cancel): "));
+        if (id == "0") return false;
+        if (editing && id.empty()) id = old.getChannelID();
+        const Channel* channel = repoChannel.readByID(id);
+        if (!channel) { cout << "[Error] Channel not found.\n"; continue; }
+        if ((!editing || id != old.getChannelID()) && channel->getStatus() != "DANG_PHAT")
+        { cout << "[Error] Choose a broadcasting channel (DANG_PHAT).\n"; continue; }
+        item.setChannelID(id);
+        break;
+    }
+
+    if (isVod)
+    {
+        vector<vector<string>> vods;
+        for (const auto& vod : repoVod.readAll())
+            if (eligible(vod)) vods.push_back({vod.getID(), vod.getTenNoiDung(), to_string(vod.getThoiLuong())});
+        cout << "===== Available ACTIVE / HOURLY VOD =====\n";
+        if (!vods.empty()) TablePrinter::printTable({10, 32, 16}, {"VOD ID", "Content", "Duration (min)"}, vods);
+        else if (!editing || old.getVodID().empty())
+        { cout << "No eligible VOD available.\n"; return false; }
+        while (true)
         {
-            if (editing) break;
-            cout << "[Error] Text must not be empty. Please try again.\n";
-            continue;
-        }
-        try
-        {
-            if (!program.empty()) item.setProgramName(program);
+            string id = convertToUpper(InputHelper::getInputOptionalString("VOD ID (0 to cancel): "));
+            if (id == "0") return false;
+            if (editing && id.empty()) id = old.getVodID();
+            const NoiDungVOD* vod = repoVod.readByID(id);
+            if (!vod) { cout << "[Error] VOD not found.\n"; continue; }
+            if ((!editing || id != old.getVodID()) && !eligible(*vod))
+            { cout << "[Error] VOD must be ACTIVE and HOURLY.\n"; continue; }
+            item.setVodID(id);
+            if (!editing || id != old.getVodID()) item.setProgramName(vod->getTenNoiDung());
             break;
         }
-        catch (const invalid_argument& error)
+    }
+    else
+    {
+        item.setVodID("");
+        while (true)
         {
-            cout << "[Validation Error] " << error.what() << " Please try again.\n";
+            string program = InputHelper::getInputOptionalString("Program name (0 to cancel): ");
+            if (program == "0") return false;
+            if (editing && program.empty()) break;
+            try { item.setProgramName(program); break; }
+            catch (const invalid_argument& error) { cout << "[Error] " << error.what() << '\n'; }
         }
     }
 
-    string start, end;
     while (true)
     {
-        start = inputScheduleDateTime("Start (yyyy-mm-dd HH:mm): ", editing);
-        if (start.empty()) start = oldStart;
-        // Cho nhap lai moc ket thuc, khong mat moc bat dau da nhap dung.
-        while (true)
+        string start = inputDateTime("Start yyyy-mm-dd HH:mm", editing);
+        if (start == "0") return false;
+        if (start.empty()) start = old.getStartTime();
+        string end;
+        try
         {
-            end = inputScheduleDateTime("End   (yyyy-mm-dd HH:mm): ", editing);
-            if (end.empty()) end = oldEnd;
-            if (end <= start)
+            if (isVod)
             {
-                cout << "[Error] End time must be after start time. Enter the end time again.\n";
-                continue;
+                const auto* vod = repoVod.readByID(item.getVodID());
+                const bool recalculate = !editing || item.getVodID() != old.getVodID() || start != old.getStartTime();
+                end = recalculate ? Schedule::endAfterMinutes(start, vod->getThoiLuong()) : old.getEndTime();
+                cout << "VOD end time: " << end << '\n';
             }
-            try
+            else
             {
-                item.setTimeRange(start, end);
-                break;
+                end = inputDateTime("End yyyy-mm-dd HH:mm", editing);
+                if (end == "0") return false;
+                if (end.empty()) end = old.getEndTime();
             }
-            catch (const invalid_argument& error)
-            {
-                cout << "[Validation Error] " << error.what() << " Enter the end time again.\n";
-            }
+            item.setTimeRange(start, end);
+            const bool placementChanged = !editing || item.getChannelID() != old.getChannelID() ||
+                item.getStartTime() != old.getStartTime() || item.getEndTime() != old.getEndTime() ||
+                item.getVodID() != old.getVodID();
+            if (placementChanged && repoChannel.readByID(item.getChannelID())->getStatus() != "DANG_PHAT")
+                throw invalid_argument("Cannot place/reschedule on a stopped channel. Cancel and choose another channel.");
+            if (isVod && placementChanged && !eligible(*repoVod.readByID(item.getVodID())))
+                throw invalid_argument("VOD must be ACTIVE and HOURLY to place/reschedule. Cancel and choose another VOD.");
+            string conflict = findConflict(item);
+            if (!conflict.empty()) throw invalid_argument("Schedule overlaps " + conflict + ". Enter another time range.");
+            break;
         }
-        string conflict = findConflict(item);
-        if (conflict.empty()) break;
-        cout << "[Error] Schedule overlaps " << conflict << " on " << item.getChannelID()
-             << ". Enter a different start/end range.\n";
+        catch (const invalid_argument& error) { cout << "[Error] " << error.what() << '\n'; }
     }
     while (true)
     {
         string description = InputHelper::getInputOptionalString(
-            editing ? "Description (Enter: keep, '-': clear): " : "Description (optional): ");
-        if (description.find_first_not_of(" \t\v\f") == string::npos) description.clear();
+            editing ? "Description (Enter: keep, '-': clear, 0: cancel): " : "Description (optional, 0: cancel): ");
+        if (description == "0") return false;
         try
         {
-            if (!editing || !description.empty())
-                item.setDescription(editing && description == "-" ? "" : description);
+            if (!editing || !description.empty()) item.setDescription(editing && description == "-" ? "" : description);
             break;
         }
-        catch (const invalid_argument& error)
-        {
-            cout << "[Validation Error] " << error.what() << " Please try again.\n";
-        }
+        catch (const invalid_argument& error) { cout << "[Error] " << error.what() << '\n'; }
     }
     return true;
 }
 
 void ScheduleMenu::createSchedule()
 {
-    SystemHelper::clearScreen();
     cout << "===== Add Schedule =====\n";
     Schedule draft;
     if (!inputFields(draft, false)) { cout << "Creation cancelled.\n"; return; }
     string id;
     do { id = repo.generateNextID(); } while (repo.readByID(id));
     Schedule item(id, draft.getChannelID(), draft.getProgramName(), draft.getStartTime(),
-                  draft.getEndTime(), draft.getDescription());
-    if (!repo.create(item)) throw runtime_error("Could not create schedule.");
-    repo.writeToFile();
-    cout << "Schedule created successfully! ID: " << id << "\n";
+                  draft.getEndTime(), draft.getDescription(), draft.getVodID());
+    const auto before = repo;
+    try
+    {
+        if (!repo.create(item)) throw runtime_error("Could not create schedule.");
+        writeLinkedData(repo, "Data/schedules.txt");
+    }
+    catch (...) { repo = before; throw; }
+    cout << "Schedule created successfully! ID: " << id << '\n';
 }
 
 void ScheduleMenu::readSchedule()
 {
-    SystemHelper::clearScreen();
-    cout << "1. View all schedules\n2. Search by ID\n3. Filter by channel\n4. Filter by date\n";
+    cout << "1. View all schedules\n2. Search by ID\n3. Filter by channel\n4. Filter by date\n5. Search schedules by VOD ID\n";
     int choice = InputHelper::getInputInt("Select an option (0 to go back): ");
     if (choice == 0) return;
     if (choice == 2)
     {
         string id = InputHelper::getInputID("Schedule ID: ", "LPS");
-        const Schedule* item = repo.readByID(id);
-        if (!item) cout << "Schedule not found: " << id << "\n";
-        else printDetail(item->exportToVector());
+        const auto* item = repo.readByID(id);
+        if (!item) cout << "Schedule not found: " << id << '\n';
+        else printDetail(*item);
         return;
     }
-    if (choice < 1 || choice > 4) { cout << "Invalid option.\n"; return; }
+    if (choice < 1 || choice > 5) { cout << "Invalid option.\n"; return; }
     string query;
     if (choice == 3) query = InputHelper::getInputID("Channel ID: ", "KENH");
     if (choice == 4)
     {
-        Date date = InputHelper::getInputDate("Broadcast date");
-        // Date::toFileString la dd-mm-yyyy: doi thu tu sang yyyy-mm-dd.
-        string value = date.toFileString();
+        string value = InputHelper::getInputDate("Broadcast date").toFileString();
         query = value.substr(6, 4) + "-" + value.substr(3, 2) + "-" + value.substr(0, 2);
     }
-    vector<vector<string>> rows;
-    for (const Schedule& item : repo.readAll())
+    if (choice == 5)
     {
-        // Khoang nua mo [start,end): lich ket thuc dung 00:00 khong tinh vao ngay sau.
-        bool onDate = choice == 4 && item.getStartTime().substr(0, 10) <= query &&
-                      item.getEndTime() > query + " 00:00";
-        if (choice == 1 || (choice == 3 && item.getChannelID() == query) || onDate)
-            rows.push_back(item.exportToVector());
+        query = InputHelper::getInputID("VOD ID: ", "VOD");
+        repoVod.loadFromFile();
+        const auto* vod = repoVod.readByID(query);
+        if (!vod) { cout << "VOD not found: " << query << '\n'; return; }
+        if (vod->getHinhThucXem() == "NON_HOURLY")
+        { cout << "VOD is NON_HOURLY (on demand); it has no broadcast schedule.\n"; return; }
     }
-    if (rows.empty()) cout << "No schedules found.\n";
-    else TablePrinter::printTable(widths, headers, rows);
+    vector<Schedule> found;
+    for (const auto& item : repo.readAll())
+    {
+        const bool onDate = choice == 4 && item.getStartTime().substr(0, 10) <= query &&
+                            item.getEndTime() > query + " 00:00";
+        if (choice == 1 || (choice == 3 && item.getChannelID() == query) || onDate ||
+            (choice == 5 && item.getVodID() == query)) found.push_back(item);
+    }
+    if (choice == 5)
+    {
+        sort(found.begin(), found.end(), byStart);
+        if (found.empty()) { cout << "VOD has not been scheduled yet: " << query << '\n'; return; }
+    }
+    printSchedules(found);
 }
 
 void ScheduleMenu::sortSchedules()
 {
-    vector<Schedule> list = repo.readAll();
-    sort(list.begin(), list.end(), [](const Schedule& a, const Schedule& b)
-    {
-        if (a.getStartTime() != b.getStartTime()) return a.getStartTime() < b.getStartTime();
-        return a.getID() < b.getID();
-    });
-    vector<vector<string>> rows;
-    for (const Schedule& item : list) rows.push_back(item.exportToVector());
-    if (rows.empty()) cout << "No schedules found.\n";
-    else TablePrinter::printTable(widths, headers, rows);
+    auto list = repo.readAll();
+    sort(list.begin(), list.end(), byStart);
+    printSchedules(list);
 }
 
 void ScheduleMenu::updateSchedule()
 {
-    SystemHelper::clearScreen();
     cout << "===== Update Schedule =====\n";
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
+    printSchedules(repo.readAll());
     string id = InputHelper::getInputID("Schedule ID to update: ", "LPS");
-    const Schedule* found = repo.readByID(id);
-    if (!found) { cout << "Schedule not found: " << id << "\n"; return; }
-    printDetail(found->exportToVector());
+    const auto* found = repo.readByID(id);
+    if (!found) { cout << "Schedule not found: " << id << '\n'; return; }
+    printDetail(*found);
     Schedule candidate = *found;
     if (!inputFields(candidate, true)) { cout << "Update cancelled.\n"; return; }
-    if (!repo.update(candidate)) throw runtime_error("Could not update schedule.");
-    repo.writeToFile();
+    const auto before = repo;
+    try
+    {
+        if (!repo.update(candidate)) throw runtime_error("Could not update schedule.");
+        writeLinkedData(repo, "Data/schedules.txt");
+    }
+    catch (...) { repo = before; throw; }
     cout << "Schedule updated successfully!\n";
 }
 
 void ScheduleMenu::deleteSchedule()
 {
-    SystemHelper::clearScreen();
     cout << "===== Delete Schedule =====\n";
-    TablePrinter::printTable(widths, headers, repo.exportToVector());
+    printSchedules(repo.readAll());
     string id = InputHelper::getInputID("Schedule ID to delete: ", "LPS");
-    const Schedule* item = repo.readByID(id);
-    if (!item) { cout << "Schedule not found: " << id << "\n"; return; }
-    printDetail(item->exportToVector());
-    string confirmation;
+    const auto* item = repo.readByID(id);
+    if (!item) { cout << "Schedule not found: " << id << '\n'; return; }
+    printDetail(*item);
     while (true)
     {
-        confirmation = convertToUpper(InputHelper::getInputString("Confirm deletion? (y/n): "));
-        if (confirmation == "Y" || confirmation == "N") break;
+        string answer = convertToUpper(InputHelper::getInputString("Confirm deletion? (y/n): "));
+        if (answer == "N") { cout << "Deletion cancelled.\n"; return; }
+        if (answer == "Y") break;
         cout << "[Error] Please enter y or n.\n";
     }
-    if (confirmation == "N")
+    const auto before = repo;
+    try
     {
-        cout << "Deletion cancelled.\n";
-        return;
+        if (!repo.remove(id)) throw runtime_error("Could not delete schedule.");
+        writeLinkedData(repo, "Data/schedules.txt");
     }
-    if (!repo.remove(id)) throw runtime_error("Could not delete schedule.");
-    repo.writeToFile();
+    catch (...) { repo = before; throw; }
     cout << "Schedule deleted successfully!\n";
 }
 
 void ScheduleMenu::printMenu()
 {
     SystemHelper::clearScreen();
-    cout << "===== Schedule Management =====\n";
-    cout << "1. Add Schedule\n2. View/Search Schedule\n3. Update Schedule\n"
+    cout << "===== Schedule Management (TV / VOD) =====\n"
+         << "1. Add Schedule\n2. View/Search Schedule\n3. Update Schedule\n"
          << "4. Delete Schedule\n5. Sort by start time\n";
 }
 
@@ -315,6 +352,6 @@ void ScheduleMenu::handleChoice(int choice)
         default: cout << "Invalid option.\n"; break;
         }
     }
-    catch (const exception& error) { cout << "[Error] " << error.what() << "\n"; }
+    catch (const exception& error) { cout << "[Error] " << error.what() << '\n'; }
     InputHelper::getInputOptionalString("Press Enter to continue...");
 }

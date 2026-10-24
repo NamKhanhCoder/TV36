@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <cctype>
 #include <stdexcept>
+#include <iomanip>
+#include <sstream>
+#include <cstdint>
 #include "Utils/Date.h"
 #include "Utils/Time.h"
 
@@ -35,13 +38,47 @@ namespace
 
 Schedule::Schedule() : Entity() {}
 
-Schedule::Schedule(const string& id, const string& channelID, const string& programName, const string& startTime, const string& endTime, const string& description) : Entity(id)
+Schedule::Schedule(const string& id, const string& channelID, const string& programName, const string& startTime, const string& endTime, const string& description, const string& vodID) : Entity(id)
 {
     checkID(id, "LPS");
     setChannelID(channelID);
     setProgramName(programName);
     setDescription(description);
     setTimeRange(startTime, endTime);
+    setVodID(vodID);
+}
+
+string Schedule::getVodID() const { return vodID; }
+
+void Schedule::setVodID(const string& value)
+{
+    if (!value.empty()) checkID(value, "VOD");
+    vodID = value;
+}
+
+string Schedule::endAfterMinutes(const string& start, int duration)
+{
+    normalizeDateTime(start);
+    if (duration <= 0) throw invalid_argument("VOD duration must be positive.");
+    Date date(start.substr(0, 10));
+    const int64_t total = static_cast<int64_t>(stoi(start.substr(11, 2))) * 60 +
+                          stoi(start.substr(14, 2)) + duration;
+    int64_t days = total / 1440;
+    int day = date.getDay(), month = date.getMonth(), year = date.getYear();
+    while (days > 0)
+    {
+        int remaining = Date::daysInMonth(month, year) - day;
+        if (days <= remaining) { day += static_cast<int>(days); break; }
+        days -= remaining + 1;
+        day = 1;
+        if (++month == 13) { month = 1; ++year; }
+        if (year > 2100) throw invalid_argument("VOD end time exceeds year 2100.");
+    }
+    ostringstream out;
+    out << setfill('0') << setw(4) << year << '-' << setw(2) << month << '-'
+        << setw(2) << day << ' ' << setw(2) << (total % 1440) / 60 << ':'
+        << setw(2) << total % 60;
+    return normalizeDateTime(out.str());
 }
 
 string Schedule::getChannelID() const { return channelID; }
@@ -121,18 +158,19 @@ void Schedule::setTimeRange(const string& start, const string& end)
 void Schedule::parseFromString(const string& data)
 {
     vector<string> words = splitString(data);
-    if (words.size() != 6)
-        throw invalid_argument("Schedule row must have 6 fields.");
+    if (words.size() != 6 && words.size() != 7)
+        throw invalid_argument("Schedule row must have 6 or 7 fields.");
     // Chi gan sau khi toan bo dong du lieu hop le.
-    *this = Schedule(words[0], words[1], words[2], words[3], words[4], words[5]);
+    *this = Schedule(words[0], words[1], words[2], words[3], words[4], words[5],
+                     words.size() == 7 ? words[6] : "");
 }
 
 string Schedule::exportToString() const
 {
-    return id + "|" + channelID + "|" + programName + "|" + startTime + "|" + endTime + "|" + description;
+    return id + "|" + channelID + "|" + programName + "|" + startTime + "|" + endTime + "|" + description + "|" + vodID;
 }
 
 vector<string> Schedule::exportToVector() const
 {
-    return {id, channelID, programName, startTime, endTime, description};
+    return {id, channelID, programName, startTime, endTime, description, vodID};
 }

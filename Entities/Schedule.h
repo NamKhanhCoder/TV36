@@ -18,12 +18,17 @@ private:
     string startTime;
     string endTime;
     string description;
+    string vodID;
 
 public:
     // Tao ban nhap tam; can dien du truong truoc khi luu.
     Schedule();
     // Tao lich hoan chinh va kiem tra tat ca thuoc tinh.
-    Schedule(const string& id, const string& channelID, const string& programName, const string& startTime, const string& endTime, const string& description);
+    Schedule(const string& id, const string& channelID, const string& programName, const string& startTime, const string& endTime, const string& description, const string& vodID = "");
+    string getVodID() const;
+    void setVodID(const string& value);
+    // Cong phut theo lich, khong phu thuoc mui gio/DST cua he dieu hanh.
+    static string endAfterMinutes(const string& start, int duration);
     // Lay ma kenh phat song.
     string getChannelID() const;
     // Ma kenh co dang KENH + it nhat 3 chu so; Menu kiem tra ton tai.
@@ -49,9 +54,9 @@ public:
     // Kiem tra ngay gio thuc te va dinh dang ISO; throw invalid_argument neu sai.
     static string normalizeDateTime(const string& value);
 
-    // Doc 6 cot; throw neu sai va giu nguyen doi tuong hien tai.
+    // Doc 6 cot cu hoac 7 cot moi; loi khong lam thay doi doi tuong.
     void parseFromString(const string& data) override;
-    // Xuat 6 cot ngan cach bang | de Repository ghi file.
+    // Xuat 7 cot ngan cach bang |, vodID rong la lich thuong.
     string exportToString() const override;
     // Xuat cac cot theo thu tu bang hien thi.
     vector<string> exportToVector() const override;

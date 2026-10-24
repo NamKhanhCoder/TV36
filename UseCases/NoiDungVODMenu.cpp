@@ -13,6 +13,7 @@
 #include "Utils/InputHelper.h"
 #include "Utils/SystemHelper.h"
 #include "Utils/StringHelper.h"
+#include "Utils/LinkedDataWriter.h"
 using namespace std;
 namespace
 {
@@ -21,11 +22,23 @@ namespace
 }
 // Ham khoi tao: khoi tao 2 repository (NoiDungVOD va Package) va nap du lieu tu file
 NoiDungVODMenu::NoiDungVODMenu() : repo("Data/noidungvod.txt", "Data/vod_counter.txt", "VOD"),
-                                   repopackage("Data/packages.txt", "Data/packages_counter.txt", "GOI")
+                                   repopackage("Data/packages.txt", "Data/packages_counter.txt", "GOI"),
+                                   repoSchedule("Data/schedules.txt", "Data/schedules_counter.txt", "LPS")
 {
     repo.loadFromFile();
     repopackage.loadFromFile();
 }
+// Nguyen Hong Anh: nap lai lich truoc moi lan kiem tra, bao cac ma lich lien quan.
+string NoiDungVODMenu::referencingSchedules(const string& id)
+{
+    repoSchedule.loadFromFile();
+    string ids;
+    for (const auto& schedule : repoSchedule.readAll())
+        if (schedule.getVodID() == id)
+            ids += (ids.empty() ? "" : ", ") + schedule.getID();
+    return ids;
+}
+
 // Chuc nang xem danh sach: xuat toan bo ban ghi VOD ra bang can cot TablePrinter
 void NoiDungVODMenu::xemDanhSach()
 {
@@ -206,7 +219,7 @@ void NoiDungVODMenu::themNoiDung()
     {
         try
         {
-            repo.writeToFile();
+            writeLinkedData(repo, "Data/noidungvod.txt");
             cout << "VOD content created successfully!" << endl;
             LOG("[VODMenu] VOD content created successfully, ID: " + id);
         }
@@ -515,9 +528,13 @@ void NoiDungVODMenu::sapXep()
 // Chuc nang cap nhat: tim theo ma VOD, hien thi thong tin hien tai va cho phep sua tung truong
 void NoiDungVODMenu::capNhat()
 {
+    repo.loadFromFile();
     string id = InputHelper::getInputString("Enter VOD ID to update: ");
     id = convertToUpper(id);
-    NoiDungVOD *p = repo.readByID(id);
+    NoiDungVOD *found = repo.readByID(id);
+    NoiDungVOD candidate;
+    if (found) candidate = *found;
+    NoiDungVOD *p = found ? &candidate : nullptr;
     if (p == nullptr)
     {
         cout << "[Error] VOD ID not found, try again!" << endl;
@@ -548,7 +565,7 @@ void NoiDungVODMenu::capNhat()
                 try
                 {
                     p->setTenNoiDung(tenNoiDung);
-                    cout << "Content name updated successfully!" << endl;
+                    cout << "Content name accepted." << endl;
                     break;
                 }
                 catch (const exception &e)
@@ -569,7 +586,7 @@ void NoiDungVODMenu::capNhat()
                 try
                 {
                     p->setTheLoai(theLoai);
-                    cout << "Genre updated successfully!" << endl;
+                    cout << "Genre accepted." << endl;
                     break;
                 }
                 catch (const exception &e)
@@ -589,8 +606,11 @@ void NoiDungVODMenu::capNhat()
             {
                 try
                 {
+                    const string references = referencingSchedules(id);
+                    if (thoiLuong != p->getThoiLuong() && !references.empty())
+                        throw invalid_argument("Cannot change duration; referenced by schedules: " + references);
                     p->setThoiLuong(thoiLuong);
-                    cout << "Duration updated successfully!" << endl;
+                    cout << "Duration accepted." << endl;
                     break;
                 }
                 catch (const exception &e)
@@ -610,7 +630,7 @@ void NoiDungVODMenu::capNhat()
                 try
                 {
                     p->setMoTa(moTa);
-                    cout << "Description updated successfully!" << endl;
+                    cout << "Description accepted." << endl;
                     break;
                 }
                 catch (const exception &e)
@@ -630,7 +650,7 @@ void NoiDungVODMenu::capNhat()
                 try
                 {
                     p->setNamPhatHanh(namPhatHanh);
-                    cout << "Release year updated successfully!" << endl;
+                    cout << "Release year accepted." << endl;
                     break;
                 }
                 catch (const exception &e)
@@ -673,7 +693,7 @@ void NoiDungVODMenu::capNhat()
                             }
                         }
                         p->setUrl(url);
-                        cout << "URL updated successfully!" << endl;
+                        cout << "URL accepted." << endl;
                         break;
                     }
                     else if (choice == 2)
@@ -699,7 +719,7 @@ void NoiDungVODMenu::capNhat()
                             }
                         }
                         p->setUrl(url);
-                        cout << "URL updated successfully!" << endl;
+                        cout << "URL accepted." << endl;
                         break;
                     }
                     else
@@ -727,13 +747,13 @@ void NoiDungVODMenu::capNhat()
                     if (choice == 1)
                     {
                         p->setTrangThai("ACTIVE");
-                        cout << "Status updated successfully!" << endl;
+                        cout << "Status accepted." << endl;
                         break;
                     }
                     else if (choice == 2)
                     {
                         p->setTrangThai("INACTIVE");
-                        cout << "Status updated successfully!" << endl;
+                        cout << "Status accepted." << endl;
                         break;
                     }
                     cout << "[Error] Invalid option, please enter 1 or 2!\n";
@@ -757,13 +777,16 @@ void NoiDungVODMenu::capNhat()
                     if (choice == 1)
                     {
                         p->setHinhThucXem("HOURLY");
-                        cout << "Access type updated successfully!" << endl;
+                        cout << "Access type accepted." << endl;
                         break;
                     }
                     else if (choice == 2)
                     {
+                        const string references = referencingSchedules(id);
+                        if (!references.empty())
+                            throw invalid_argument("Cannot change to NON_HOURLY; referenced by schedules: " + references);
                         p->setHinhThucXem("NON_HOURLY");
-                        cout << "Access type updated successfully!" << endl;
+                        cout << "Access type accepted." << endl;
                         break;
                     }
                     cout << "[Error] Invalid option, please enter 1 or 2!\n";
@@ -776,9 +799,16 @@ void NoiDungVODMenu::capNhat()
             }
         }
     }
+    const auto before = repo;
     try
     {
-        repo.writeToFile();
+        // Kiem tra lai ngay truoc khi cam ket, sau do moi thay ban ghi trong RAM.
+        const string references = referencingSchedules(id);
+        if (!references.empty() && (candidate.getThoiLuong() != found->getThoiLuong() ||
+            candidate.getHinhThucXem() != "HOURLY"))
+            throw invalid_argument("VOD is referenced by schedules: " + references);
+        if (!repo.update(candidate)) throw runtime_error("VOD update failed.");
+        writeLinkedData(repo, "Data/noidungvod.txt");
         cout << "VOD content updated successfully!" << endl;
         LOG("[VODMenu] VOD content updated successfully, ID: " + id);
     }
@@ -786,7 +816,7 @@ void NoiDungVODMenu::capNhat()
     {
         cout << "[Error] Failed to save VOD content to file: " << e.what() << endl;
         LOG("[VODMenu] File write failed during update: " + string(e.what()));
-        repo.loadFromFile();
+        repo = before;
         cout << "[Notice] Memory rolled back to last saved state on disk." << endl;
     }
     InputHelper::getInputOptionalString("Press any key to go back: ");
@@ -807,6 +837,14 @@ void NoiDungVODMenu::xoaNoiDung()
     }
     else
     {
+        // Nguyen Hong Anh: lich cung tham chieu VOD, ke ca lich da phat.
+        const string references = referencingSchedules(id);
+        if (!references.empty())
+        {
+            cout << "[Error] Cannot delete VOD; referenced by schedules: " << references << '\n';
+            InputHelper::getInputOptionalString("Press Enter to go back: ");
+            return;
+        }
         // Kiem tra rang buoc toan ven: chan xoa neu VOD dang nam trong goi cuoc (Package)
         repopackage.loadFromFile();
         vector<Package> danhSachPackage = repopackage.readAll();
@@ -847,7 +885,7 @@ void NoiDungVODMenu::xoaNoiDung()
             repo.remove(id);
             try
             {
-                repo.writeToFile();
+                writeLinkedData(repo, "Data/noidungvod.txt");
                 cout << "VOD content deleted successfully!" << endl;
             }
             catch (const exception &e)
