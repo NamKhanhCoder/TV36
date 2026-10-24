@@ -12,6 +12,7 @@
 #include "UseCases/BaseMenu.h"
 // Tham chieu thuc the Package de kiem tra rang buoc khoa ngoai truoc khi xoa
 #include "Entities/Package.h"
+#include "Entities/Schedule.h"
 #include <vector>
 #include <string>
 using namespace std;
@@ -22,6 +23,9 @@ private:
         // Cac repository quan ly noi dung VOD va tham chieu du lieu goi cuoc (Package)
         Repository<NoiDungVOD> repo;
         Repository<Package> repopackage;
+        // Nguyen Hong Anh: rang buoc VOD dang duoc lich tham chieu.
+        Repository<Schedule> repoSchedule;
+        string referencingSchedules(const string& id);
 
 public:
         // Ham khoi tao menu va nap du lieu tu file

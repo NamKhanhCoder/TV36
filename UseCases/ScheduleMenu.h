@@ -10,6 +10,7 @@
 #include "Repositories/Repository.h"
 #include "Entities/Schedule.h"
 #include "Entities/Channel.h"
+#include "Entities/NoiDungVOD.h"
 
 // Menu CRUD lich, kiem tra kenh ton tai va tranh trung gio tren cung kenh.
 class ScheduleMenu : public BaseMenu
@@ -17,6 +18,7 @@ class ScheduleMenu : public BaseMenu
 private:
     Repository<Schedule> repo;
     Repository<Channel> repoChannel;
+    Repository<NoiDungVOD> repoVod;
     bool inputFields(Schedule& item, bool editing);
     void loadSchedules();
     string findConflict(const Schedule& item);
