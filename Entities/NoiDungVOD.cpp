@@ -21,6 +21,7 @@ NoiDungVOD::NoiDungVOD()
     namPhatHanh = 0;
     url = "";
     trangThai = "INACTIVE";
+    hinhThucXem = "NON_HOURLY";
 }
 // Cac ham getter lay gia tri thuoc tinh
 string NoiDungVOD::getTenNoiDung() const
@@ -50,6 +51,10 @@ string NoiDungVOD::getUrl() const
 string NoiDungVOD::getTrangThai() const
 {
     return trangThai;
+}
+string NoiDungVOD::getHinhThucXem() const
+{
+    return hinhThucXem;
 }
 // Cac ham setter gan gia tri cho thuoc tinh
 void NoiDungVOD::setID(string id)
@@ -107,12 +112,12 @@ void NoiDungVOD::setNamPhatHanh(int namPhatHanh)
         throw invalid_argument("[VOD] the release year of the data is not valid: " + to_string(namPhatHanh));
 }
 void NoiDungVOD::setUrl(string url)
-{   
-    if(!url.empty() && url.find('|') == string :: npos)
+{
+    if (!url.empty() && url.find('|') == string::npos)
     {
         this->url = url;
     }
-    else 
+    else
     {
         throw invalid_argument("[VOD] The URL of the data is not valid: " + url);
     }
@@ -126,16 +131,25 @@ void NoiDungVOD::setTrangThai(string trangThai)
     else
         throw invalid_argument("[VOD] the status of the data is not valid: " + trangThai);
 }
+void NoiDungVOD::setHinhThucXem(string hinhThucXem)
+{
+    if (hinhThucXem == "HOURLY" || hinhThucXem == "NON_HOURLY")
+    {
+        this->hinhThucXem = hinhThucXem;
+    }
+    else
+        throw invalid_argument("[VOD] the access type of the data is not valid: " + hinhThucXem);
+}
 // Chuyen doi doi tuong thanh chuoi dinh dang luu vao file
 string NoiDungVOD::exportToString() const
 {
-    return id + "|" + tenNoiDung + "|" + theLoai + "|" + to_string(thoiLuong) + "|" + moTa + "|" + to_string(namPhatHanh) + "|" + url + "|" + trangThai;
+    return id + "|" + tenNoiDung + "|" + theLoai + "|" + to_string(thoiLuong) + "|" + moTa + "|" + to_string(namPhatHanh) + "|" + url + "|" + trangThai + "|" + hinhThucXem;
 }
 // Doc va phan tich chuoi tu file de nap vao doi tuong
 void NoiDungVOD::parseFromString(const string &data)
 {
     vector<string> words = splitString(data);
-    if (words.size() != 8)
+    if (words.size() != 9)
     {
         throw invalid_argument("[VOD] The line of data is not valid: " + data);
     }
@@ -167,11 +181,12 @@ void NoiDungVOD::parseFromString(const string &data)
     setMoTa(words[4]);
     setUrl(words[6]);
     setTrangThai(words[7]);
+    setHinhThucXem(words[8]);
 }
 // Xuat cac thuoc tinh thanh vector string de hien thi bang TablePrinter
 vector<string> NoiDungVOD::exportToVector() const
 {
-    return {id, tenNoiDung, theLoai, to_string(thoiLuong), moTa, to_string(namPhatHanh), url, trangThai};
+    return {id, tenNoiDung, theLoai, to_string(thoiLuong), moTa, to_string(namPhatHanh), url, trangThai, hinhThucXem};
 }
 // Nap chong toan tu < so sanh theo ten A-Z
 bool NoiDungVOD::operator<(const NoiDungVOD &other) const

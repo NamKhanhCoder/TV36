@@ -17,15 +17,17 @@ using namespace std;
  * @brief Lop thuc the NoiDungVOD quan ly danh muc phim va video theo yeu cau.
  * Ke thua lop truu tuong Entity, quan ly cac thuoc tinh ve tieu de, the loai, thoi luong, URL va trang thai.
  */
-class NoiDungVOD : public Entity {
-private: 
-    string tenNoiDung;   ///< Ten tieu de noi dung VOD (khong rong, khong chua '|')
-    string theLoai;      ///< The loai noi dung (Hanh dong, Hai, Hoat hinh...)
-    int thoiLuong;       ///< Thoi luong phat (tinh theo phut, > 0)
-    string moTa;         ///< Tom tat noi dung video (khong chua '|')
-    int namPhatHanh;     ///< Nam cong chieu/phat hanh (1950 <= nam <= nam hien tai)
-    string url;          ///< Duong dan phat video (khong rong, khong chua '|')
-    string trangThai;    ///< Trang thai phat hanh ("ACTIVE" hoac "INACTIVE")
+class NoiDungVOD : public Entity
+{
+private:
+    string tenNoiDung;  ///< Ten tieu de noi dung VOD (khong rong, khong chua '|')
+    string theLoai;     ///< The loai noi dung (Hanh dong, Hai, Hoat hinh...)
+    int thoiLuong;      ///< Thoi luong phat (tinh theo phut, > 0)
+    string moTa;        ///< Tom tat noi dung video (khong chua '|')
+    int namPhatHanh;    ///< Nam cong chieu/phat hanh (1950 <= nam <= nam hien tai)
+    string url;         ///< Duong dan phat video (khong rong, khong chua '|')
+    string trangThai;   ///< Trang thai phat hanh ("ACTIVE" hoac "INACTIVE")
+    string hinhThucXem; ///< Hinh thuc xem ("HOURLY" hoac "NON_HOURLY")
 
 public:
     /**
@@ -79,7 +81,11 @@ public:
      * @return string "ACTIVE" hoac "INACTIVE".
      */
     string getTrangThai() const;
-
+    /**
+     * @brief Lay hinh thuc xem hien tai cua video.
+     * @return string "HOURLY" hoac "NON_HOURLY".
+     */
+    string getHinhThucXem() const;
     // ===============================================================
     // CAC HAM GHI DE TU ENTITY (SERIALIZATION & HIEN THI BANG)
     // ===============================================================
@@ -163,7 +169,12 @@ public:
      * @throws std::invalid_argument Neu trangThai khong thuoc hai gia tri cho phep.
      */
     void setTrangThai(string trangThai);
-
+    /**
+     * @brief Thiet lap hinh thuc xem video.
+     * @param hinhThucXem Gia tri hinh thuc xem ("HOURLY" hoac "NON_HOURLY").
+     * @throws std::invalid_argument Neu hinhThucXem khong hop le.
+     */
+    void setHinhThucXem(string hinhThucXem);
     // ===============================================================
     // NAP CHONG TOAN TU SO SANH PHUC VU SAP XEP
     // ===============================================================
@@ -173,12 +184,12 @@ public:
      * @param other Doi tuong VOD can so sanh.
      * @return true Neu ten cua doi tuong hien tai nho hon other.
      */
-    bool operator < (const NoiDungVOD &other) const;
+    bool operator<(const NoiDungVOD &other) const;
 
     /**
      * @brief Nap chong toan tu > so sanh hai noi dung VOD theo ten tieu de tu Z den A.
      * @param other Doi tuong VOD can so sanh.
      * @return true Neu ten cua doi tuong hien tai lon hon other.
      */
-    bool operator > (const NoiDungVOD &other) const;
+    bool operator>(const NoiDungVOD &other) const;
 };
