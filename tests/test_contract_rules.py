@@ -114,6 +114,12 @@ int main() {
     Date leap(31,1,2024); leap.addMonths(1); check(leap.toString()=="29/02/2024","leap");
     Date common(31,1,2026); common.addMonths(1); check(common.toString()=="28/02/2026","month-end");
     Date last(30,11,2100); last.addMonths(1); check(last.toString()=="30/12/2100","last-valid-month");
+    Date back(31,3,2024); back.addMonths(-1); check(back.toString()=="29/02/2024","negative-month");
+    for(int amount: {-1, INT_MIN}) {
+        Date d(1,1,1900); const auto before=d.toString(); bool rejected=false;
+        try {d.addMonths(amount);} catch(const std::exception&) {rejected=true;}
+        check(rejected && d.toString()==before,"underflow must reject without changing date");
+    }
     for(int amount: {1, INT_MAX}) {
         Date d(31,12,2100); const auto before=d.toString(); bool rejected=false;
         try {d.addMonths(amount);} catch(const std::exception&) {rejected=true;}
