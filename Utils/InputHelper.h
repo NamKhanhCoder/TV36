@@ -14,6 +14,11 @@ using namespace std;
 class InputHelper
 {
 public:
+    // End of a console/redirected input session is control flow, not a
+    // validation error. Keep it outside std::exception so retry handlers
+    // cannot swallow it and loop forever.
+    struct EndOfInput {};
+
     static int getInputInt(const string &message = "");
     static double getInputDouble(const string &message = "");
     static string getInputString(const string &message = "");

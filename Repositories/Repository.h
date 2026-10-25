@@ -82,7 +82,11 @@ private:
         int counter = 0;
         if (file.is_open())
         {
-            file >> counter;
+            if (!(file >> counter) || counter < 0 || counter > 999)
+                throw std::runtime_error("[Repository] Invalid ID counter: " + counter_path);
+            file >> std::ws;
+            if (!file.eof())
+                throw std::runtime_error("[Repository] Invalid trailing characters in counter: " + counter_path);
             file.close();
         }
         else
@@ -107,14 +111,27 @@ public:
     //==================================================Show on slide 9
     string generateNextID()
     {
-        this->id_count++;
-        ofstream file(counter_path, ios::trunc);
-        if (file.is_open())
+        int next = id_count;
+        string candidate;
+        do
         {
-            file << this->id_count;
-            file.close();
-        }
-        return id_prefix + padding(id_count, 3); // KH001, KH002...
+            if (next >= 999)
+                throw std::runtime_error("[Repository] No ID available in the three-digit range.");
+            candidate = id_prefix + padding(++next, 3);
+        } while (readByID(candidate) != nullptr);
+
+        ofstream file(counter_path, ios::trunc);
+        if (!file.is_open())
+            throw std::runtime_error("[Repository] Cannot write ID counter: " + counter_path);
+        file << next;
+        file.flush();
+        if (!file)
+            throw std::runtime_error("[Repository] Failed to write ID counter: " + counter_path);
+        file.close();
+        if (!file)
+            throw std::runtime_error("[Repository] Failed to close ID counter: " + counter_path);
+        id_count = next;
+        return candidate;
     }
     //==================================================
     // 1. Constructor

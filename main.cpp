@@ -23,7 +23,7 @@
 
 using namespace std;
 
-int main()
+static int runApplication()
 {
 #ifdef _WIN32
     system("chcp 65001 > nul");
@@ -162,6 +162,10 @@ int main()
             }
             }
         }
+        catch (const InputHelper::EndOfInput &)
+        {
+            throw;
+        }
         catch (const std::exception &ex)
         {
             cout << "\n========================================================\n";
@@ -180,4 +184,14 @@ int main()
     }
 
     return 0;
+}
+
+int main()
+{
+    try { return runApplication(); }
+    catch (const InputHelper::EndOfInput&)
+    {
+        cout << "\nInput closed. Exiting application.\n";
+        return 0;
+    }
 }

@@ -14,6 +14,13 @@
 #include "Validator.h"
 #include "Utils/Debugger.h"
 using namespace std;
+namespace {
+    void readInputLine(string& input)
+    {
+        if (!getline(cin, input)) throw InputHelper::EndOfInput{};
+    }
+}
+
 string trim_end_spaces(const string &str) // sanitizer (remove spaces of 2 ends)
 {
     size_t first = str.find_first_not_of(' ');
@@ -53,8 +60,7 @@ string InputHelper::getInputID(const string &message, const string &prefix, bool
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input))
-            throw runtime_error("Failed to read ID.");
+        readInputLine(input);
         input = trim_end_spaces(input);
         if (optional && input.empty())
             return "";
@@ -79,11 +85,7 @@ int InputHelper::getInputInt(const string &message)
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input))
-        {
-            cin.clear();
-            continue;
-        }
+        readInputLine(input);
         input = trim_end_spaces(input);
         LOG("[InputHelper] Integer sanitized to: " + input);
         if (Validator::isValidInt(input))
@@ -104,11 +106,7 @@ double InputHelper::getInputDouble(const string &message)
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input))
-        {
-            cin.clear();
-            continue;
-        }
+        readInputLine(input);
         input = trim_end_spaces(input);
         LOG("[InputHelper] Double sanitized to: " + input);
         if (Validator::isValidDouble(input))
@@ -129,11 +127,7 @@ string InputHelper::getInputString(const string &message)
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input))
-        {
-            cin.clear(); // Xóa cờ lỗi EOF/failbit để bàn phím nhận diện lại
-            continue;    // Quay lại đầu vòng lặp chờ người dùng gõ tiếp
-        }
+        readInputLine(input);
 
         input = trim_end_spaces(input);
         if (input.empty())
@@ -157,11 +151,7 @@ string InputHelper::getInputOptionalString(const string &message)
     while (true)
     {
         cout << message << endl;
-        if (!getline(cin, input))
-        {
-            cin.clear();
-            return "";
-        }
+        readInputLine(input);
 
         input = trim_end_spaces(input);
         if (input.empty())
@@ -182,7 +172,7 @@ string InputHelper::getInputEmail(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
         input = force_lowercase(input);
         if (Validator::isValidEmail(input)) // not empty case
@@ -203,7 +193,7 @@ string InputHelper::getInputPhone(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
         input = normalizePhone(input);
         if (Validator::isValidPhone(input)) // not empty case
@@ -225,7 +215,7 @@ int InputHelper::getInputOptionalInt(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         if (input.empty())
@@ -254,7 +244,7 @@ double InputHelper::getInputOptionalDouble(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         if (input.empty())
@@ -283,7 +273,7 @@ string InputHelper::getInputOptionalEmail(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         if (input.empty())
@@ -312,7 +302,7 @@ string InputHelper::getInputOptionalPhone(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         if (input.empty())
@@ -341,7 +331,7 @@ Date InputHelper::getInputDate(const string &message)
     while (true)
     {
         cout << message <<endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         LOG("[InputHelper] Date sanitized to: " + input);
@@ -364,7 +354,7 @@ Time InputHelper::getInputTime(const string &message)
     while (true)
     {
         cout << message << " (hh:mm): " << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         LOG("[InputHelper] Time sanitized to: " + input);
@@ -387,7 +377,7 @@ Date InputHelper::getInputOptionalDate(const string &message)
     while (true)
     {
         cout << message << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         if (input.empty())
@@ -416,7 +406,7 @@ Time InputHelper::getInputOptionalTime(const string &message)
     while (true)
     {
         cout << message << " (hh:mm): " << endl;
-        getline(cin, input);
+        readInputLine(input);
         input = trim_end_spaces(input);
 
         if (input.empty())
