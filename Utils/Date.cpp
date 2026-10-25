@@ -178,18 +178,18 @@ void Date::addDays(int days)
 
 void Date::addMonths(int months)
 {
-    month += months;
-    while (month > 12)
-    {
-        month -= 12;
-        year++;
-    }
-    
-    int maxDays = daysInMonth(month, year);
-    if (day > maxDays)
-    {
-        day = maxDays;
-    }
+    if (isEmpty())
+        throw std::invalid_argument("[Date] Cannot add months to an empty date");
+    // Validate before changing any field; use a wide value to avoid overflow.
+    const long long target = static_cast<long long>(year) * 12 + month - 1 + months;
+    if (target < 1900LL * 12 || target > 2100LL * 12 + 11)
+        throw std::invalid_argument("[Date] Result must stay within years 1900 to 2100");
+    const int newYear = static_cast<int>(target / 12);
+    const int newMonth = static_cast<int>(target % 12) + 1;
+    const int maxDays = daysInMonth(newMonth, newYear);
+    year = newYear;
+    month = newMonth;
+    if (day > maxDays) day = maxDays;
 }
 
 Date Date::getCurrentDate()

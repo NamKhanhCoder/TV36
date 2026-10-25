@@ -76,8 +76,9 @@ bool ContractMenu::isSetTopBoxInUse(const string &stbID, const string &excludeCo
         if (!excludeContractID.empty() && c.getID() == excludeContractID)
             continue;
 
-        // Neu hop dong dang hoat dong ma xai STB nay thi STB duoc coi la dang su dung
-        if (c.get_stbID() == stbID && c.get_status() == ContractStatus::ACTIVE)
+        // Hop dong tam dung van giu thiet bi da cap phat.
+        if (c.get_stbID() == stbID &&
+            (c.get_status() == ContractStatus::ACTIVE || c.get_status() == ContractStatus::SUSPENDED))
             return true;
     }
     return false;
@@ -111,6 +112,11 @@ string ContractMenu::selectPackageID()
         Package *pkg = repoPackage.readByID(id);
         if (pkg != nullptr)
         {
+            if (pkg->getStatus() != PackageStatus::DANG_CUNG_CAP)
+            {
+                cout << "[Error] Package " << id << " is not available for new contracts. Please select another package.\n";
+                continue;
+            }
             return id;
         }
         cout << "[Error] Package ID not found: " << id << ". Please choose from the table above.\n";
@@ -142,7 +148,7 @@ string ContractMenu::selectSetTopBoxID(const string &currentContractID)
 
         if (isSetTopBoxInUse(id, currentContractID))
         {
-            cout << "[Error] Set-Top Box " << id << " is already allocated to another active contract!\n";
+            cout << "[Error] Set-Top Box " << id << " is already allocated to an ACTIVE or SUSPENDED contract!\n";
             cout << "Please select an available Set-Top Box.\n";
             continue;
         }
@@ -176,16 +182,17 @@ Date ContractMenu::calculateEndDate(const Date &startDate)
             continue;
         }
 
-        Date endDate = startDate;
-        endDate.addMonths(durationMonths);
-        if (endDate.getYear() > 2100)
+        try
         {
-            cout << "[Error] Duration too long: End date year cannot exceed 2100 (Calculated: " << endDate.getYear() << "). Please choose a smaller duration.\n";
-            continue;
+            Date endDate = startDate;
+            endDate.addMonths(durationMonths);
+            cout << "[Info] Calculated End Date (" << durationMonths << " months): " << endDate.toString() << "\n";
+            return endDate;
         }
-
-        cout << "[Info] Calculated End Date (" << durationMonths << " months): " << endDate.toString() << "\n";
-        return endDate;
+        catch (const exception &e)
+        {
+            cout << "[Error] " << e.what() << ". Please choose a smaller duration.\n";
+        }
     }
 }
 
@@ -513,6 +520,11 @@ void ContractMenu::updateContract()
             cout << "[Error] Package not found: " << newPkgID << ". Please try again.\n";
             continue;
         }
+        if (pkg->getStatus() != PackageStatus::DANG_CUNG_CAP)
+        {
+            cout << "[Error] Package " << newPkgID << " is not available for new contracts. Current package kept; choose another or press Enter.\n";
+            continue;
+        }
 
         try
         {
@@ -573,7 +585,7 @@ void ContractMenu::updateContract()
 
         if (isSetTopBoxInUse(newStbID, candidate.getID()))
         {
-            cout << "[Error] Set-Top Box " << newStbID << " is currently used by another active contract!\n";
+            cout << "[Error] Set-Top Box " << newStbID << " is currently used by another ACTIVE or SUSPENDED contract!\n";
             continue;
         }
 
@@ -600,6 +612,8 @@ void ContractMenu::updateContract()
 
         try
         {
+            if (!all_of(extendStr.begin(), extendStr.end(), [](unsigned char c) { return c >= '0' && c <= '9'; }))
+                throw invalid_argument("Number of months must contain only digits.");
             int addMonths = stoi(extendStr);
             if (addMonths <= 0)
             {
@@ -609,11 +623,6 @@ void ContractMenu::updateContract()
 
             Date updatedEndDate = candidate.get_endDate();
             updatedEndDate.addMonths(addMonths);
-            if (updatedEndDate.getYear() > 2100)
-            {
-                cout << "[Error] Duration too long: End year cannot exceed 2100 (Calculated: " << updatedEndDate.getYear() << ").\n";
-                continue;
-            }
 
             candidate.set_endDate(updatedEndDate);
 
@@ -624,7 +633,7 @@ void ContractMenu::updateContract()
                 {
                     if (isSetTopBoxInUse(candidate.get_stbID(), candidate.getID()))
                     {
-                        cout << "[Error] Cannot reactivate to ACTIVE: Set-Top Box " << candidate.get_stbID() << " is in use by another active contract!\n";
+                        cout << "[Error] Cannot reactivate to ACTIVE: Set-Top Box " << candidate.get_stbID() << " is in use by another ACTIVE or SUSPENDED contract!\n";
                     }
                     else
                     {
@@ -636,9 +645,9 @@ void ContractMenu::updateContract()
             cout << "[Notice] Contract extended by " << addMonths << " months! New End Date: " << updatedEndDate.toString() << "\n";
             break;
         }
-        catch (...)
+        catch (const exception &e)
         {
-            cout << "[Error] Invalid input for months! Please enter an integer.\n";
+            cout << "[Error] Invalid input for months: " << e.what() << " Please enter a positive integer within the supported date range.\n";
         }
     }
 
@@ -674,7 +683,7 @@ void ContractMenu::updateContract()
             if (isSetTopBoxInUse(candidate.get_stbID(), candidate.getID()))
             {
                 cout << "[Error] Cannot set status to ACTIVE: Set-Top Box " << candidate.get_stbID()
-                     << " is currently in use by another active contract!\n";
+                     << " is currently in use by another ACTIVE or SUSPENDED contract!\n";
             }
             else
             {
@@ -684,8 +693,16 @@ void ContractMenu::updateContract()
         }
         else if (statusChoice == "2")
         {
-            candidate.set_status(ContractStatus::SUSPENDED);
-            cout << "[Notice] Contract status updated to SUSPENDED.\n";
+            if (isSetTopBoxInUse(candidate.get_stbID(), candidate.getID()))
+            {
+                cout << "[Error] Cannot set status to SUSPENDED: Set-Top Box " << candidate.get_stbID()
+                     << " is currently in use by another ACTIVE or SUSPENDED contract!\n";
+            }
+            else
+            {
+                candidate.set_status(ContractStatus::SUSPENDED);
+                cout << "[Notice] Contract status updated to SUSPENDED.\n";
+            }
         }
         else if (statusChoice == "3")
         {
